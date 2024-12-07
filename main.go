@@ -248,9 +248,9 @@ func main() {
 		case 'q':
 			running_on_my_nuts = false
 		case 'j':
-			move_cursor(&screen, +1, &render_queue)
-		case 'k':
 			move_cursor(&screen, -1, &render_queue)
+		case 'k':
+			move_cursor(&screen, +1, &render_queue)
 		}
 	}
 }
