@@ -1,16 +1,15 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"image"
 	_ "image/jpeg"
 	_ "image/png"
 	"log"
-	"net/url"
+	"net"
 	"os"
 	"os/signal"
-
-	"github.com/gorilla/websocket"
 )
 
 var frame_chars = []byte{' ', '`', '.', ',', '~', '+', '*', '&', '#', '@'}
@@ -18,17 +17,11 @@ var frame_chars = []byte{' ', '`', '.', ',', '~', '+', '*', '&', '#', '@'}
 func main() {
 
 	// Define the WebSocket server URL (replace with your server's address)
-	serverAddr := "ws://localhost:6969/websocket"
-
-	// Parse the URL
-	u, err := url.Parse(serverAddr)
-	if err != nil {
-		log.Fatalf("Invalid server address: %v", err)
-	}
+	serverAddr := "localhost:6969"
 
 	// Dial the WebSocket server
 	log.Printf("Connecting to %s...", serverAddr)
-	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	conn, err := net.Dial("tcp", serverAddr)
 	if err != nil {
 		log.Fatalf("Failed to connect: %v", err)
 	}
@@ -39,45 +32,36 @@ func main() {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 
-	// Communication goroutine
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
 		for {
-			_, message, err := conn.ReadMessage()
+			message, _, err := bufio.NewReader(conn).ReadLine()
 			if err != nil {
 				log.Println("Read error:", err)
 				return
 			}
-			decode_frame(message)
+			fmt.Println(string(message))
 		}
 	}()
 
-	list, err := os.ReadDir("tmp_frames")
-	if err != nil {
-		panic("WHAATT")
-	}
-
-	for _, entry := range list {
-		if !entry.IsDir() {
-			file, err := os.Open("tmp_frames/" + entry.Name())
-			defer file.Close()
-			if err != nil {
-				panic("WHERE IS ROBERT??")
-			}
-			img, _, err := image.Decode(file)
-			if err != nil {
-				panic("ROBERT WHAT HAPPENED??")
-			}
-			encoded := encode_frame(img)
-			fmt.Println(len(encoded))
-			err = conn.WriteMessage(websocket.BinaryMessage, encoded)
+	go func() {
+		scanner := bufio.NewScanner(os.Stdin)
+		for scanner.Scan() {
+			data := []byte{127}
+			data = append(data, scanner.Bytes()...)
+			data = append(data, '\n')
+			writer := bufio.NewWriter(conn)
+			_, err := writer.Write(data)
 			if err != nil {
 				log.Fatalf("Write error: %v", err)
 			}
+			err = writer.Flush()
+			if err != nil {
+				log.Fatalf("Flush error: %v", err)
+			}
 		}
-	}
-	// Send a test message
+	}()
 
 	// Wait for interrupt signal to close the connection
 	for {
@@ -87,7 +71,9 @@ func main() {
 		case <-interrupt:
 			log.Println("Interrupt received, closing connection")
 			// Send a close message to the server
-			err := conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+			data := []byte{127}
+			data = append(data, "close please"...)
+			_, err = bufio.NewWriter(conn).Write(data)
 			if err != nil {
 				log.Println("Close error:", err)
 			}
