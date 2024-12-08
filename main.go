@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
+	"os"
+
 	dd "github.com/nodaridev/talking_pond/internal/duck_dom"
 	"golang.org/x/term"
-	"os"
 )
 
 // import (
@@ -177,20 +178,24 @@ func clear_screen() {
 }
 
 func move_cursor(screen *dd.Screen, direction int, render_queue *[]dd.Item) {
-	fmt.Print(direction, screen.Active_child_indx)
-	if int(screen.Active_child_indx)+direction >= 0 &&
-		int(screen.Active_child_indx)+direction < len(screen.Children) {
+	if screen.Active_child_indx + direction >= 0 &&
+		screen.Active_child_indx + direction < len(screen.Children) {
+
 		active_item := &screen.Children[screen.Active_child_indx]
-		active_item.Styles = "\033[0m"
-		screen.Active_child_indx = uint(int(screen.Active_child_indx) + direction)
+		active_item.Styles = ""
+		screen.Active_child_indx += direction
 
 		next_active_item := &screen.Children[active_item.Active_child_indx]
 		next_active_item.Styles = "\033[7m"
 
-		*render_queue = append(*render_queue, *active_item, *next_active_item)
-	}
+		// active_item.Row += 2
+		// active_item.Col += 2
+		// next_active_item.Row += 2
+		// next_active_item.Col += 2
 
-	// fmt.Printf("\033[%d;%dH", row, col)
+		*render_queue = append(*render_queue, *active_item, *next_active_item)
+
+	}
 }
 
 func main() {
@@ -203,27 +208,31 @@ func main() {
 
 	clear_screen()
 
-	stdin_buffer := make([]byte, 1)
-
 	screen := dd.Screen{}
+	width, height, _ := term.GetSize(int(os.Stdin.Fd()))
+	screen.Max_cols = width
+	screen.Max_rows = height
+
 	item := dd.Item{
-		Row:     10,
-		Col:     5,
-		Content: "|BLYA OTO DVIZ|",
+		Row:     2,
+		Col:     1,
+		Content: "|con 1|",
+		Styles:  "\033[7m", 
 	}
 
 	item_two := dd.Item{
-		Row:     12,
-		Col:     5,
-		Content: "|BLYA OTO DVIZ X2|",
+		Row:     3,
+		Col:     1,
+		Content: "|con 2|",
 	}
+
 	screen.Children = append(screen.Children, item, item_two)
 
 	render_queue := []dd.Item{}
-	// now we render all
 
 	render_queue = append(render_queue, screen.Children...)
 
+	stdin_buffer := make([]byte, 1)
 	buffer := ""
 	running_on_my_nuts := true
 	for running_on_my_nuts {
@@ -248,9 +257,9 @@ func main() {
 		case 'q':
 			running_on_my_nuts = false
 		case 'j':
-			move_cursor(&screen, -1, &render_queue)
+			move_cursor(&screen, 1, &render_queue)
 		case 'k':
-			move_cursor(&screen, +1, &render_queue)
+			move_cursor(&screen, -1, &render_queue)
 		}
 	}
 }
