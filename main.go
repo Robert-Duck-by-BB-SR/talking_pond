@@ -178,20 +178,15 @@ func clear_screen() {
 }
 
 func move_cursor(screen *dd.Screen, direction int, render_queue *[]dd.Item) {
-	if screen.Active_child_indx + direction >= 0 &&
-		screen.Active_child_indx + direction < len(screen.Children) {
-
+	new_index := screen.Active_child_indx + direction 
+	if new_index>= 0 && new_index < len(screen.Children) {
 		active_item := &screen.Children[screen.Active_child_indx]
 		active_item.Styles = ""
-		screen.Active_child_indx += direction
 
-		next_active_item := &screen.Children[active_item.Active_child_indx]
+		screen.Active_child_indx = new_index
+
+		next_active_item := &screen.Children[new_index]
 		next_active_item.Styles = "\033[7m"
-
-		// active_item.Row += 2
-		// active_item.Col += 2
-		// next_active_item.Row += 2
-		// next_active_item.Col += 2
 
 		*render_queue = append(*render_queue, *active_item, *next_active_item)
 
@@ -216,14 +211,14 @@ func main() {
 	item := dd.Item{
 		Row:     2,
 		Col:     1,
-		Content: "|con 1|",
+		Content: "|Deez nuts|",
 		Styles:  "\033[7m", 
 	}
 
 	item_two := dd.Item{
 		Row:     3,
 		Col:     1,
-		Content: "|con 2|",
+		Content: "|got em|",
 	}
 
 	screen.Children = append(screen.Children, item, item_two)
