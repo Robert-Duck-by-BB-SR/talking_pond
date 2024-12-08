@@ -21,6 +21,9 @@ type Renderable interface {
 	SetPos(Position)
 	GetPos() Position
 	SetStyle(string)
+	Active() Renderable
+	SetActive(int)
+	ActiveIndex() int
 }
 
 const (
@@ -33,6 +36,24 @@ const (
 	MOVE_CURSOR_TO_THE_BENINGING = "\033[H"
 	CLEAR_ROW                    = "\033[2K"
 )
+
+func (self *Screen) Render() string {
+	// NOTE: maybe make it fill the render q?
+	return ""
+}
+
+func (self *Screen) SetPos(Position) {
+}
+
+func (self *Screen) GetPos() Position {
+	return Position{}
+}
+func (self *Screen) SetStyle(string) {
+}
+
+func (self *Screen) Active() Renderable { return self.Windows[self.Active_window_indx] }
+func (self *Screen) SetActive(id int)   { self.Active_window_indx = id }
+func (self *Screen) ActiveIndex() int   { return self.Active_window_indx }
 
 func Debug_me_daddy(screen *Screen, content string) {
 	fmt.Printf("\033[%d;1H", screen.Max_rows)

@@ -26,3 +26,7 @@ func (self *Button) GetPos() Position {
 func (self *Button) SetStyle(styles string) {
 	self.Styles = styles
 }
+
+func (self *Button) Active() Renderable { return self.Children[self.Active_child_indx] }
+func (self *Button) SetActive(id int)   { self.Active_child_indx = id }
+func (self *Button) ActiveIndex() int   { return self.Active_child_indx }

@@ -172,15 +172,22 @@ import (
 // 	}
 // }
 
-func move_cursor(screen *dd.Screen, direction int) {
-	new_index := screen.Active_window_indx + direction
+func move_cursor(screen *dd.Screen, item dd.Renderable, direction int) {
+	new_index := item.ActiveIndex() + direction
 	if new_index >= 0 && new_index < len(screen.Windows) {
-		active_item := screen.Windows[screen.Active_window_indx]
+		// active_item := screen.Windows[screen.Active_window_indx]
+		// active_item.SetStyle("")
+		//
+		// screen.Active_window_indx = new_index
+		//
+		// next_active_item := screen.Windows[new_index]
+		// next_active_item.SetStyle(dd.INVERT_STYLES)
+		active_item := item.Active()
 		active_item.SetStyle("")
 
-		screen.Active_window_indx = new_index
+		item.SetActive(new_index)
 
-		next_active_item := screen.Windows[new_index]
+		next_active_item := item.Active()
 		next_active_item.SetStyle(dd.INVERT_STYLES)
 
 		screen.Render_queue = append(screen.Render_queue, active_item, next_active_item)
@@ -266,13 +273,13 @@ func main() {
 		case 'q':
 			running_on_my_nuts = false
 		case 'j':
-			move_cursor(&screen, 1)
+			move_cursor(&screen, screen.Active(), 1)
 		case 'k':
-			move_cursor(&screen, -1)
+			move_cursor(&screen, screen.Active(), -1)
 		case 'h':
-			move_cursor(&screen, -1)
+			move_cursor(&screen, &screen, -1)
 		case 'l':
-			move_cursor(&screen, 1)
+			move_cursor(&screen, &screen, 1)
 		}
 	}
 }
