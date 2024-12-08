@@ -18,8 +18,6 @@ type Screen struct {
 
 type Renderable interface {
 	Render() string
-	SetPos(Position)
-	GetPos() Position
 	SetStyle(string)
 	Active() Renderable
 	SetActive(int)
@@ -42,12 +40,6 @@ func (self *Screen) Render() string {
 	return ""
 }
 
-func (self *Screen) SetPos(Position) {
-}
-
-func (self *Screen) GetPos() Position {
-	return Position{}
-}
 func (self *Screen) SetStyle(string) {
 }
 

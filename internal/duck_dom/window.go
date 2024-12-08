@@ -9,14 +9,6 @@ type Window struct {
 func (self *Window) Render() string {
 	return ""
 }
-
-func (self *Window) SetPos(p Position) {
-	self.Pos = p
-}
-
-func (self *Window) GetPos() Position {
-	return self.Pos
-}
 func (self *Window) SetStyle(string) {}
 
 func (self *Window) Active() Renderable { return self.Children[self.ActiveChildId] }
