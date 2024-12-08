@@ -175,16 +175,15 @@ import (
 func move_cursor(screen *dd.Screen, direction int) {
 	new_index := screen.Active_window_indx + direction
 	if new_index >= 0 && new_index < len(screen.Windows) {
-		active_item := &screen.Windows[screen.Active_window_indx]
-		active_item.Styles = ""
+		active_item := screen.Windows[screen.Active_window_indx]
+		active_item.SetStyle("")
 
 		screen.Active_window_indx = new_index
 
-		next_active_item := &screen.Windows[new_index]
-		next_active_item.Styles = dd.INVERT_STYLES
+		next_active_item := screen.Windows[new_index]
+		next_active_item.SetStyle(dd.INVERT_STYLES)
 
-		screen.Render_queue = append(screen.Render_queue, *active_item, *next_active_item)
-
+		screen.Render_queue = append(screen.Render_queue, active_item, next_active_item)
 	}
 }
 
@@ -203,22 +202,44 @@ func main() {
 	screen.Max_cols = width
 	screen.Max_rows = height
 
-	item := dd.Item{
-		Row:     2,
-		Col:     1,
+	item := dd.Button{
+		Pos:     dd.Position{Row: 3, Col: 1},
 		Content: "|Deez nuts|",
 		Styles:  dd.INVERT_STYLES,
 	}
 
-	item_two := dd.Item{
-		Row:     3,
-		Col:     1,
+	item_two := dd.Button{
+		Pos:     dd.Position{Row: 5, Col: 1},
 		Content: "|got em|",
 	}
 
-	screen.Windows = append(screen.Windows, item, item_two)
+	item_three := dd.Button{
+		Pos:     dd.Position{Row: 1, Col: 21},
+		Content: "|SIMD|",
+		Styles:  dd.INVERT_STYLES,
+	}
+
+	item_four := dd.Button{
+		// NOTE: should we make item position relative or absolute?
+		Pos:     dd.Position{Row: 3, Col: 21},
+		Content: "|Ligma?|",
+	}
+
+	sidebar := dd.Window{
+		Pos: dd.Position{Row: 0, Col: 0},
+	}
+
+	main_win := dd.Window{
+		Pos: dd.Position{Row: 0, Col: 20},
+	}
+
+	sidebar.Children = append(sidebar.Children, &item, &item_two)
+	main_win.Children = append(main_win.Children, &item_three, &item_four)
+	screen.Windows = append(screen.Windows, &sidebar, &main_win)
 
 	screen.Render_queue = append(screen.Render_queue, screen.Windows...)
+	screen.Render_queue = append(screen.Render_queue, sidebar.Children...)
+	screen.Render_queue = append(screen.Render_queue, main_win.Children...)
 
 	stdin_buffer := make([]byte, 1)
 	buffer := ""
@@ -248,6 +269,10 @@ func main() {
 			move_cursor(&screen, 1)
 		case 'k':
 			move_cursor(&screen, -1)
+		case 'h':
+			move_cursor(&screen, -1)
+		case 'l':
+			move_cursor(&screen, 1)
 		}
 	}
 }
