@@ -178,14 +178,14 @@ func clear_screen() {
 }
 
 func move_cursor(screen *dd.Screen, direction int, render_queue *[]dd.Item) {
-	new_index := screen.Screen_active_child_indx + direction 
-	if new_index>= 0 && new_index < len(screen.Children) {
-		active_item := &screen.Children[screen.Screen_active_child_indx]
+	new_index := screen.Active_window_indx + direction 
+	if new_index>= 0 && new_index < len(screen.Windows) {
+		active_item := &screen.Windows[screen.Active_window_indx]
 		active_item.Styles = ""
 
-		screen.Screen_active_child_indx = new_index
+		screen.Active_window_indx = new_index
 
-		next_active_item := &screen.Children[new_index]
+		next_active_item := &screen.Windows[new_index]
 		next_active_item.Styles = "\033[7m"
 
 		*render_queue = append(*render_queue, *active_item, *next_active_item)
@@ -221,11 +221,11 @@ func main() {
 		Content: "|got em|",
 	}
 
-	screen.Children = append(screen.Children, item, item_two)
+	screen.Windows = append(screen.Windows, item, item_two)
 
 	render_queue := []dd.Item{}
 
-	render_queue = append(render_queue, screen.Children...)
+	render_queue = append(render_queue, screen.Windows...)
 
 	stdin_buffer := make([]byte, 1)
 	buffer := ""
