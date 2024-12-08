@@ -172,23 +172,18 @@ import (
 // 	}
 // }
 
-func clear_screen() {
-	fmt.Printf("\033[2J")
-	fmt.Printf("\033[H")
-}
-
-func move_cursor(screen *dd.Screen, direction int, render_queue *[]dd.Item) {
-	new_index := screen.Active_window_indx + direction 
-	if new_index>= 0 && new_index < len(screen.Windows) {
+func move_cursor(screen *dd.Screen, direction int) {
+	new_index := screen.Active_window_indx + direction
+	if new_index >= 0 && new_index < len(screen.Windows) {
 		active_item := &screen.Windows[screen.Active_window_indx]
 		active_item.Styles = ""
 
 		screen.Active_window_indx = new_index
 
 		next_active_item := &screen.Windows[new_index]
-		next_active_item.Styles = "\033[7m"
+		next_active_item.Styles = dd.INVERT_STYLES
 
-		*render_queue = append(*render_queue, *active_item, *next_active_item)
+		screen.Render_queue = append(screen.Render_queue, *active_item, *next_active_item)
 
 	}
 }
@@ -201,7 +196,7 @@ func main() {
 	}
 	defer term.Restore(int(os.Stdin.Fd()), oldState)
 
-	clear_screen()
+	dd.Clear_screen()
 
 	screen := dd.Screen{}
 	width, height, _ := term.GetSize(int(os.Stdin.Fd()))
@@ -212,7 +207,7 @@ func main() {
 		Row:     2,
 		Col:     1,
 		Content: "|Deez nuts|",
-		Styles:  "\033[7m", 
+		Styles:  dd.INVERT_STYLES,
 	}
 
 	item_two := dd.Item{
@@ -223,18 +218,16 @@ func main() {
 
 	screen.Windows = append(screen.Windows, item, item_two)
 
-	render_queue := []dd.Item{}
-
-	render_queue = append(render_queue, screen.Windows...)
+	screen.Render_queue = append(screen.Render_queue, screen.Windows...)
 
 	stdin_buffer := make([]byte, 1)
 	buffer := ""
 	running_on_my_nuts := true
 	for running_on_my_nuts {
-		for len(render_queue) > 0 {
-			item_to_render := render_queue[0]
+		for len(screen.Render_queue) > 0 {
+			item_to_render := screen.Render_queue[0]
 			buffer += item_to_render.Render()
-			render_queue = render_queue[1:]
+			screen.Render_queue = screen.Render_queue[1:]
 		}
 
 		if len(buffer) > 0 {
@@ -252,9 +245,9 @@ func main() {
 		case 'q':
 			running_on_my_nuts = false
 		case 'j':
-			move_cursor(&screen, 1, &render_queue)
+			move_cursor(&screen, 1)
 		case 'k':
-			move_cursor(&screen, -1, &render_queue)
+			move_cursor(&screen, -1)
 		}
 	}
 }
