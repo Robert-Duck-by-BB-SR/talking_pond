@@ -2,24 +2,26 @@ package duckdom
 
 import "fmt"
 
+type Position struct {
+	Row, Col uint
+}
+
 type Screen struct {
 	Max_rows           int
 	Max_cols           int
 	Cursor_pos         [2]uint
 	Active_window_indx int
 	// fuck Windows, all my homies use Linux
-	Windows      []Item
-	Render_queue []Item
+	Windows      []Renderable
+	Render_queue []Renderable
 }
 
-type Item struct {
-	Active_child_indx int
-	Children          []Item
-	Row               uint
-	Col               uint
-	Content           string
-	Styles            string
-	counter           int
+type Renderable interface {
+	Render() string
+	SetStyle(string)
+	Active() Renderable
+	SetActive(int)
+	ActiveIndex() int
 }
 
 const (
@@ -33,9 +35,17 @@ const (
 	CLEAR_ROW                    = "\033[2K"
 )
 
-func (self *Item) Render() string {
-	return fmt.Sprintf("\033[%d;%dH\033[2K%s%s\033[0m", self.Row, self.Col, self.Styles, self.Content)
+func (self *Screen) Render() string {
+	// NOTE: maybe make it fill the render q?
+	return ""
 }
+
+func (self *Screen) SetStyle(string) {
+}
+
+func (self *Screen) Active() Renderable { return self.Windows[self.Active_window_indx] }
+func (self *Screen) SetActive(id int)   { self.Active_window_indx = id }
+func (self *Screen) ActiveIndex() int   { return self.Active_window_indx }
 
 func Debug_me_daddy(screen *Screen, content string) {
 	fmt.Printf("\033[%d;1H", screen.Max_rows)
