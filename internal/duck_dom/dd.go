@@ -6,7 +6,7 @@ type Screen struct{
 	Max_rows int
 	Max_cols int
 	Cursor_pos [2]uint
-	Active_child_indx int
+	Screen_active_child_indx int
 	Children []Item
 }
 

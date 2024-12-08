@@ -178,12 +178,12 @@ func clear_screen() {
 }
 
 func move_cursor(screen *dd.Screen, direction int, render_queue *[]dd.Item) {
-	new_index := screen.Active_child_indx + direction 
+	new_index := screen.Screen_active_child_indx + direction 
 	if new_index>= 0 && new_index < len(screen.Children) {
-		active_item := &screen.Children[screen.Active_child_indx]
+		active_item := &screen.Children[screen.Screen_active_child_indx]
 		active_item.Styles = ""
 
-		screen.Active_child_indx = new_index
+		screen.Screen_active_child_indx = new_index
 
 		next_active_item := &screen.Children[new_index]
 		next_active_item.Styles = "\033[7m"
