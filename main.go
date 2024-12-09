@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	dd "github.com/nodaridev/talking_pond/internal/duck_dom"
+	dd "github.com/Robert-Duck-by-BB-SR/talking_pond/internal/duck_dom"
 	"golang.org/x/term"
 )
 
@@ -175,13 +175,6 @@ import (
 func move_cursor(screen *dd.Screen, item dd.Renderable, direction int) {
 	new_index := item.ActiveIndex() + direction
 	if new_index >= 0 && new_index < len(screen.Windows) {
-		// active_item := screen.Windows[screen.Active_window_indx]
-		// active_item.SetStyle("")
-		//
-		// screen.Active_window_indx = new_index
-		//
-		// next_active_item := screen.Windows[new_index]
-		// next_active_item.SetStyle(dd.INVERT_STYLES)
 		active_item := item.Active()
 		active_item.SetStyle("")
 
@@ -190,24 +183,24 @@ func move_cursor(screen *dd.Screen, item dd.Renderable, direction int) {
 		next_active_item := item.Active()
 		next_active_item.SetStyle(dd.INVERT_STYLES)
 
-		screen.Render_queue = append(screen.Render_queue, active_item, next_active_item)
+		screen.RenderQueue = append(screen.RenderQueue, active_item, next_active_item)
 	}
 }
 
 func main() {
-	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
+	old_state, err := term.MakeRaw(int(os.Stdin.Fd()))
 	if err != nil {
 		fmt.Println("Error enabling raw mode:", err)
 		return
 	}
-	defer term.Restore(int(os.Stdin.Fd()), oldState)
+	defer term.Restore(int(os.Stdin.Fd()), old_state)
 
-	dd.Clear_screen()
+	dd.ClearScreen()
 
 	screen := dd.Screen{}
 	width, height, _ := term.GetSize(int(os.Stdin.Fd()))
-	screen.Max_cols = width
-	screen.Max_rows = height
+	screen.MaxCols = width
+	screen.MaxRows = height
 
 	item := dd.Button{
 		Pos:     dd.Position{Row: 3, Col: 1},
@@ -244,18 +237,18 @@ func main() {
 	main_win.Children = append(main_win.Children, &item_three, &item_four)
 	screen.Windows = append(screen.Windows, &sidebar, &main_win)
 
-	screen.Render_queue = append(screen.Render_queue, screen.Windows...)
-	screen.Render_queue = append(screen.Render_queue, sidebar.Children...)
-	screen.Render_queue = append(screen.Render_queue, main_win.Children...)
+	screen.RenderQueue = append(screen.RenderQueue, screen.Windows...)
+	screen.RenderQueue = append(screen.RenderQueue, sidebar.Children...)
+	screen.RenderQueue = append(screen.RenderQueue, main_win.Children...)
 
 	stdin_buffer := make([]byte, 1)
 	buffer := ""
 	running_on_my_nuts := true
 	for running_on_my_nuts {
-		for len(screen.Render_queue) > 0 {
-			item_to_render := screen.Render_queue[0]
+		for len(screen.RenderQueue) > 0 {
+			item_to_render := screen.RenderQueue[0]
 			buffer += item_to_render.Render()
-			screen.Render_queue = screen.Render_queue[1:]
+			screen.RenderQueue = screen.RenderQueue[1:]
 		}
 
 		if len(buffer) > 0 {

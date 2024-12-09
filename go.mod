@@ -1,4 +1,4 @@
-module github.com/nodaridev/talking_pond
+module github.com/Robert-Duck-by-BB-SR/talking_pond
 
 go 1.22.2
 
