@@ -184,6 +184,7 @@ func move_cursor(screen *dd.Screen, item dd.Renderable, direction int) {
 		next_active_item.SetStyle(dd.INVERT_STYLES)
 
 		screen.RenderQueue = append(screen.RenderQueue, active_item, next_active_item)
+		screen.CursorPos = next_active_item.GetPos()
 	}
 }
 
@@ -207,6 +208,7 @@ func main() {
 		Content: "|Deez nuts|",
 		Styles:  dd.INVERT_STYLES,
 	}
+	screen.CursorPos = item.Pos
 
 	item_two := dd.Button{
 		Pos:     dd.Position{Row: 5, Col: 1},
@@ -255,6 +257,7 @@ func main() {
 			fmt.Print(buffer)
 			buffer = ""
 		}
+		fmt.Printf(dd.MOVE_CURSOR_TO_POSITION, screen.CursorPos.Row, screen.CursorPos.Col)
 
 		_, err := os.Stdin.Read(stdin_buffer)
 		if err != nil {
@@ -271,8 +274,10 @@ func main() {
 			move_cursor(&screen, screen.Active(), -1)
 		case 'h':
 			move_cursor(&screen, &screen, -1)
+			screen.CursorPos = screen.Active().Active().GetPos()
 		case 'l':
 			move_cursor(&screen, &screen, 1)
+			screen.CursorPos = screen.Active().Active().GetPos()
 		}
 	}
 }

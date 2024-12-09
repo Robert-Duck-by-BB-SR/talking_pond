@@ -10,7 +10,11 @@ const (
 	// constant commands
 	CLEAR_SCREEN                 = "\033[2J"
 	MOVE_CURSOR_TO_THE_BENINGING = "\033[H"
+	MOVE_CURSOR_TO_POSITION      = "\033[%d;%dH"
 	CLEAR_ROW                    = "\033[2K"
+
+	// NOTE: DEBUG ONLY. IF YOU USE IT IN PROD I WILL FIND YOU AND MAKE YOU SMELL MY SOCKS
+	DEBUG_STYLES = "\033[30;43m"
 )
 
 type Position struct {
@@ -34,6 +38,7 @@ type Renderable interface {
 	Active() Renderable
 	SetActive(int)
 	ActiveIndex() int
+	GetPos() Position
 }
 
 func (self *Screen) Render() string {
@@ -41,17 +46,17 @@ func (self *Screen) Render() string {
 	return ""
 }
 
-func (self *Screen) SetStyle(string) {
-}
+func (self *Screen) SetStyle(string)  {}
+func (self *Screen) GetPos() Position { return Position{} }
 
 func (self *Screen) Active() Renderable { return self.Windows[self.ActiveWindowId] }
 func (self *Screen) SetActive(id int)   { self.ActiveWindowId = id }
 func (self *Screen) ActiveIndex() int   { return self.ActiveWindowId }
 
 func DebugMeDaddy(screen *Screen, content string) {
-	fmt.Printf("\033[%d;1H", screen.MaxRows)
+	fmt.Printf(MOVE_CURSOR_TO_POSITION, screen.MaxRows, 1)
 	fmt.Printf(CLEAR_ROW)
-	fmt.Printf("\033[%d;%dH\033[30;43m%s\033[0m", screen.MaxRows, 1, "DebugDuck: "+content)
+	fmt.Printf(MOVE_CURSOR_TO_POSITION+DEBUG_STYLES+"%s"+RESET_STYLES, screen.MaxRows, 1, "DebugDuck: "+content)
 }
 
 func ClearScreen() {
