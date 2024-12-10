@@ -203,45 +203,50 @@ func main() {
 	screen.MaxCols = width
 	screen.MaxRows = height
 
-	item := dd.Button{
-		Pos:     dd.Position{Row: 3, Col: 1},
-		Content: "|Deez nuts|",
-		Styles:  dd.INVERT_STYLES,
-	}
-	screen.CursorPos = item.Pos
+	// item := dd.Button{
+	// 	Pos:     dd.Position{Row: 3, Col: 1},
+	// 	Content: "|Deez nuts|",
+	// 	Styles:  dd.INVERT_STYLES,
+	// }
+	// screen.CursorPos = item.Pos
 
-	item_two := dd.Button{
-		Pos:     dd.Position{Row: 5, Col: 1},
-		Content: "|got em|",
-	}
+	// item_two := dd.Button{
+	// 	Pos:     dd.Position{Row: 5, Col: 1},
+	// 	Content: "|got em|",
+	// }
+	//
+	// item_three := dd.Button{
+	// 	Pos:     dd.Position{Row: 1, Col: 21},
+	// 	Content: "|SIMD|",
+	// 	Styles:  dd.INVERT_STYLES,
+	// }
+	//
+	// item_four := dd.Button{
+	// 	// NOTE: should we make item position relative or absolute?
+	// 	Pos:     dd.Position{Row: 3, Col: 21},
+	// 	Content: "|Ligma?|",
+	// }
+	//
+	// sidebar := dd.Window{
+	// 	Pos: dd.Position{Row: 0, Col: 0},
+	// }
+	//
+	// sidebar.Children = append(sidebar.Children, &item, &item_two)
+	// main_win.Children = append(main_win.Children, &item_three, &item_four)
+	// screen.Windows = append(screen.Windows, &sidebar, &main_win)
+	//
+	// screen.RenderQueue = append(screen.RenderQueue, screen.Windows...)
+	// screen.RenderQueue = append(screen.RenderQueue, sidebar.Children...)
+	// screen.RenderQueue = append(screen.RenderQueue, main_win.Children...)
+	
 
-	item_three := dd.Button{
-		Pos:     dd.Position{Row: 1, Col: 21},
-		Content: "|SIMD|",
-		Styles:  dd.INVERT_STYLES,
-	}
-
-	item_four := dd.Button{
+	sidebar := dd.Sidebar{
 		// NOTE: should we make item position relative or absolute?
-		Pos:     dd.Position{Row: 3, Col: 21},
+		Pos:     dd.Position{Row: uint(screen.MaxRows), Col: 50},
 		Content: "|Ligma?|",
 	}
-
-	sidebar := dd.Window{
-		Pos: dd.Position{Row: 0, Col: 0},
-	}
-
-	main_win := dd.Window{
-		Pos: dd.Position{Row: 0, Col: 20},
-	}
-
-	sidebar.Children = append(sidebar.Children, &item, &item_two)
-	main_win.Children = append(main_win.Children, &item_three, &item_four)
-	screen.Windows = append(screen.Windows, &sidebar, &main_win)
-
-	screen.RenderQueue = append(screen.RenderQueue, screen.Windows...)
-	screen.RenderQueue = append(screen.RenderQueue, sidebar.Children...)
-	screen.RenderQueue = append(screen.RenderQueue, main_win.Children...)
+	
+	screen.RenderQueue = append(screen.RenderQueue, &sidebar)
 
 	stdin_buffer := make([]byte, 1)
 	buffer := ""
