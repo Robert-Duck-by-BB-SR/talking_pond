@@ -176,12 +176,12 @@ func move_cursor(screen *dd.Screen, item dd.Renderable, direction int) {
 	new_index := item.ActiveIndex() + direction
 	if new_index >= 0 && new_index < len(screen.Windows) {
 		active_item := item.Active()
-		active_item.SetStyle("")
+		active_item.SetBackground("")
 
 		item.SetActive(new_index)
 
 		next_active_item := item.Active()
-		next_active_item.SetStyle(dd.INVERT_STYLES)
+		next_active_item.SetBackground(dd.INVERT_STYLES)
 
 		screen.RenderQueue = append(screen.RenderQueue, active_item, next_active_item)
 		screen.CursorPos = next_active_item.GetPos()
@@ -238,15 +238,23 @@ func main() {
 	// screen.RenderQueue = append(screen.RenderQueue, screen.Windows...)
 	// screen.RenderQueue = append(screen.RenderQueue, sidebar.Children...)
 	// screen.RenderQueue = append(screen.RenderQueue, main_win.Children...)
-	
 
 	sidebar := dd.Sidebar{
 		// NOTE: should we make item position relative or absolute?
-		Pos:     dd.Position{Row: uint(screen.MaxRows), Col: 50},
+		Pos:     dd.Position{Row: 0, Col: 0},
+		Content: "|Ligma?|",
+		Styles: dd.Styles{Width: 50, Height: screen.MaxRows, Background: dd.DEBUG_STYLES},
+	}
+
+	content := dd.Sidebar{
+		// NOTE: should we make item position relative or absolute?
+		Pos:     dd.Position{Row: 0, Col: uint(sidebar.Styles.Width) + 2},
+		Styles: dd.Styles{Width: screen.MaxCols - sidebar.Styles.Width - 1, Height: screen.MaxRows, Background: "\033[48;2;69;69;69m"},
 		Content: "|Ligma?|",
 	}
-	
+
 	screen.RenderQueue = append(screen.RenderQueue, &sidebar)
+	screen.RenderQueue = append(screen.RenderQueue, &content)
 
 	stdin_buffer := make([]byte, 1)
 	buffer := ""
@@ -260,6 +268,10 @@ func main() {
 
 		if len(buffer) > 0 {
 			fmt.Print(buffer)
+			// err := os.WriteFile("debug.txt", []byte(buffer), 0755)
+			// if err != nil {
+			// 	fmt.Printf("unable to write file: %w", err)
+			// }
 			buffer = ""
 		}
 		fmt.Printf(dd.MOVE_CURSOR_TO_POSITION, screen.CursorPos.Row, screen.CursorPos.Col)
@@ -277,12 +289,12 @@ func main() {
 			move_cursor(&screen, screen.Active(), 1)
 		case 'k':
 			move_cursor(&screen, screen.Active(), -1)
-		case 'h':
-			move_cursor(&screen, &screen, -1)
-			screen.CursorPos = screen.Active().Active().GetPos()
-		case 'l':
-			move_cursor(&screen, &screen, 1)
-			screen.CursorPos = screen.Active().Active().GetPos()
+		// case 'h':
+		// 	move_cursor(&screen, &screen, -1)
+		// 	screen.CursorPos = screen.Active().Active().GetPos()
+		// case 'l':
+		// 	move_cursor(&screen, &screen, 1)
+		// 	screen.CursorPos = screen.Active().Active().GetPos()
 		}
 	}
 }
