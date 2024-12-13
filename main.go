@@ -160,14 +160,14 @@ func main() {
 	// screen.RenderQueue = append(screen.RenderQueue, sidebar.Children...)
 	// screen.RenderQueue = append(screen.RenderQueue, main_win.Children...)
 
-	sidebar := dd.Sidebar{
+	sidebar := dd.Window{
 		// NOTE: should we make item position relative or absolute?
 		Pos:     dd.Position{Row: 0, Col: 0},
 		Content: "|Ligma?|",
 		Styles: dd.Styles{Width: 50, Height: screen.MaxRows, Background: dd.DEBUG_STYLES},
 	}
 
-	content := dd.Sidebar{
+	content := dd.Window{
 		// NOTE: should we make item position relative or absolute?
 		Pos:     dd.Position{Row: 0, Col: uint(sidebar.Styles.Width) + 2},
 		Styles: dd.Styles{Width: screen.MaxCols - sidebar.Styles.Width - 1, Height: screen.MaxRows, Background: "\033[48;2;69;69;69m"},
