@@ -1,9 +1,14 @@
 package duckdom
 
-import "fmt"
+import (
+	"fmt"
+)
 
 const (
 	// styles
+
+	// USE IT LATER
+	// \033[48;2;%d;%d;%dm
 	INVERT_STYLES = "\033[7m"
 	RESET_STYLES  = "\033[0m"
 
@@ -12,6 +17,7 @@ const (
 	MOVE_CURSOR_TO_THE_BENINGING = "\033[H"
 	MOVE_CURSOR_TO_POSITION      = "\033[%d;%dH"
 	CLEAR_ROW                    = "\033[2K"
+	HIDE_CURSOR                  = "\x1b[?25l"
 
 	// NOTE: DEBUG ONLY. IF YOU USE IT IN PROD I WILL FIND YOU AND MAKE YOU SMELL MY SOCKS
 	DEBUG_STYLES = "\033[30;43m"
@@ -33,12 +39,18 @@ type Screen struct {
 }
 
 type Renderable interface {
+	Stylable
 	Render() string
-	SetStyle(string)
 	Active() Renderable
 	SetActive(int)
 	ActiveIndex() int
 	GetPos() Position
+}
+
+type Stylable interface {
+	SetWidth(int) Stylable
+	SetHeight(int) Stylable
+	SetBackground(string) Stylable
 }
 
 func (self *Screen) Render() string {

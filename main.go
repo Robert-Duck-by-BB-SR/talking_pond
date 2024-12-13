@@ -176,12 +176,12 @@ func move_cursor(screen *dd.Screen, item dd.Renderable, direction int) {
 	new_index := item.ActiveIndex() + direction
 	if new_index >= 0 && new_index < len(screen.Windows) {
 		active_item := item.Active()
-		active_item.SetStyle("")
+		active_item.SetBackground("")
 
 		item.SetActive(new_index)
 
 		next_active_item := item.Active()
-		next_active_item.SetStyle(dd.INVERT_STYLES)
+		next_active_item.SetBackground(dd.INVERT_STYLES)
 
 		screen.RenderQueue = append(screen.RenderQueue, active_item, next_active_item)
 		screen.CursorPos = next_active_item.GetPos()
@@ -203,45 +203,58 @@ func main() {
 	screen.MaxCols = width
 	screen.MaxRows = height
 
-	item := dd.Button{
-		Pos:     dd.Position{Row: 3, Col: 1},
-		Content: "|Deez nuts|",
-		Styles:  dd.INVERT_STYLES,
-	}
-	screen.CursorPos = item.Pos
+	// item := dd.Button{
+	// 	Pos:     dd.Position{Row: 3, Col: 1},
+	// 	Content: "|Deez nuts|",
+	// 	Styles:  dd.INVERT_STYLES,
+	// }
+	// screen.CursorPos = item.Pos
 
-	item_two := dd.Button{
-		Pos:     dd.Position{Row: 5, Col: 1},
-		Content: "|got em|",
-	}
+	// item_two := dd.Button{
+	// 	Pos:     dd.Position{Row: 5, Col: 1},
+	// 	Content: "|got em|",
+	// }
+	//
+	// item_three := dd.Button{
+	// 	Pos:     dd.Position{Row: 1, Col: 21},
+	// 	Content: "|SIMD|",
+	// 	Styles:  dd.INVERT_STYLES,
+	// }
+	//
+	// item_four := dd.Button{
+	// 	// NOTE: should we make item position relative or absolute?
+	// 	Pos:     dd.Position{Row: 3, Col: 21},
+	// 	Content: "|Ligma?|",
+	// }
+	//
+	// sidebar := dd.Window{
+	// 	Pos: dd.Position{Row: 0, Col: 0},
+	// }
+	//
+	// sidebar.Children = append(sidebar.Children, &item, &item_two)
+	// main_win.Children = append(main_win.Children, &item_three, &item_four)
+	// screen.Windows = append(screen.Windows, &sidebar, &main_win)
+	//
+	// screen.RenderQueue = append(screen.RenderQueue, screen.Windows...)
+	// screen.RenderQueue = append(screen.RenderQueue, sidebar.Children...)
+	// screen.RenderQueue = append(screen.RenderQueue, main_win.Children...)
 
-	item_three := dd.Button{
-		Pos:     dd.Position{Row: 1, Col: 21},
-		Content: "|SIMD|",
-		Styles:  dd.INVERT_STYLES,
-	}
-
-	item_four := dd.Button{
+	sidebar := dd.Window{
 		// NOTE: should we make item position relative or absolute?
-		Pos:     dd.Position{Row: 3, Col: 21},
+		Pos:     dd.Position{Row: 0, Col: 0},
+		Content: "|Ligma?|",
+		Styles: dd.Styles{Width: 50, Height: screen.MaxRows, Background: dd.DEBUG_STYLES},
+	}
+
+	content := dd.Window{
+		// NOTE: should we make item position relative or absolute?
+		Pos:     dd.Position{Row: 0, Col: uint(sidebar.Styles.Width) + 2},
+		Styles: dd.Styles{Width: screen.MaxCols - sidebar.Styles.Width - 1, Height: screen.MaxRows, Background: "\033[48;2;69;69;69m"},
 		Content: "|Ligma?|",
 	}
 
-	sidebar := dd.Window{
-		Pos: dd.Position{Row: 0, Col: 0},
-	}
-
-	main_win := dd.Window{
-		Pos: dd.Position{Row: 0, Col: 20},
-	}
-
-	sidebar.Children = append(sidebar.Children, &item, &item_two)
-	main_win.Children = append(main_win.Children, &item_three, &item_four)
-	screen.Windows = append(screen.Windows, &sidebar, &main_win)
-
-	screen.RenderQueue = append(screen.RenderQueue, screen.Windows...)
-	screen.RenderQueue = append(screen.RenderQueue, sidebar.Children...)
-	screen.RenderQueue = append(screen.RenderQueue, main_win.Children...)
+	screen.RenderQueue = append(screen.RenderQueue, &sidebar)
+	screen.RenderQueue = append(screen.RenderQueue, &content)
 
 	stdin_buffer := make([]byte, 1)
 	buffer := ""
@@ -255,6 +268,10 @@ func main() {
 
 		if len(buffer) > 0 {
 			fmt.Print(buffer)
+			// err := os.WriteFile("debug.txt", []byte(buffer), 0755)
+			// if err != nil {
+			// 	fmt.Printf("unable to write file: %w", err)
+			// }
 			buffer = ""
 		}
 		fmt.Printf(dd.MOVE_CURSOR_TO_POSITION, screen.CursorPos.Row, screen.CursorPos.Col)
@@ -272,12 +289,12 @@ func main() {
 			move_cursor(&screen, screen.Active(), 1)
 		case 'k':
 			move_cursor(&screen, screen.Active(), -1)
-		case 'h':
-			move_cursor(&screen, &screen, -1)
-			screen.CursorPos = screen.Active().Active().GetPos()
-		case 'l':
-			move_cursor(&screen, &screen, 1)
-			screen.CursorPos = screen.Active().Active().GetPos()
+		// case 'h':
+		// 	move_cursor(&screen, &screen, -1)
+		// 	screen.CursorPos = screen.Active().Active().GetPos()
+		// case 'l':
+		// 	move_cursor(&screen, &screen, 1)
+		// 	screen.CursorPos = screen.Active().Active().GetPos()
 		}
 	}
 }
