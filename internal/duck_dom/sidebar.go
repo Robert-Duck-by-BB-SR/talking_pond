@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-type Sidebar struct {
+type Window struct {
 	ActiveChildId int
 	Children      []Renderable
 	Pos           Position
@@ -13,22 +13,22 @@ type Sidebar struct {
 	Styles        Styles
 }
 
-func (self *Sidebar) SetWidth(w int) Stylable{
+func (self *Window) SetWidth(w int) Stylable{
 	self.Styles.Width = w;
 	return self
 }
 
-func (self *Sidebar) SetHeight(h int) Stylable{
+func (self *Window) SetHeight(h int) Stylable{
 	self.Styles.Height = h
 	return self
 }
 
-func (self *Sidebar) SetBackground(b string) Stylable{
+func (self *Window) SetBackground(b string) Stylable{
 	self.Styles.Background = b
 	return self
 }
 
-func (self *Sidebar) Render() string {
+func (self *Window) Render() string {
 	var string_builder strings.Builder
 	string_builder.WriteString(self.Styles.Background)
 	fillament := strings.Repeat(" ", self.Styles.Width) 
@@ -42,11 +42,11 @@ func (self *Sidebar) Render() string {
 	return string_builder.String()
 }
 
-func (self *Sidebar) SetStyle(styles Styles) {
+func (self *Window) SetStyle(styles Styles) {
 	self.Styles = styles
 }
 
-func (self *Sidebar) Active() Renderable { return self.Children[self.ActiveChildId] }
-func (self *Sidebar) SetActive(id int)   { self.ActiveChildId = id }
-func (self *Sidebar) ActiveIndex() int   { return self.ActiveChildId }
-func (self *Sidebar) GetPos() Position { return self.Pos }
+func (self *Window) Active() Renderable { return self.Children[self.ActiveChildId] }
+func (self *Window) SetActive(id int)   { self.ActiveChildId = id }
+func (self *Window) ActiveIndex() int   { return self.ActiveChildId }
+func (self *Window) GetPos() Position { return self.Pos }
