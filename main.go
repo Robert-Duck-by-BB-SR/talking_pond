@@ -1,100 +1,113 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	_ "image/jpeg"
+	_ "image/png"
+	"log"
+	"net"
 	"os"
+	"os/signal"
 
-	dd "github.com/Robert-Duck-by-BB-SR/talking_pond/internal/duck_dom"
-	"golang.org/x/term"
+	"github.com/google/uuid"
 )
 
-// import (
-// 	"bufio"
-// 	"fmt"
-// 	"image"
-// 	_ "image/jpeg"
-// 	_ "image/png"
-// 	"log"
-// 	"net"
-// 	"os"
-// 	"os/signal"
-// )
-//
-// var frame_chars = []byte{' ', '`', '.', ',', '~', '+', '*', '&', '#', '@'}
-//
-// func main() {
-//
-// 	// Define the WebSocket server URL (replace with your server's address)
-// 	serverAddr := "localhost:6969"
-//
-// 	// Dial the WebSocket server
-// 	log.Printf("Connecting to %s...", serverAddr)
-// 	conn, err := net.Dial("tcp", serverAddr)
-// 	if err != nil {
-// 		log.Fatalf("Failed to connect: %v", err)
-// 	}
-// 	defer conn.Close()
-// 	log.Println("Connected to server")
-//
-// 	// Set up interrupt handling for graceful shutdown
-// 	interrupt := make(chan os.Signal, 1)
-// 	signal.Notify(interrupt, os.Interrupt)
-//
-// 	done := make(chan struct{})
-// 	go func() {
-// 		defer close(done)
-// 		for {
-// 			message, _, err := bufio.NewReader(conn).ReadLine()
-// 			if err != nil {
-// 				log.Println("Read error:", err)
-// 				return
-// 			}
-// 			fmt.Println(string(message))
-// 		}
-// 	}()
-//
-// 	go func() {
-// 		scanner := bufio.NewScanner(os.Stdin)
-// 		for scanner.Scan() {
-// 			data := []byte{127}
-// 			data = append(data, scanner.Bytes()...)
-// 			data = append(data, '\n')
-// 			writer := bufio.NewWriter(conn)
-// 			_, err := writer.Write(data)
-// 			if err != nil {
-// 				log.Fatalf("Write error: %v", err)
-// 			}
-// 			err = writer.Flush()
-// 			if err != nil {
-// 				log.Fatalf("Flush error: %v", err)
-// 			}
-// 		}
-// 	}()
-//
-// 	// Wait for interrupt signal to close the connection
-// 	for {
-// 		select {
-// 		case <-done:
-// 			return
-// 		case <-interrupt:
-// 			log.Println("Interrupt received, closing connection")
-// 			// Send a close message to the server
-// 			data := []byte{127}
-// 			data = append(data, "close please"...)
-// 			_, err = bufio.NewWriter(conn).Write(data)
-// 			if err != nil {
-// 				log.Println("Close error:", err)
-// 			}
-// 			return
-// 		}
-// 	}
-//
-// }
-//
+var frame_chars = []byte{' ', '`', '.', ',', '~', '+', '*', '&', '#', '@'}
+
+func main() {
+
+	// NOTE: for now we're gon store it in memory due to testing, but later it's gonna become a file
+	var config [2]string
+	server_port := ":6969"
+
+	i := 0
+	// FIXME: it's a filthy hack that should be replaced as soon as files/ui gets connected
+	for i < len(config) && config[i] == "" {
+		scanner := bufio.NewScanner(os.Stdin)
+		fmt.Print("-> ")
+		for scanner.Scan() {
+			config[i] = scanner.Text()
+			i += 1
+			break
+		}
+	}
+	server_addr := config[0] + server_port
+
+	// Dial the WebSocket server
+	log.Printf("Connecting to %s...", config[0])
+	conn, err := net.Dial("tcp", server_addr)
+	if err != nil {
+		log.Fatalf("Failed to connect: %v", err)
+	}
+	defer conn.Close()
+	log.Println("Connected to server")
+
+	// Set up interrupt handling for graceful shutdown
+	interrupt := make(chan os.Signal, 1)
+	signal.Notify(interrupt, os.Interrupt)
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for {
+			message, _, err := bufio.NewReader(conn).ReadLine()
+			if err != nil {
+				log.Println("Read error:", err)
+				return
+			}
+			fmt.Println(string(message))
+		}
+	}()
+
+	// NOTE: temp solution before conv is real
+	temp_convo := []byte(uuid.NewString())
+
+	go func() {
+		scanner := bufio.NewScanner(os.Stdin)
+		for scanner.Scan() {
+			data := []byte{0, byte(len(config[1]))}
+			data = append(data, []byte(config[1])...)
+			data = append(data, temp_convo...)
+			data = append(data, 0)
+			data = append(data, scanner.Bytes()...)
+			data = append(data, '\n')
+			writer := bufio.NewWriter(conn)
+			_, err := writer.Write(data)
+			if err != nil {
+				log.Fatalf("Write error: %v", err)
+			}
+			err = writer.Flush()
+			if err != nil {
+				log.Fatalf("Flush error: %v", err)
+			}
+		}
+	}()
+
+	// Wait for interrupt signal to close the connection
+	for {
+		select {
+		case <-done:
+			return
+		case <-interrupt:
+			log.Println("Interrupt received, closing connection")
+			// Send a close message to the server
+			data := []byte{127}
+			data = append(data, "close please"...)
+			_, err = bufio.NewWriter(conn).Write(data)
+			if err != nil {
+				log.Println("Close error:", err)
+			}
+			return
+		}
+	}
+
+}
+
 // type CharMeDaddy struct {
 // 	char, count, r, g, b byte
 // }
-//
+
 // func encode_frame(img image.Image) []byte {
 // 	orig_bounds := img.Bounds().Max
 //
@@ -140,7 +153,7 @@ import (
 // 	}
 // 	return encoded_data
 // }
-//
+
 // func decode_frame(enc_data []byte) {
 // 	// sliding window -> 5 bytes
 // 	// 0 - char
@@ -171,113 +184,3 @@ import (
 //
 // 	}
 // }
-
-func move_cursor(screen *dd.Screen, item dd.Renderable, direction int) {
-	new_index := item.ActiveIndex() + direction
-	if new_index >= 0 && new_index < len(screen.Windows) {
-		active_item := item.Active()
-		active_item.SetStyle("")
-
-		item.SetActive(new_index)
-
-		next_active_item := item.Active()
-		next_active_item.SetStyle(dd.INVERT_STYLES)
-
-		screen.RenderQueue = append(screen.RenderQueue, active_item, next_active_item)
-		screen.CursorPos = next_active_item.GetPos()
-	}
-}
-
-func main() {
-	old_state, err := term.MakeRaw(int(os.Stdin.Fd()))
-	if err != nil {
-		fmt.Println("Error enabling raw mode:", err)
-		return
-	}
-	defer term.Restore(int(os.Stdin.Fd()), old_state)
-
-	dd.ClearScreen()
-
-	screen := dd.Screen{}
-	width, height, _ := term.GetSize(int(os.Stdin.Fd()))
-	screen.MaxCols = width
-	screen.MaxRows = height
-
-	item := dd.Button{
-		Pos:     dd.Position{Row: 3, Col: 1},
-		Content: "|Deez nuts|",
-		Styles:  dd.INVERT_STYLES,
-	}
-	screen.CursorPos = item.Pos
-
-	item_two := dd.Button{
-		Pos:     dd.Position{Row: 5, Col: 1},
-		Content: "|got em|",
-	}
-
-	item_three := dd.Button{
-		Pos:     dd.Position{Row: 1, Col: 21},
-		Content: "|SIMD|",
-		Styles:  dd.INVERT_STYLES,
-	}
-
-	item_four := dd.Button{
-		// NOTE: should we make item position relative or absolute?
-		Pos:     dd.Position{Row: 3, Col: 21},
-		Content: "|Ligma?|",
-	}
-
-	sidebar := dd.Window{
-		Pos: dd.Position{Row: 0, Col: 0},
-	}
-
-	main_win := dd.Window{
-		Pos: dd.Position{Row: 0, Col: 20},
-	}
-
-	sidebar.Children = append(sidebar.Children, &item, &item_two)
-	main_win.Children = append(main_win.Children, &item_three, &item_four)
-	screen.Windows = append(screen.Windows, &sidebar, &main_win)
-
-	screen.RenderQueue = append(screen.RenderQueue, screen.Windows...)
-	screen.RenderQueue = append(screen.RenderQueue, sidebar.Children...)
-	screen.RenderQueue = append(screen.RenderQueue, main_win.Children...)
-
-	stdin_buffer := make([]byte, 1)
-	buffer := ""
-	running_on_my_nuts := true
-	for running_on_my_nuts {
-		for len(screen.RenderQueue) > 0 {
-			item_to_render := screen.RenderQueue[0]
-			buffer += item_to_render.Render()
-			screen.RenderQueue = screen.RenderQueue[1:]
-		}
-
-		if len(buffer) > 0 {
-			fmt.Print(buffer)
-			buffer = ""
-		}
-		fmt.Printf(dd.MOVE_CURSOR_TO_POSITION, screen.CursorPos.Row, screen.CursorPos.Col)
-
-		_, err := os.Stdin.Read(stdin_buffer)
-		if err != nil {
-			fmt.Println("Error reading input:", err)
-			break
-		}
-
-		switch stdin_buffer[0] {
-		case 'q':
-			running_on_my_nuts = false
-		case 'j':
-			move_cursor(&screen, screen.Active(), 1)
-		case 'k':
-			move_cursor(&screen, screen.Active(), -1)
-		case 'h':
-			move_cursor(&screen, &screen, -1)
-			screen.CursorPos = screen.Active().Active().GetPos()
-		case 'l':
-			move_cursor(&screen, &screen, 1)
-			screen.CursorPos = screen.Active().Active().GetPos()
-		}
-	}
-}
