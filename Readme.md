@@ -6,3 +6,5 @@ PascalCase // for public functions and variables
 WHATEVER_THIS_IS // for public consts
 snake_case // for anything else
 ```
+# Two idiots one terminal
+Row and Col start from 1

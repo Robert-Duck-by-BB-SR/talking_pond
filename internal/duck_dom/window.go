@@ -31,10 +31,18 @@ func (self *Window) SetBackground(b string) Stylable{
 func (self *Window) Render() string {
 	var string_builder strings.Builder
 	string_builder.WriteString(self.Styles.Background)
-	fillament := strings.Repeat(" ", self.Styles.Width) 
-	for i := self.Pos.Row; i < uint(self.Styles.Height); i+= 1{
-		// replace 0 by starting col
-		string_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, i, self.Pos.Col))
+	fillament := ""
+	horizontal_border_filament := strings.Repeat("-", self.Styles.Width) 
+	vertical_border_filament := "|" + strings.Repeat(" ", self.Styles.Width - 2) + "|"
+
+	for row := self.Pos.StartingRow; row < uint(self.Styles.Height); row+= 1{
+		if(row == self.Pos.StartingRow || row == uint(self.Styles.Height - 1)){
+			fillament = horizontal_border_filament
+		} else{
+			fillament = vertical_border_filament
+		}
+
+		string_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, row, self.Pos.StartingCol))
 		string_builder.WriteString(fillament)
 	}
 	string_builder.WriteString(RESET_STYLES)

@@ -241,16 +241,14 @@ func main() {
 
 	sidebar := dd.Window{
 		// NOTE: should we make item position relative or absolute?
-		Pos:     dd.Position{Row: 0, Col: 0},
-		Content: "|Ligma?|",
-		Styles: dd.Styles{Width: 50, Height: screen.MaxRows, Background: dd.DEBUG_STYLES},
+		Pos:    dd.Position{StartingRow: 1, StartingCol: 1},
+		Styles: dd.Styles{Width: 50, Height: screen.MaxRows, Background: dd.DEBUG_STYLES, Border: dd.Border{Width: 1, Style: dd.Solid, Color: "red"}},
 	}
 
 	content := dd.Window{
 		// NOTE: should we make item position relative or absolute?
-		Pos:     dd.Position{Row: 0, Col: uint(sidebar.Styles.Width) + 2},
+		Pos:    dd.Position{StartingRow: 1, StartingCol: uint(sidebar.Styles.Width) + 2},
 		Styles: dd.Styles{Width: screen.MaxCols - sidebar.Styles.Width - 1, Height: screen.MaxRows, Background: "\033[48;2;69;69;69m"},
-		Content: "|Ligma?|",
 	}
 
 	screen.RenderQueue = append(screen.RenderQueue, &sidebar)
@@ -268,13 +266,9 @@ func main() {
 
 		if len(buffer) > 0 {
 			fmt.Print(buffer)
-			// err := os.WriteFile("debug.txt", []byte(buffer), 0755)
-			// if err != nil {
-			// 	fmt.Printf("unable to write file: %w", err)
-			// }
 			buffer = ""
 		}
-		fmt.Printf(dd.MOVE_CURSOR_TO_POSITION, screen.CursorPos.Row, screen.CursorPos.Col)
+		fmt.Printf(dd.MOVE_CURSOR_TO_POSITION, screen.CursorPos.StartingRow, screen.CursorPos.StartingCol)
 
 		_, err := os.Stdin.Read(stdin_buffer)
 		if err != nil {
@@ -289,12 +283,12 @@ func main() {
 			move_cursor(&screen, screen.Active(), 1)
 		case 'k':
 			move_cursor(&screen, screen.Active(), -1)
-		// case 'h':
-		// 	move_cursor(&screen, &screen, -1)
-		// 	screen.CursorPos = screen.Active().Active().GetPos()
-		// case 'l':
-		// 	move_cursor(&screen, &screen, 1)
-		// 	screen.CursorPos = screen.Active().Active().GetPos()
+			// case 'h':
+			// 	move_cursor(&screen, &screen, -1)
+			// 	screen.CursorPos = screen.Active().Active().GetPos()
+			// case 'l':
+			// 	move_cursor(&screen, &screen, 1)
+			// 	screen.CursorPos = screen.Active().Active().GetPos()
 		}
 	}
 }

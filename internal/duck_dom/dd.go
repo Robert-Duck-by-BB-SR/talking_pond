@@ -7,7 +7,7 @@ import (
 const (
 	// styles
 
-	// USE IT LATER
+	// USE IT LATER for RGB
 	// \033[48;2;%d;%d;%dm
 	INVERT_STYLES = "\033[7m"
 	RESET_STYLES  = "\033[0m"
@@ -24,7 +24,7 @@ const (
 )
 
 type Position struct {
-	Row, Col uint
+	StartingRow, StartingCol uint
 }
 
 type Screen struct {
@@ -64,12 +64,6 @@ func (self *Screen) GetPos() Position { return Position{} }
 func (self *Screen) Active() Renderable { return self.Windows[self.ActiveWindowId] }
 func (self *Screen) SetActive(id int)   { self.ActiveWindowId = id }
 func (self *Screen) ActiveIndex() int   { return self.ActiveWindowId }
-
-func DebugMeDaddy(screen *Screen, content string) {
-	fmt.Printf(MOVE_CURSOR_TO_POSITION, screen.MaxRows, 1)
-	fmt.Printf(CLEAR_ROW)
-	fmt.Printf(MOVE_CURSOR_TO_POSITION+DEBUG_STYLES+"%s"+RESET_STYLES, screen.MaxRows, 1, "DebugDuck: "+content)
-}
 
 func ClearScreen() {
 	fmt.Printf(CLEAR_SCREEN)
