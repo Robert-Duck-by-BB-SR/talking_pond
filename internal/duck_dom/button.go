@@ -13,7 +13,7 @@ type Button struct {
 func (self *Button) OnClick() {}
 
 func (self *Button) Render() string {
-	return fmt.Sprintf(MOVE_CURSOR_TO_POSITION+"%s%s"+RESET_STYLES, self.Pos.Row, self.Pos.Col, self.Styles, self.Content)
+	return fmt.Sprintf(MOVE_CURSOR_TO_POSITION+"%s%s"+RESET_STYLES, self.Pos.StartingRow, self.Pos.StartingCol, self.Styles, self.Content)
 }
 func (self *Button) SetStyle(styles string) {
 	self.Styles = styles
