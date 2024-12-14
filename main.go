@@ -162,14 +162,24 @@ func main() {
 
 	sidebar := dd.Window{
 		// NOTE: should we make item position relative or absolute?
-		Pos:    dd.Position{StartingRow: 1, StartingCol: 1},
-		Styles: dd.Styles{Width: 50, Height: screen.MaxRows, Background: dd.DEBUG_STYLES, Border: dd.Border{Width: 1, Style: dd.Solid, Color: "red"}},
+		Pos: dd.Position{StartingRow: 1, StartingCol: 1},
+		Styles: dd.Styles{
+			Width:      50,
+			Height:     screen.MaxRows,
+			Background: dd.DEBUG_STYLES,
+			Border:     dd.Border{Width: 1, Style: dd.Solid, Color: "\033[48;2;250;250;250m"},
+		},
 	}
 
 	content := dd.Window{
 		// NOTE: should we make item position relative or absolute?
-		Pos:    dd.Position{StartingRow: 1, StartingCol: uint(sidebar.Styles.Width) + 2},
-		Styles: dd.Styles{Width: screen.MaxCols - sidebar.Styles.Width - 1, Height: screen.MaxRows, Background: "\033[48;2;69;69;69m"},
+		Pos: dd.Position{StartingRow: 1, StartingCol: uint(sidebar.Styles.Width) + 2},
+		Styles: dd.Styles{
+			Width:      screen.MaxCols - sidebar.Styles.Width - 1,
+			Height:     screen.MaxRows,
+			Background: "\033[48;2;69;69;69m",
+			// Border:     dd.Border{Width: 1, Style: dd.Solid, Color: "red"},
+		},
 	}
 
 	screen.RenderQueue = append(screen.RenderQueue, &sidebar)
