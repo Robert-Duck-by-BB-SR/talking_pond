@@ -28,6 +28,16 @@ func (self *Window) SetBackground(b string) Stylable{
 	return self
 }
 
+func (self *Window) SetStyle(styles Styles) Stylable{
+	self.Styles = styles
+	return self
+}
+
+func (self *Window) SetBorder(b Border) Stylable{
+	self.Styles.Border = b
+	return self
+}
+
 func (self *Window) Render() string {
 	var bor_builder strings.Builder
 
@@ -97,9 +107,6 @@ func render_with_border(self *Window, main_border_build *strings.Builder) string
 	return main_border_build.String()
 }
 
-func (self *Window) SetStyle(styles Styles) {
-	self.Styles = styles
-}
 
 func (self *Window) Active() Renderable { return self.Children[self.ActiveChildId] }
 func (self *Window) SetActive(id int)   { self.ActiveChildId = id }
