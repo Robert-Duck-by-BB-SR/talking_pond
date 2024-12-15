@@ -9,27 +9,48 @@ import (
 	"net"
 	"os"
 	"os/signal"
-
-	"github.com/google/uuid"
+	"strings"
 )
 
 var frame_chars = []byte{' ', '`', '.', ',', '~', '+', '*', '&', '#', '@'}
 
 func main() {
 
-	// NOTE: for now we're gon store it in memory due to testing, but later it's gonna become a file
 	var config [2]string
 	server_port := ":6969"
 
-	i := 0
-	// FIXME: it's a filthy hack that should be replaced as soon as files/ui gets connected
-	for i < len(config) && config[i] == "" {
-		scanner := bufio.NewScanner(os.Stdin)
-		fmt.Print("-> ")
-		for scanner.Scan() {
-			config[i] = scanner.Text()
-			i += 1
-			break
+	file, err := os.Open(".secrets")
+	defer file.Close()
+	log.Printf("%v, %v", file, err)
+	if err != nil {
+		i := 0
+		for i < len(config) && config[i] == "" {
+			scanner := bufio.NewScanner(os.Stdin)
+			fmt.Print("-> ")
+			for scanner.Scan() {
+				config[i] = scanner.Text()
+				i += 1
+				break
+			}
+		}
+		f, err := os.Create(".secrets")
+		if err != nil {
+			panic(err)
+		}
+		_, err = f.Write([]byte(config[0] + "\n" + config[1] + "\n"))
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		i := 0
+		scanner := bufio.NewScanner(file)
+		for i < len(config) && config[i] == "" {
+			for scanner.Scan() {
+				fmt.Print(scanner.Text())
+				config[i] = scanner.Text()
+				i += 1
+				break
+			}
 		}
 	}
 	server_addr := config[0] + server_port
@@ -43,32 +64,61 @@ func main() {
 	defer conn.Close()
 	log.Println("Connected to server")
 
+	// NOTE: testing requests
+	data := []byte{1}
+	data = append(data, "get:users"...)
+	data = append(data, '\n')
+
+	writer := bufio.NewWriter(conn)
+	i, err := writer.Write(data)
+	log.Println(i)
+	if err != nil {
+		log.Fatalf("Write error: %v", err)
+	}
+	err = writer.Flush()
+	if err != nil {
+		log.Fatalf("Flush error: %v", err)
+	}
+
+	message, _, err := bufio.NewReader(conn).ReadLine()
+	fmt.Println(string(message))
+	if err != nil {
+		log.Println("Read error:", err)
+		return
+	}
 	// Set up interrupt handling for graceful shutdown
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
+
+	convo := ""
 
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
 		for {
 			message, _, err := bufio.NewReader(conn).ReadLine()
+			fmt.Println(message)
 			if err != nil {
 				log.Println("Read error:", err)
 				return
 			}
-			fmt.Println(string(message))
+			if message[1] == 69 {
+				command := strings.Split(string(message[2:]), ":")
+				if command[0] == "convo" {
+					convo = command[1]
+				}
+			} else {
+				fmt.Println(string(message))
+			}
 		}
 	}()
-
-	// NOTE: temp solution before conv is real
-	temp_convo := []byte(uuid.NewString())
 
 	go func() {
 		scanner := bufio.NewScanner(os.Stdin)
 		for scanner.Scan() {
 			data := []byte{0, byte(len(config[1]))}
 			data = append(data, []byte(config[1])...)
-			data = append(data, temp_convo...)
+			data = append(data, []byte(convo)...)
 			data = append(data, 0)
 			data = append(data, scanner.Bytes()...)
 			data = append(data, '\n')
