@@ -246,7 +246,7 @@ func main() {
 			Width:      50,
 			Height:     screen.MaxRows,
 			Background: dd.DEBUG_STYLES,
-			Border:     dd.Border{Width: 1, Style: dd.Solid, Color: "\033[48;2;250;250;250m"},
+			Border:     dd.Border{Width: 1, Style: dd.Solid, Color: "\033[31m"},
 		},
 	}
 
@@ -257,7 +257,7 @@ func main() {
 			Width:      screen.MaxCols - sidebar.Styles.Width - 1,
 			Height:     screen.MaxRows,
 			Background: "\033[48;2;69;69;69m",
-			// Border:     dd.Border{Width: 1, Style: dd.Solid, Color: "red"},
+			Border:     dd.Border{Width: 1, Style: dd.Solid, Color: "\033[31m"},
 		},
 	}
 

@@ -10,6 +10,7 @@ const (
 	// USE IT LATER for RGB
 	// \033[48;2;%d;%d;%dm
 	INVERT_STYLES = "\033[7m"
+	RED_COLOR= "\033[31m"
 	RESET_STYLES  = "\033[0m"
 
 	// constant commands
