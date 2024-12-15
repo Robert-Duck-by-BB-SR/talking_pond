@@ -5,10 +5,8 @@ import (
 )
 
 const (
-	// styles
-
-	// USE IT LATER for RGB
-	// \033[48;2;%d;%d;%dm
+	FG_KEY = "\033[38;2;"
+	BG_KEY = "\033[48;2;"
 	INVERT_STYLES = "\033[7m"
 	RED_COLOR= "\033[31m"
 	RESET_STYLES  = "\033[0m"
@@ -39,6 +37,11 @@ type Screen struct {
 	RenderQueue []Renderable
 }
 
+func (self *Screen) GetPos() Position { return Position{} }
+func (self *Screen) Active() Renderable { return self.Windows[self.ActiveWindowId] }
+func (self *Screen) SetActive(id int)   { self.ActiveWindowId = id }
+func (self *Screen) ActiveIndex() int   { return self.ActiveWindowId }
+
 type Renderable interface {
 	Stylable
 	Render() string
@@ -52,19 +55,13 @@ type Stylable interface {
 	SetWidth(int) Stylable
 	SetHeight(int) Stylable
 	SetBackground(string) Stylable
+	SetBorder(Border) Stylable
 }
 
 func (self *Screen) Render() string {
 	// NOTE: maybe make it fill the render q?
 	return ""
 }
-
-func (self *Screen) SetStyle(string)  {}
-func (self *Screen) GetPos() Position { return Position{} }
-
-func (self *Screen) Active() Renderable { return self.Windows[self.ActiveWindowId] }
-func (self *Screen) SetActive(id int)   { self.ActiveWindowId = id }
-func (self *Screen) ActiveIndex() int   { return self.ActiveWindowId }
 
 func ClearScreen() {
 	fmt.Printf(CLEAR_SCREEN)

@@ -1,5 +1,7 @@
 package duckdom
 
+import "fmt"
+
 // oh boy CSS is comming
 
 type Styles struct {
@@ -73,4 +75,12 @@ var (
 		MiddleBottom: "┻",
 	}
 )
+
+func MakeRGBBackground(r, g, b int) string{
+	return BG_KEY + fmt.Sprintf("%d;%d;%dm", r, g, b)
+}
+
+func MakeRGBTextColor(r, g, b int) string{
+	return FG_KEY + fmt.Sprintf("%d;%d;%dm", r, g, b)
+}
 
