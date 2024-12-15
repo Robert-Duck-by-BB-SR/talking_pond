@@ -14,6 +14,53 @@ import (
 
 var frame_chars = []byte{' ', '`', '.', ',', '~', '+', '*', '&', '#', '@'}
 
+func request_convo_id(config [2]string, conn net.Conn) []byte {
+	// NOTE: simulating conversation creation
+	writer := bufio.NewWriter(conn)
+	data := []byte{1}
+	data = append(data, "create:conversation;key:"...)
+	data = append(data, []byte(config[1])...)
+	data = append(data, ";users:tredstart"...)
+	data = append(data, '\n')
+	i, err := writer.Write(data)
+	log.Println(i)
+	if err != nil {
+		log.Fatalf("Write error: %v", err)
+	}
+	err = writer.Flush()
+	if err != nil {
+		log.Fatalf("Flush error: %v", err)
+	}
+
+	message, _, err := bufio.NewReader(conn).ReadLine()
+	fmt.Println(string(message))
+	if err != nil {
+		log.Println("Read error:", err)
+		return nil
+	}
+	return message
+}
+
+func request_messages(config [2]string, conn net.Conn, convo []byte) {
+	// NOTE: simulating conversation creation
+	writer := bufio.NewWriter(conn)
+	data := []byte{1}
+	data = append(data, "get:messages;key:"...)
+	data = append(data, []byte(config[1])...)
+	data = append(data, ";conversation:"...)
+	data = append(data, convo...)
+	data = append(data, '\n')
+	i, err := writer.Write(data)
+	log.Println(i)
+	if err != nil {
+		log.Fatalf("Write error: %v", err)
+	}
+	err = writer.Flush()
+	if err != nil {
+		log.Fatalf("Flush error: %v", err)
+	}
+}
+
 func main() {
 
 	var config [2]string
@@ -64,74 +111,30 @@ func main() {
 	defer conn.Close()
 	log.Println("Connected to server")
 
-	// NOTE: testing requests
-	data := []byte{1}
-	data = append(data, "get:users"...)
-	data = append(data, '\n')
-
-	writer := bufio.NewWriter(conn)
-	i, err := writer.Write(data)
-	log.Println(i)
-	if err != nil {
-		log.Fatalf("Write error: %v", err)
-	}
-	err = writer.Flush()
-	if err != nil {
-		log.Fatalf("Flush error: %v", err)
-	}
-
-	message, _, err := bufio.NewReader(conn).ReadLine()
-	fmt.Println(string(message))
-	if err != nil {
-		log.Println("Read error:", err)
-		return
-	}
 	// Set up interrupt handling for graceful shutdown
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 
-	// NOTE: simulating conversation creation
-	data = []byte{1}
-	data = append(data, "create:conversation;key:"...)
-	data = append(data, []byte(config[1])...)
-	data = append(data, ";users:deeznuts"...)
-	data = append(data, '\n')
-	i, err = writer.Write(data)
-	log.Println(i)
-	if err != nil {
-		log.Fatalf("Write error: %v", err)
-	}
-	err = writer.Flush()
-	if err != nil {
-		log.Fatalf("Flush error: %v", err)
-	}
-
-	message, _, err = bufio.NewReader(conn).ReadLine()
-	fmt.Println(string(message))
-	if err != nil {
-		log.Println("Read error:", err)
-		return
-	}
-
-	convo := ""
+	// convo := request_convo_id(config, conn)
+	// request_messages(config, conn, convo)
+	convo := "76661755-0c6e-4f99-8c7e-5feb72698be5"
+	request_messages(config, conn, []byte(convo))
 
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
 		for {
 			message, _, err := bufio.NewReader(conn).ReadLine()
-			fmt.Println(message)
 			if err != nil {
 				log.Println("Read error:", err)
 				return
 			}
-			if message[1] == 69 {
-				command := strings.Split(string(message[2:]), ":")
-				if command[0] == "convo" {
-					convo = command[1]
+			parts := strings.Split(string(message), ";")
+			for _, part := range parts {
+				m := strings.Split(part, "|")
+				if len(m) == 5 {
+					fmt.Println(m[1], ":", m[4], "->", m[3])
 				}
-			} else {
-				fmt.Println(string(message))
 			}
 		}
 	}()
@@ -139,9 +142,9 @@ func main() {
 	go func() {
 		scanner := bufio.NewScanner(os.Stdin)
 		for scanner.Scan() {
-			data := []byte{0, byte(len(config[1]))}
+			data := []byte{0, 1, byte(len(config[1]))}
 			data = append(data, []byte(config[1])...)
-			data = append(data, []byte(convo)...)
+			data = append(data, convo...)
 			data = append(data, 0)
 			data = append(data, scanner.Bytes()...)
 			data = append(data, '\n')
