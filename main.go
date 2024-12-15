@@ -90,6 +90,29 @@ func main() {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 
+	// NOTE: simulating conversation creation
+	data = []byte{1}
+	data = append(data, "create:conversation;key:"...)
+	data = append(data, []byte(config[1])...)
+	data = append(data, ";users:deeznuts"...)
+	data = append(data, '\n')
+	i, err = writer.Write(data)
+	log.Println(i)
+	if err != nil {
+		log.Fatalf("Write error: %v", err)
+	}
+	err = writer.Flush()
+	if err != nil {
+		log.Fatalf("Flush error: %v", err)
+	}
+
+	message, _, err = bufio.NewReader(conn).ReadLine()
+	fmt.Println(string(message))
+	if err != nil {
+		log.Println("Read error:", err)
+		return
+	}
+
 	convo := ""
 
 	done := make(chan struct{})
