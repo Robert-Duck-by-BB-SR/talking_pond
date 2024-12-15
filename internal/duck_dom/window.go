@@ -94,8 +94,6 @@ func render_with_border(self *Window, main_border_build *strings.Builder) string
 	main_border_build.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, self.Styles.Height - 1, self.Pos.StartingCol))
 	main_border_build.WriteString(bottom_border_build.String())
 
-	// FIXME: GREY BIRDER
-	main_border_build.WriteString(RESET_STYLES)
 	return main_border_build.String()
 }
 
