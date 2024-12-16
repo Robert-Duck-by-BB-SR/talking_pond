@@ -5,10 +5,10 @@ import (
 )
 
 const (
-	FG_KEY = "\033[38;2;"
-	BG_KEY = "\033[48;2;"
+	FG_KEY        = "\033[38;2;"
+	BG_KEY        = "\033[48;2;"
 	INVERT_STYLES = "\033[7m"
-	RED_COLOR= "\033[31m"
+	RED_COLOR     = "\033[31m"
 	RESET_STYLES  = "\033[0m"
 
 	// constant commands
@@ -33,29 +33,8 @@ type Screen struct {
 	ActiveWindowId int
 
 	// fuck Windows, all my homies use Linux
-	Windows     []Renderable
-	RenderQueue []Renderable
-}
-
-func (self *Screen) GetPos() Position { return Position{} }
-func (self *Screen) Active() Renderable { return self.Windows[self.ActiveWindowId] }
-func (self *Screen) SetActive(id int)   { self.ActiveWindowId = id }
-func (self *Screen) ActiveIndex() int   { return self.ActiveWindowId }
-
-type Renderable interface {
-	Stylable
-	Render() string
-	Active() Renderable
-	SetActive(int)
-	ActiveIndex() int
-	GetPos() Position
-}
-
-type Stylable interface {
-	SetWidth(int) Stylable
-	SetHeight(int) Stylable
-	SetBackground(string) Stylable
-	SetBorder(Border) Stylable
+	Windows     []Window
+	RenderQueue []string
 }
 
 func (self *Screen) Render() string {

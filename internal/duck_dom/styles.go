@@ -10,7 +10,7 @@ type Styles struct {
 	Paddding   int
 	Maaargin   int
 	Background string
-	Border     Border
+	Border
 }
 
 type BorderStyle int
@@ -76,11 +76,40 @@ var (
 	}
 )
 
-func MakeRGBBackground(r, g, b int) string{
+func MakeRGBBackground(r, g, b int) string {
 	return BG_KEY + fmt.Sprintf("%d;%d;%dm", r, g, b)
 }
 
-func MakeRGBTextColor(r, g, b int) string{
+func MakeRGBTextColor(r, g, b int) string {
 	return FG_KEY + fmt.Sprintf("%d;%d;%dm", r, g, b)
 }
 
+func (self *Styles) SetWidth(w int) *Styles {
+	self.Width = w
+	return self
+}
+
+func (self *Styles) SetHeight(h int) *Styles {
+	self.Height = h
+	return self
+}
+
+func (self *Styles) SetPadding(p int) *Styles {
+	self.Paddding = p
+	return self
+}
+
+func (self *Styles) SetMargin(m int) *Styles {
+	self.Maaargin = m
+	return self
+}
+
+func (self *Styles) SetBackground(b string) *Styles {
+	self.Background = b
+	return self
+}
+
+func (self *Styles) SetBorder(b Border) *Styles {
+	self.Border = b
+	return self
+}
