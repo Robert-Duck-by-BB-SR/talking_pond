@@ -172,21 +172,21 @@ import (
 // 	}
 // }
 
-func move_cursor(screen *dd.Screen, item dd.Renderable, direction int) {
-	new_index := item.ActiveIndex() + direction
-	if new_index >= 0 && new_index < len(screen.Windows) {
-		active_item := item.Active()
-		active_item.SetBackground("")
-
-		item.SetActive(new_index)
-
-		next_active_item := item.Active()
-		next_active_item.SetBackground(dd.INVERT_STYLES)
-
-		screen.RenderQueue = append(screen.RenderQueue, active_item, next_active_item)
-		screen.CursorPos = next_active_item.GetPos()
-	}
-}
+// func move_cursor(screen *dd.Screen, item dd.Renderable, direction int) {
+// 	new_index := item.ActiveIndex() + direction
+// 	if new_index >= 0 && new_index < len(screen.Windows) {
+// 		active_item := item.Active()
+// 		active_item.SetBackground("")
+//
+// 		item.SetActive(new_index)
+//
+// 		next_active_item := item.Active()
+// 		next_active_item.SetBackground(dd.INVERT_STYLES)
+//
+// 		screen.RenderQueue = append(screen.RenderQueue, active_item, next_active_item)
+// 		screen.CursorPos = next_active_item.GetPos()
+// 	}
+// }
 
 func main() {
 	old_state, err := term.MakeRaw(int(os.Stdin.Fd()))
@@ -241,7 +241,7 @@ func main() {
 
 	sidebar := dd.Window{
 		// NOTE: should we make item position relative or absolute?
-		Pos: dd.Position{StartingRow: 1, StartingCol: 1},
+		Position: dd.Position{StartingRow: 1, StartingCol: 1},
 		Styles: dd.Styles{
 			Width:      50,
 			Height:     screen.MaxRows,
@@ -252,7 +252,7 @@ func main() {
 
 	content := dd.Window{
 		// NOTE: should we make item position relative or absolute?
-		Pos: dd.Position{StartingRow: 1, StartingCol: uint(sidebar.Styles.Width) + 2},
+		Position: dd.Position{StartingRow: 1, StartingCol: uint(sidebar.Styles.Width) + 2},
 		Styles: dd.Styles{
 			Width:      screen.MaxCols - sidebar.Styles.Width - 1,
 			Height:     screen.MaxRows,
@@ -261,23 +261,19 @@ func main() {
 		},
 	}
 
-	screen.RenderQueue = append(screen.RenderQueue, &sidebar)
-	screen.RenderQueue = append(screen.RenderQueue, &content)
+	screen.RenderQueue = append(screen.RenderQueue, sidebar.Render())
+	screen.RenderQueue = append(screen.RenderQueue, content.Render())
 
 	stdin_buffer := make([]byte, 1)
-	buffer := ""
 	running_on_my_nuts := true
+	fmt.Print(dd.HIDE_CURSOR)
 	for running_on_my_nuts {
 		for len(screen.RenderQueue) > 0 {
 			item_to_render := screen.RenderQueue[0]
-			buffer += item_to_render.Render()
+			fmt.Print(item_to_render)
 			screen.RenderQueue = screen.RenderQueue[1:]
 		}
 
-		if len(buffer) > 0 {
-			fmt.Print(buffer)
-			buffer = ""
-		}
 		fmt.Printf(dd.MOVE_CURSOR_TO_POSITION, screen.CursorPos.StartingRow, screen.CursorPos.StartingCol)
 
 		_, err := os.Stdin.Read(stdin_buffer)
@@ -289,10 +285,10 @@ func main() {
 		switch stdin_buffer[0] {
 		case 'q':
 			running_on_my_nuts = false
-		case 'j':
-			move_cursor(&screen, screen.Active(), 1)
-		case 'k':
-			move_cursor(&screen, screen.Active(), -1)
+			// case 'j':
+			// 	move_cursor(&screen, screen.Active(), 1)
+			// case 'k':
+			// 	move_cursor(&screen, screen.Active(), -1)
 			// case 'h':
 			// 	move_cursor(&screen, &screen, -1)
 			// 	screen.CursorPos = screen.Active().Active().GetPos()

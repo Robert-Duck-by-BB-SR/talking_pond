@@ -1,4 +1,5 @@
 images/
 tmp_frames/
 video*
+.sec*
 
