@@ -10,6 +10,7 @@ type Styles struct {
 	Paddding   int
 	Maaargin   int
 	Background string
+	TextColor string
 	Border
 }
 
@@ -43,6 +44,11 @@ func (self *Styles) SetMargin(m int) *Styles {
 
 func (self *Styles) SetBackground(b string) *Styles {
 	self.Background = b
+	return self
+}
+
+func (self *Styles) SetTextColor(tc string) *Styles {
+	self.TextColor = tc
 	return self
 }
 

@@ -28,8 +28,8 @@ func (self *Window) render_background() string {
 	bg_builder.WriteString(self.Styles.Color)
 	fillament := strings.Repeat(" ", self.Styles.Width)
 
-	for row := self.Position.StartingRow; row < uint(self.Styles.Height); row += 1 {
-		bg_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, row, self.Position.StartingCol))
+	for i := 0; uint(i) < uint(self.Styles.Height); i += 1 {
+		bg_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, self.StartingRow + uint(i), self.Position.StartingCol))
 		bg_builder.WriteString(fillament)
 	}
 	bg_builder.WriteString(RESET_STYLES)

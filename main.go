@@ -18,36 +18,57 @@ func main() {
 
 	dd.ClearScreen()
 
-	screen := dd.Screen{}
+	screen := dd.Screen{State: &dd.Normal, EventLoopIsRunning: true}
 	width, height, _ := term.GetSize(int(os.Stdin.Fd()))
-	screen.MaxCols = width
-	screen.MaxRows = height
+	screen.Width = width
+	screen.Height = height
+
 	sidebar := dd.Window{
 		Position: dd.Position{StartingRow: 1, StartingCol: 1},
 		Styles: dd.Styles{
 			Width:      50,
-			Height:     screen.MaxRows,
-			Background: dd.DEBUG_STYLES,
-			Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+			Height:     screen.Height - 1,
+			Background: dd.MakeRGBBackground(69, 150, 100),
+			// Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 		},
 	}
 
 	content := dd.Window{
 		Position: dd.Position{StartingRow: 1, StartingCol: uint(sidebar.Styles.Width) + 2},
 		Styles: dd.Styles{
-			Width:      screen.MaxCols - sidebar.Styles.Width - 1,
-			Height:     screen.MaxRows,
+			Width:      screen.Width - sidebar.Styles.Width - 1,
+			Height:     screen.Height - 1,
 			Background: dd.MakeRGBBackground(69, 150, 100),
-			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+			// Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 		},
+	}
+	
+	status_bar_component := dd.Component{
+		Position: dd.Position{StartingRow: uint(screen.Height), StartingCol: 2},
+		Buffer:   "NORMAL",
+		Styles: dd.Styles{
+			Width:      screen.Width,
+			Height:     30,
+		},
+	}
+
+	status_bar := dd.Window{
+		Position: dd.Position{StartingRow: uint(screen.Height), StartingCol: 1},
+		Styles: dd.Styles{
+			Width:      screen.Width,
+			Height:    	1,
+			Background: dd.MakeRGBBackground(80, 40, 100),
+			// Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+		},
+		Components: []dd.Component{status_bar_component},
 	}
 
 	item := dd.Component{
 		Position: dd.Position{StartingRow: 3, StartingCol: uint(sidebar.StartingCol) + 2},
 		Buffer:   "|Deez nuts|",
 		Styles: dd.Styles{
-			Width:      screen.MaxCols - sidebar.Styles.Width - 1,
-			Height:     screen.MaxRows,
+			Width:      screen.Width - sidebar.Styles.Width - 1,
+			Height:     screen.Height,
 			Background: dd.MakeRGBBackground(69, 150, 100),
 			Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 		},
@@ -74,7 +95,9 @@ func main() {
 
 	screen.RenderQueue = append(screen.RenderQueue, sidebar.Render())
 	screen.RenderQueue = append(screen.RenderQueue, content.Render())
+	screen.RenderQueue = append(screen.RenderQueue, status_bar.Render())
 
+	// TODO: render them together with parents
 	for _, comp := range sidebar.Components {
 		comp.Render()
 		screen.RenderQueue = append(screen.RenderQueue, comp.Content)
@@ -84,10 +107,13 @@ func main() {
 		screen.RenderQueue = append(screen.RenderQueue, comp.Content)
 	}
 
+	for _, comp := range status_bar.Components {
+		comp.Render()
+		screen.RenderQueue = append(screen.RenderQueue, comp.Content)
+	}
+
 	stdin_buffer := make([]byte, 1)
-	running_on_my_nuts := true
-	fmt.Print(dd.HIDE_CURSOR)
-	for running_on_my_nuts {
+	for screen.EventLoopIsRunning{
 		for len(screen.RenderQueue) > 0 {
 			item_to_render := screen.RenderQueue[0]
 			fmt.Print(item_to_render)
@@ -103,20 +129,19 @@ func main() {
 			break
 		}
 
-		switch stdin_buffer[0] {
-		case 'q':
-			running_on_my_nuts = false
-			// case 'j':
-			// 	move_cursor(&screen, screen.Active(), 1)
-			// case 'k':
-			// 	move_cursor(&screen, screen.Active(), -1)
-			// case 'h':
-			// 	move_cursor(&screen, &screen, -1)
-			// 	screen.CursorPos = screen.Active().Active().GetPos()
-			// case 'l':
-			// 	move_cursor(&screen, &screen, 1)
-			// 	screen.CursorPos = screen.Active().Active().GetPos()
-		}
+		screen.State.HandleKeypress(&screen, stdin_buffer)
+
+		// case 'j':
+		// 	move_cursor(&screen, screen.Active(), 1)
+		// case 'k':
+		// 	move_cursor(&screen, screen.Active(), -1)
+		// case 'h':
+		// 	move_cursor(&screen, &screen, -1)
+		// 	screen.CursorPos = screen.Active().Active().GetPos()
+		// case 'l':
+		// 	move_cursor(&screen, &screen, 1)
+		// 	screen.CursorPos = screen.Active().Active().GetPos()
 	}
+	// restart to default settings
 	fmt.Print(dd.SHOW_CURSOR)
 }
