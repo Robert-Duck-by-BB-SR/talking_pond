@@ -23,16 +23,16 @@ func (self *Window) Render() string {
 }
 
 func (self *Window) render_background() string {
-	var bor_builder strings.Builder
-	bor_builder.WriteString(self.Styles.Background)
-	bor_builder.WriteString(self.Styles.Color)
+	var bg_builder strings.Builder
+	bg_builder.WriteString(self.Styles.Background)
+	bg_builder.WriteString(self.Styles.Color)
 	fillament := strings.Repeat(" ", self.Styles.Width)
 
 	for row := self.Position.StartingRow; row < uint(self.Styles.Height); row += 1 {
-		bor_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, row, self.Position.StartingCol))
-		bor_builder.WriteString(fillament)
+		bg_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, row, self.Position.StartingCol))
+		bg_builder.WriteString(fillament)
 	}
-	bor_builder.WriteString(RESET_STYLES)
+	bg_builder.WriteString(RESET_STYLES)
 
-	return bor_builder.String()
+	return bg_builder.String()
 }
