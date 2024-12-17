@@ -52,5 +52,6 @@ func (self *Styles) SetBorder(b Border) *Styles {
 }
 
 func (self *Styles) Compiled() string {
+	// TODO: combine all styles into one string
 	return ""
 }
