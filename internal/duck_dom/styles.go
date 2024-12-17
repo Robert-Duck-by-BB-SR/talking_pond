@@ -113,3 +113,7 @@ func (self *Styles) SetBorder(b Border) *Styles {
 	self.Border = b
 	return self
 }
+
+func (self *Styles) Compiled() string {
+	return ""
+}
