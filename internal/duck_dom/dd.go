@@ -10,6 +10,7 @@ const (
 	INVERT_STYLES = "\033[7m"
 	RED_COLOR     = "\033[31m"
 	RESET_STYLES  = "\033[0m"
+	RGB           = "%d;%d;%dm"
 
 	// constant commands
 	CLEAR_SCREEN                 = "\033[2J"

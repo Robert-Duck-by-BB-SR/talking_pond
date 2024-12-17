@@ -132,7 +132,7 @@ func main() {
 			Width:      50,
 			Height:     screen.MaxRows,
 			Background: dd.DEBUG_STYLES,
-			Border:     dd.Border{Width: 1, Style: dd.Solid, Color: dd.MakeRGBTextColor(100, 100, 100)},
+			Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 		},
 	}
 
@@ -142,13 +142,19 @@ func main() {
 			Width:      screen.MaxCols - sidebar.Styles.Width - 1,
 			Height:     screen.MaxRows,
 			Background: dd.MakeRGBBackground(69, 150, 100),
-			Border:     dd.Border{Width: 1, Style: dd.Solid, Color: dd.MakeRGBTextColor(100, 100, 100)},
+			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 		},
 	}
 
 	item := dd.Component{
 		Position: dd.Position{StartingRow: 3, StartingCol: uint(sidebar.StartingCol) + 2},
 		Buffer:   "|Deez nuts|",
+		Styles: dd.Styles{
+			Width:      screen.MaxCols - sidebar.Styles.Width - 1,
+			Height:     screen.MaxRows,
+			Background: dd.MakeRGBBackground(69, 150, 100),
+			Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+		},
 	}
 
 	item_two := dd.Component{
