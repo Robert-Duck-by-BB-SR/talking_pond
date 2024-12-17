@@ -222,4 +222,5 @@ func main() {
 			// 	screen.CursorPos = screen.Active().Active().GetPos()
 		}
 	}
+	fmt.Print(dd.SHOW_CURSOR)
 }

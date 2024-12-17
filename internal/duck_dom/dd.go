@@ -18,6 +18,7 @@ const (
 	MOVE_CURSOR_TO_POSITION      = "\033[%d;%dH"
 	CLEAR_ROW                    = "\033[2K"
 	HIDE_CURSOR                  = "\x1b[?25l"
+	SHOW_CURSOR                  = "\x1b[?25h"
 
 	// NOTE: DEBUG ONLY. IF YOU USE IT IN PROD I WILL FIND YOU AND MAKE YOU SMELL MY SOCKS
 	DEBUG_STYLES = "\033[30;43m"
