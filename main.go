@@ -10,6 +10,7 @@ import (
 	"golang.org/x/term"
 )
 
+<<<<<<< HEAD
 // var frame_chars = []byte{' ', '`', '.', ',', '~', '+', '*', '&', '#', '@'}
 
 // type CharMeDaddy struct {
@@ -109,6 +110,8 @@ import (
 // 	}
 // }
 
+=======
+>>>>>>> a62a6fc (renderer: display items)
 func main() {
 	old_state, err := term.MakeRaw(int(os.Stdin.Fd()))
 	if err != nil {
@@ -123,45 +126,7 @@ func main() {
 	width, height, _ := term.GetSize(int(os.Stdin.Fd()))
 	screen.MaxCols = width
 	screen.MaxRows = height
-
-	// item := dd.Button{
-	// 	Pos:     dd.Position{Row: 3, Col: 1},
-	// 	Content: "|Deez nuts|",
-	// 	Styles:  dd.INVERT_STYLES,
-	// }
-	// screen.CursorPos = item.Pos
-
-	// item_two := dd.Button{
-	// 	Pos:     dd.Position{Row: 5, Col: 1},
-	// 	Content: "|got em|",
-	// }
-	//
-	// item_three := dd.Button{
-	// 	Pos:     dd.Position{Row: 1, Col: 21},
-	// 	Content: "|SIMD|",
-	// 	Styles:  dd.INVERT_STYLES,
-	// }
-	//
-	// item_four := dd.Button{
-	// 	// NOTE: should we make item position relative or absolute?
-	// 	Pos:     dd.Position{Row: 3, Col: 21},
-	// 	Content: "|Ligma?|",
-	// }
-	//
-	// sidebar := dd.Window{
-	// 	Pos: dd.Position{Row: 0, Col: 0},
-	// }
-	//
-	// sidebar.Children = append(sidebar.Children, &item, &item_two)
-	// main_win.Children = append(main_win.Children, &item_three, &item_four)
-	// screen.Windows = append(screen.Windows, &sidebar, &main_win)
-	//
-	// screen.RenderQueue = append(screen.RenderQueue, screen.Windows...)
-	// screen.RenderQueue = append(screen.RenderQueue, sidebar.Children...)
-	// screen.RenderQueue = append(screen.RenderQueue, main_win.Children...)
-
 	sidebar := dd.Window{
-		// NOTE: should we make item position relative or absolute?
 		Position: dd.Position{StartingRow: 1, StartingCol: 1},
 		Styles: dd.Styles{
 			Width:      50,
@@ -172,7 +137,6 @@ func main() {
 	}
 
 	content := dd.Window{
-		// NOTE: should we make item position relative or absolute?
 		Position: dd.Position{StartingRow: 1, StartingCol: uint(sidebar.Styles.Width) + 2},
 		Styles: dd.Styles{
 			Width:      screen.MaxCols - sidebar.Styles.Width - 1,
@@ -182,8 +146,41 @@ func main() {
 		},
 	}
 
+	item := dd.Component{
+		Position: dd.Position{StartingRow: 3, StartingCol: uint(sidebar.StartingCol) + 2},
+		Buffer:   "|Deez nuts|",
+	}
+
+	item_two := dd.Component{
+		Position: dd.Position{StartingRow: 5, StartingCol: uint(sidebar.StartingCol) + 2},
+		Buffer:   "|got em|",
+	}
+
+	sidebar.Components = []dd.Component{item, item_two}
+
+	item_three := dd.Component{
+		Position: dd.Position{StartingRow: 2, StartingCol: uint(content.StartingCol) + 2},
+		Buffer:   "|SIMD|",
+	}
+
+	item_four := dd.Component{
+		Position: dd.Position{StartingRow: 4, StartingCol: uint(content.StartingCol) + 2},
+		Buffer:   "|Ligma?|",
+	}
+
+	content.Components = []dd.Component{item_three, item_four}
+
 	screen.RenderQueue = append(screen.RenderQueue, sidebar.Render())
 	screen.RenderQueue = append(screen.RenderQueue, content.Render())
+
+	for _, comp := range sidebar.Components {
+		comp.Render()
+		screen.RenderQueue = append(screen.RenderQueue, comp.Content)
+	}
+	for _, comp := range content.Components {
+		comp.Render()
+		screen.RenderQueue = append(screen.RenderQueue, comp.Content)
+	}
 
 	stdin_buffer := make([]byte, 1)
 	running_on_my_nuts := true
@@ -192,10 +189,11 @@ func main() {
 		for len(screen.RenderQueue) > 0 {
 			item_to_render := screen.RenderQueue[0]
 			fmt.Print(item_to_render)
+			dd.FileDebugMeDaddy(item_to_render)
 			screen.RenderQueue = screen.RenderQueue[1:]
 		}
 
-		fmt.Printf(dd.MOVE_CURSOR_TO_POSITION, screen.CursorPos.StartingRow, screen.CursorPos.StartingCol)
+		fmt.Printf(dd.MOVE_CURSOR_TO_POSITION, screen.CursorPosition.StartingRow, screen.CursorPosition.StartingCol)
 
 		_, err := os.Stdin.Read(stdin_buffer)
 		if err != nil {

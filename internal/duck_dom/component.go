@@ -1,5 +1,10 @@
 package duckdom
 
+import (
+	"fmt"
+	"strings"
+)
+
 type Component struct {
 	Position
 	Styles
@@ -13,4 +18,13 @@ type Component struct {
 
 func (self *Component) ExecuteAction() {
 	self.Action()
+}
+
+func (self *Component) Render() {
+	var builder strings.Builder
+	builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, self.Position.StartingRow, self.Position.StartingCol))
+	builder.WriteString(self.Styles.Compiled())
+	builder.WriteString(self.Buffer)
+	builder.WriteString(RESET_STYLES)
+	self.Content = builder.String()
 }

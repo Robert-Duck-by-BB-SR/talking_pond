@@ -29,7 +29,7 @@ type Position struct {
 type Screen struct {
 	MaxRows        int
 	MaxCols        int
-	CursorPos      Position
+	CursorPosition Position
 	ActiveWindowId int
 
 	// fuck Windows, all my homies use Linux
@@ -37,9 +37,10 @@ type Screen struct {
 	RenderQueue []string
 }
 
-func (self *Screen) Render() string {
-	// NOTE: maybe make it fill the render q?
-	return ""
+func (self *Screen) Render() {
+	for renderable := range self.RenderQueue {
+		fmt.Print(renderable)
+	}
 }
 
 func ClearScreen() {
