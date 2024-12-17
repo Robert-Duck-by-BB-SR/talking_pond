@@ -29,11 +29,14 @@ type Position struct {
 }
 
 type Screen struct {
-	MaxRows        int
-	MaxCols        int
+	// Width = max number of columns for terminal window
+	Width        int
+	// Height = max number of row for terminal window
+	Height        int
 	CursorPosition Position
 	ActiveWindowId int
-
+	EventLoopIsRunning bool
+	State
 	// fuck Windows, all my homies use Linux
 	Windows     []Window
 	RenderQueue []string
@@ -48,4 +51,52 @@ func (self *Screen) Render() {
 func ClearScreen() {
 	fmt.Printf(CLEAR_SCREEN)
 	fmt.Printf(MOVE_CURSOR_TO_THE_BENINGING)
+	fmt.Print(HIDE_CURSOR)
+}
+
+type State interface{
+	HandleKeypress(*Screen, []byte)
+}
+
+type NormalMode struct{}
+var Normal NormalMode 
+
+func (*NormalMode) HandleKeypress(screen *Screen, keys []byte){
+	// big ass switch case
+	switch keys[0]{
+	case 'q':
+		screen.EventLoopIsRunning = false
+	case 'j':
+		screen.RenderQueue = append(screen.RenderQueue, "yooooooo")
+
+	// switching modes
+	case ':':
+		screen.State = &Command
+	case 'i':
+		screen.State = &Insert
+	}
+}
+
+type InsertMode struct{}
+var Insert InsertMode
+
+func (*InsertMode) HandleKeypress(screen *Screen, keys []byte){
+	switch keys[0]{
+	case '': 
+		screen.State = &Normal
+	case 'j':
+		screen.RenderQueue = append(screen.RenderQueue, "jjjjjjjj")
+	case 'i':
+		screen.RenderQueue = append(screen.RenderQueue, "iiiiiii")
+	}
+}
+
+type CommandMode struct{}
+var Command CommandMode
+
+func (*CommandMode) HandleKeypress(screen *Screen, keys []byte){
+	switch keys[0]{
+	case '': 
+		screen.State = &Normal
+	}
 }
