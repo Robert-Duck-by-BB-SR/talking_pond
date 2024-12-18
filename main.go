@@ -133,26 +133,35 @@ func main() {
 			Width:      50,
 			Height:     screen.Height - 1,
 			Background: dd.MakeRGBBackground(69, 150, 100),
-			// Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+			Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 		},
 	}
 
 	content := dd.Window{
-		Position: dd.Position{StartingRow: 1, StartingCol: uint(sidebar.Styles.Width) + 2},
+		Position: dd.Position{StartingRow: 1, StartingCol: uint(sidebar.Styles.Width) + 1},
 		Styles: dd.Styles{
 			Width:      screen.Width - sidebar.Styles.Width - 1,
-			Height:     screen.Height - 1,
+			Height:     int(float32(screen.Height)*0.7) + 1,
 			Background: dd.MakeRGBBackground(69, 150, 100),
-			// Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 		},
 	}
 
+	input_bar := dd.Window{
+		Position: dd.Position{StartingRow: uint(content.Height) + 1, StartingCol: uint(sidebar.Width) + 1},
+		Styles: dd.Styles{
+			Width:      screen.Width - sidebar.Styles.Width - 1,
+			Height:     int(float32(screen.Height)*0.3) - 1,
+			Background: dd.MakeRGBBackground(150, 150, 40),
+			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+		},
+	}
 	status_bar_component := dd.Component{
 		Position: dd.Position{StartingRow: uint(screen.Height), StartingCol: 2},
-		Buffer:   "NORMAL",
+		Buffer:   dd.NORMAL,
 		Styles: dd.Styles{
 			Width:  screen.Width,
-			Height: 30,
+			Height: 1,
 		},
 	}
 
@@ -162,7 +171,6 @@ func main() {
 			Width:      screen.Width,
 			Height:     1,
 			Background: dd.MakeRGBBackground(80, 40, 100),
-			// Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 		},
 		Components: []dd.Component{status_bar_component},
 	}
@@ -200,6 +208,7 @@ func main() {
 	screen.RenderQueue = append(screen.RenderQueue, sidebar.Render())
 	screen.RenderQueue = append(screen.RenderQueue, content.Render())
 	screen.RenderQueue = append(screen.RenderQueue, status_bar.Render())
+	screen.RenderQueue = append(screen.RenderQueue, input_bar.Render())
 
 	// TODO: render them together with parents
 	for _, comp := range sidebar.Components {
@@ -234,17 +243,6 @@ func main() {
 		}
 
 		screen.State.HandleKeypress(&screen, stdin_buffer)
-
-		// case 'j':
-		// 	move_cursor(&screen, screen.Active(), 1)
-		// case 'k':
-		// 	move_cursor(&screen, screen.Active(), -1)
-		// case 'h':
-		// 	move_cursor(&screen, &screen, -1)
-		// 	screen.CursorPos = screen.Active().Active().GetPos()
-		// case 'l':
-		// 	move_cursor(&screen, &screen, 1)
-		// 	screen.CursorPos = screen.Active().Active().GetPos()
 	}
 	// restart to default settings
 	fmt.Print(dd.SHOW_CURSOR)

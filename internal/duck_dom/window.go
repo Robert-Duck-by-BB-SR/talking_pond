@@ -28,7 +28,7 @@ func (self *Window) render_background() string {
 	bg_builder.WriteString(self.Styles.Color)
 	fillament := strings.Repeat(" ", self.Styles.Width)
 
-	for i := range self.Styles.Height {
+	for i := 0; i < self.Styles.Height; i += 1 {
 		bg_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, self.StartingRow+uint(i), self.Position.StartingCol))
 		bg_builder.WriteString(fillament)
 	}

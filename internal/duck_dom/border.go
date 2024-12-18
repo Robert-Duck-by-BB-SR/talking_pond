@@ -89,13 +89,13 @@ func render_border(position Position, styles *Styles) string {
 	border_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, position.StartingRow, position.StartingCol))
 	border_builder.WriteString(top)
 
-	for i := 1; uint(i) < uint(styles.Height); i += 1 {
+	for i := 1; uint(i) < uint(styles.Height)-1; i += 1 {
 		left_wall := fmt.Sprintf(MOVE_CURSOR_TO_POSITION, position.StartingRow+uint(i), position.StartingCol)
 		right_wall := fmt.Sprintf(MOVE_CURSOR_TO_POSITION, position.StartingRow+uint(i), position.StartingCol+uint(styles.Width)-1)
 		wall := left_wall + styles.Border.Style.Left + right_wall + styles.Border.Style.Right
 		border_builder.WriteString(wall)
 	}
-	border_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, styles.Height+int(position.StartingRow), position.StartingCol))
+	border_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, styles.Height+int(position.StartingRow)-1, position.StartingCol))
 	border_builder.WriteString(bottom)
 	border_builder.WriteString(RESET_STYLES)
 
