@@ -20,11 +20,13 @@ func (self *Component) ExecuteAction() {
 	self.Action()
 }
 
-func (self *Component) Render() {
+// FIXME: NODARIO definetely needs a name or logic change
+func (self *Component) Render() string {
 	var builder strings.Builder
 	builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, self.Position.StartingRow, self.Position.StartingCol))
 	builder.WriteString(self.Styles.Compiled())
 	builder.WriteString(self.Buffer)
 	builder.WriteString(RESET_STYLES)
 	self.Content = builder.String()
+	return self.Content
 }

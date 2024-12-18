@@ -1,6 +1,9 @@
 package duckdom
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // oh boy CSS is comming
 
@@ -58,6 +61,8 @@ func (self *Styles) SetBorder(b Border) *Styles {
 }
 
 func (self *Styles) Compiled() string {
-	// TODO: combine all styles into one string
-	return ""
+	var styles_builder strings.Builder
+	styles_builder.WriteString(self.Background)
+	styles_builder.WriteString(self.TextColor)
+	return styles_builder.String()
 }
