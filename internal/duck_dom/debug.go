@@ -5,6 +5,7 @@ import (
 	"os"
 )
 
+/* Debug a value of one statement */
 func DebugMeDaddy(screen *Screen, content string) {
 	fmt.Printf(MOVE_CURSOR_TO_POSITION, screen.Height, 1)
 	fmt.Printf(CLEAR_ROW)
