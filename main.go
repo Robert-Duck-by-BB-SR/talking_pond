@@ -226,10 +226,10 @@ func main() {
 	screen.Windows = append(screen.Windows, sidebar, content, input_bar)
 
 	for _, window := range screen.Windows {
+		screen.RenderQueue = append(screen.RenderQueue, window.Render())
 		for _, component := range window.Components {
 			screen.RenderQueue = append(screen.RenderQueue, component.Render())
 		}
-		screen.RenderQueue = append(screen.RenderQueue, window.Render())
 	}
 
 	screen.Activate()
@@ -237,7 +237,6 @@ func main() {
 
 	stdin_buffer := make([]byte, 1)
 	for screen.EventLoopIsRunning {
-		dd.DebugMeDaddy(&screen, fmt.Sprint(len(screen.Windows)))
 		for len(screen.RenderQueue) > 0 {
 			item_to_render := screen.RenderQueue[0]
 			fmt.Print(item_to_render)

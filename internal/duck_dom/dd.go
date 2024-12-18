@@ -80,24 +80,30 @@ func cycle_index(new, len int) int {
 }
 
 func (self *Screen) change_window(direction int) {
-	DebugMeDaddy(self, fmt.Sprint(len(self.Windows)))
 	// TODO: select active item and deselect it visually
-	prev_window := self.Windows[self.ActiveWindowId]
-	prev_window.Border.Style = RoundedBorder
+	old_window := self.Windows[self.ActiveWindowId]
+	old_window.Border.Style = RoundedBorder
 	self.ActiveWindowId = cycle_index(self.ActiveWindowId+direction, len(self.Windows))
 	new_window := self.Windows[self.ActiveWindowId]
 	new_window.Border.Style = BoldBorder
 	self.RenderQueue = append(
 		self.RenderQueue,
-		render_border(prev_window.Position, &prev_window.Styles),
+		render_border(old_window.Position, &old_window.Styles),
 		render_border(new_window.Position, &new_window.Styles),
 	)
-	if len(prev_window.Components) > 0 {
-		self.RenderQueue = append(self.RenderQueue, prev_window.Components[new_window.ActiveComponentId].Render())
+	if len(old_window.Components) > 0 {
+		self.RenderQueue = append(
+			self.RenderQueue,
+			RESET_STYLES+old_window.Components[old_window.ActiveComponentId].Render(),
+		)
 	}
 
+	DebugMeDaddy(self, fmt.Sprintf("new: %d", new_window.ActiveComponentId))
 	if len(new_window.Components) > 0 {
-		self.RenderQueue = append(self.RenderQueue, new_window.Components[new_window.ActiveComponentId].Render())
+		self.RenderQueue = append(
+			self.RenderQueue,
+			INVERT_STYLES+new_window.Components[new_window.ActiveComponentId].Render(),
+		)
 	}
 }
 
