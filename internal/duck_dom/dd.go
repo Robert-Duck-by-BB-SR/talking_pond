@@ -5,6 +5,13 @@ import (
 )
 
 const (
+	NORMAL  = "NORMAL"
+	INSERT  = "INSERT"
+	COMMAND = "COMMAND"
+	WINDOW  = "WINDOW"
+)
+
+const (
 	FG_KEY        = "\033[38;2;"
 	BG_KEY        = "\033[48;2;"
 	INVERT_STYLES = "\033[7m"
