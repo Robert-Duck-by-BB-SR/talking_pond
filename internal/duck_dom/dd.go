@@ -51,6 +51,10 @@ type Screen struct {
 }
 
 func (self *Screen) Render() {
+	for _, window := range(self.Windows){
+		self.RenderQueue = append(self.RenderQueue, window.Render())
+	}
+
 	for renderable := range self.RenderQueue {
 		fmt.Print(renderable)
 	}

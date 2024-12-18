@@ -13,14 +13,20 @@ type Window struct {
 }
 
 func (self *Window) Render() string {
-	win := self.render_background()
+	window_with_components := self.render_background()
 
+	// TODO: use better way if border is assigned
 	if self.Styles.Border.Color != "" {
-		win += render_border(self.Position, &self.Styles)
+		window_with_components += render_border(self.Position, &self.Styles)
 	}
 
-	return win
+	for _, component := range(self.Components){
+		window_with_components += component.Render()
+	}
+
+	return window_with_components
 }
+
 
 func (self *Window) render_background() string {
 	var bg_builder strings.Builder

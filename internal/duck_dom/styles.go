@@ -60,7 +60,7 @@ func (self *Styles) SetBorder(b Border) *Styles {
 	return self
 }
 
-func (self *Styles) Compiled() string {
+func (self *Styles) Compile() string {
 	var styles_builder strings.Builder
 	styles_builder.WriteString(self.Background)
 	styles_builder.WriteString(self.TextColor)

@@ -13,6 +13,7 @@ type Component struct {
 	// NOTE: we should really think about it
 	// maybe it would be better if we just made a bunch of functions
 	// that take *Component as an input and does some actions with it
+	ChildComponents []Component
 	Action func()
 }
 
@@ -21,10 +22,11 @@ func (self *Component) ExecuteAction() {
 }
 
 // FIXME: NODARIO definetely needs a name or logic change
+// FIXME: The fuck you mean?
 func (self *Component) Render() string {
 	var builder strings.Builder
 	builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, self.Position.StartingRow, self.Position.StartingCol))
-	builder.WriteString(self.Styles.Compiled())
+	builder.WriteString(self.Styles.Compile())
 	builder.WriteString(self.Buffer)
 	builder.WriteString(RESET_STYLES)
 	self.Content = builder.String()
