@@ -181,14 +181,20 @@ func main() {
 		Styles: dd.Styles{
 			Width:      screen.Width - sidebar.Styles.Width - 1,
 			Height:     screen.Height,
-			Background: dd.MakeRGBBackground(69, 150, 100),
-			Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+			Background: dd.MakeRGBBackground(80, 40, 100),
+			// Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 		},
 	}
 
 	item_two := dd.Component{
 		Position: dd.Position{StartingRow: 5, StartingCol: uint(sidebar.StartingCol) + 2},
 		Buffer:   "|got em|",
+		Styles: dd.Styles{
+			Width:      screen.Width - sidebar.Styles.Width - 1,
+			Height:     screen.Height,
+			Background: dd.MakeRGBBackground(80, 40, 100),
+			// Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+		},
 	}
 
 	sidebar.Components = []dd.Component{item, item_two}
@@ -196,43 +202,45 @@ func main() {
 	item_three := dd.Component{
 		Position: dd.Position{StartingRow: 2, StartingCol: uint(content.StartingCol) + 2},
 		Buffer:   "|SIMD|",
+		Styles: dd.Styles{
+			Width:      screen.Width - sidebar.Styles.Width - 1,
+			Height:     screen.Height,
+			Background: dd.MakeRGBBackground(80, 40, 100),
+			// Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+		},
 	}
 
 	item_four := dd.Component{
 		Position: dd.Position{StartingRow: 4, StartingCol: uint(content.StartingCol) + 2},
 		Buffer:   "|Ligma?|",
+		Styles: dd.Styles{
+			Width:      screen.Width - sidebar.Styles.Width - 1,
+			Height:     screen.Height,
+			Background: dd.MakeRGBBackground(80, 40, 100),
+			// Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+		},
 	}
 
 	content.Components = []dd.Component{item_three, item_four}
 
 	screen.Windows = append(screen.Windows, sidebar, content, input_bar)
 
-	screen.RenderQueue = append(screen.RenderQueue, sidebar.Render())
-	screen.RenderQueue = append(screen.RenderQueue, content.Render())
-	screen.RenderQueue = append(screen.RenderQueue, status_bar.Render())
-	screen.RenderQueue = append(screen.RenderQueue, input_bar.Render())
-
-	// TODO: render them together with parents
-	for _, comp := range sidebar.Components {
-		comp.Render()
-		screen.RenderQueue = append(screen.RenderQueue, comp.Content)
-	}
-	for _, comp := range content.Components {
-		comp.Render()
-		screen.RenderQueue = append(screen.RenderQueue, comp.Content)
+	for _, window := range screen.Windows {
+		for _, component := range window.Components {
+			screen.RenderQueue = append(screen.RenderQueue, component.Render())
+		}
+		screen.RenderQueue = append(screen.RenderQueue, window.Render())
 	}
 
-	for _, comp := range status_bar.Components {
-		comp.Render()
-		screen.RenderQueue = append(screen.RenderQueue, comp.Content)
-	}
+	screen.Activate()
+	screen.RenderQueue = append(screen.RenderQueue, status_bar.Render(), status_bar_component.Render())
 
 	stdin_buffer := make([]byte, 1)
 	for screen.EventLoopIsRunning {
+		dd.DebugMeDaddy(&screen, fmt.Sprint(len(screen.Windows)))
 		for len(screen.RenderQueue) > 0 {
 			item_to_render := screen.RenderQueue[0]
 			fmt.Print(item_to_render)
-			dd.FileDebugMeDaddy(item_to_render)
 			screen.RenderQueue = screen.RenderQueue[1:]
 		}
 

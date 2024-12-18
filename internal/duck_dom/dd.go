@@ -80,6 +80,7 @@ func cycle_index(new, len int) int {
 }
 
 func (self *Screen) change_window(direction int) {
+	DebugMeDaddy(self, fmt.Sprint(len(self.Windows)))
 	// TODO: select active item and deselect it visually
 	prev_window := self.Windows[self.ActiveWindowId]
 	prev_window.Border.Style = RoundedBorder
@@ -91,6 +92,36 @@ func (self *Screen) change_window(direction int) {
 		render_border(prev_window.Position, &prev_window.Styles),
 		render_border(new_window.Position, &new_window.Styles),
 	)
+	if len(prev_window.Components) > 0 {
+		self.RenderQueue = append(self.RenderQueue, prev_window.Components[new_window.ActiveComponentId].Render())
+	}
+
+	if len(new_window.Components) > 0 {
+		self.RenderQueue = append(self.RenderQueue, new_window.Components[new_window.ActiveComponentId].Render())
+	}
+}
+
+func (self *Screen) change_component(direction int) {
+	active_window := &self.Windows[self.ActiveWindowId]
+	if len(active_window.Components) > 0 {
+		prev_component := active_window.Components[active_window.ActiveComponentId]
+		self.RenderQueue = append(
+			self.RenderQueue,
+			RESET_STYLES+prev_component.Render())
+
+		active_window.ActiveComponentId = cycle_index(active_window.ActiveComponentId+direction, len(active_window.Components))
+		if len(active_window.Components) > 0 {
+			new_component := active_window.Components[active_window.ActiveComponentId]
+			self.RenderQueue = append(
+				self.RenderQueue,
+				INVERT_STYLES+new_component.Render(),
+			)
+		}
+	}
+}
+
+func (self *Screen) Activate() {
+	self.change_component(0)
 }
 
 func (*NormalMode) HandleKeypress(screen *Screen, keys []byte) {
@@ -98,15 +129,17 @@ func (*NormalMode) HandleKeypress(screen *Screen, keys []byte) {
 	switch keys[0] {
 	case 'q':
 		screen.EventLoopIsRunning = false
+	// Ctrl+W (ASCII 23 or \x17)
+	case 23:
+		screen.State = &WM
 	case 'l':
 		fallthrough
 	case 'j':
-		screen.change_window(+1)
+		screen.change_component(+1)
 	case 'k':
 		fallthrough
 	case 'h':
-		screen.change_window(-1)
-
+		screen.change_component(-1)
 	// switching modes
 	case ':':
 		screen.State = &Command
@@ -138,5 +171,25 @@ func (*CommandMode) HandleKeypress(screen *Screen, keys []byte) {
 	switch keys[0] {
 	case '':
 		screen.State = &Normal
+	}
+}
+
+type WindowMode struct{}
+
+// FIXME: PAPI RENAME
+var WM WindowMode
+
+func (*WindowMode) HandleKeypress(screen *Screen, keys []byte) {
+	switch keys[0] {
+	case '':
+		screen.State = &Normal
+	case 'l':
+		fallthrough
+	case 'j':
+		screen.change_window(+1)
+	case 'k':
+		fallthrough
+	case 'h':
+		screen.change_window(-1)
 	}
 }
