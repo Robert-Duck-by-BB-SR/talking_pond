@@ -165,7 +165,7 @@ func main() {
 		},
 	}
 
-	status_bar := dd.Window{
+	screen.StatusBar = dd.Window{
 		Position: dd.Position{StartingRow: uint(screen.Height), StartingCol: 1},
 		Styles: dd.Styles{
 			Width:      screen.Width,
@@ -226,6 +226,7 @@ func main() {
 	screen.Windows = append(screen.Windows, sidebar, content, input_bar)
 
 	for _, window := range screen.Windows {
+        // TODO: RENDER window should render both window and components but also should be composable
 		screen.RenderQueue = append(screen.RenderQueue, window.Render())
 		for _, component := range window.Components {
 			screen.RenderQueue = append(screen.RenderQueue, component.Render())
@@ -233,7 +234,7 @@ func main() {
 	}
 
 	screen.Activate()
-	screen.RenderQueue = append(screen.RenderQueue, status_bar.Render(), status_bar_component.Render())
+	screen.RenderQueue = append(screen.RenderQueue, screen.StatusBar.Render(), status_bar_component.Render())
 
 	stdin_buffer := make([]byte, 1)
 	for screen.EventLoopIsRunning {

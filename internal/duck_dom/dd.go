@@ -43,6 +43,7 @@ type Screen struct {
 	CursorPosition     Position
 	ActiveWindowId     int
 	EventLoopIsRunning bool
+	StatusBar          Window
 	State
 	// fuck Windows, all my homies use Linux
 	Windows     []Window
@@ -97,8 +98,6 @@ func (self *Screen) change_window(direction int) {
 			RESET_STYLES+old_window.Components[old_window.ActiveComponentId].Render(),
 		)
 	}
-
-	DebugMeDaddy(self, fmt.Sprintf("new: %d", new_window.ActiveComponentId))
 	if len(new_window.Components) > 0 {
 		self.RenderQueue = append(
 			self.RenderQueue,
@@ -138,6 +137,8 @@ func (*NormalMode) HandleKeypress(screen *Screen, keys []byte) {
 	// Ctrl+W (ASCII 23 or \x17)
 	case 23:
 		screen.State = &WM
+		screen.StatusBar.Components[0].Buffer = WINDOW
+		screen.RenderQueue = append(screen.RenderQueue, screen.StatusBar.Components[0].Render())
 	case 'l':
 		fallthrough
 	case 'j':
@@ -149,8 +150,12 @@ func (*NormalMode) HandleKeypress(screen *Screen, keys []byte) {
 	// switching modes
 	case ':':
 		screen.State = &Command
+		screen.StatusBar.Components[0].Buffer = COMMAND
+		screen.RenderQueue = append(screen.RenderQueue, screen.StatusBar.Components[0].Render())
 	case 'i':
 		screen.State = &Insert
+		screen.StatusBar.Components[0].Buffer = INSERT
+		screen.RenderQueue = append(screen.RenderQueue, screen.StatusBar.Components[0].Render())
 	}
 }
 
@@ -162,6 +167,8 @@ func (*InsertMode) HandleKeypress(screen *Screen, keys []byte) {
 	switch keys[0] {
 	case '':
 		screen.State = &Normal
+		screen.StatusBar.Components[0].Buffer = NORMAL
+		screen.RenderQueue = append(screen.RenderQueue, screen.StatusBar.Components[0].Render())
 	case 'j':
 		screen.RenderQueue = append(screen.RenderQueue, "jjjjjjjj")
 	case 'i':
@@ -177,6 +184,8 @@ func (*CommandMode) HandleKeypress(screen *Screen, keys []byte) {
 	switch keys[0] {
 	case '':
 		screen.State = &Normal
+		screen.StatusBar.Components[0].Buffer = NORMAL
+		screen.RenderQueue = append(screen.RenderQueue, screen.StatusBar.Components[0].Render())
 	}
 }
 
@@ -187,8 +196,14 @@ var WM WindowMode
 
 func (*WindowMode) HandleKeypress(screen *Screen, keys []byte) {
 	switch keys[0] {
+	case '':
+		fallthrough
+	case '':
+		fallthrough
 	case '':
 		screen.State = &Normal
+		screen.StatusBar.Components[0].Buffer = NORMAL
+		screen.RenderQueue = append(screen.RenderQueue, screen.StatusBar.Components[0].Render())
 	case 'l':
 		fallthrough
 	case 'j':
