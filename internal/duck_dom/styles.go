@@ -10,7 +10,7 @@ type Styles struct {
 	Paddding   int
 	Maaargin   int
 	Background string
-	TextColor string
+	TextColor  string
 	Border
 }
 

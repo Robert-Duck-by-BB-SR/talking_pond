@@ -42,13 +42,13 @@ func main() {
 			// Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 		},
 	}
-	
+
 	status_bar_component := dd.Component{
 		Position: dd.Position{StartingRow: uint(screen.Height), StartingCol: 2},
 		Buffer:   "NORMAL",
 		Styles: dd.Styles{
-			Width:      screen.Width,
-			Height:     30,
+			Width:  screen.Width,
+			Height: 30,
 		},
 	}
 
@@ -56,7 +56,7 @@ func main() {
 		Position: dd.Position{StartingRow: uint(screen.Height), StartingCol: 1},
 		Styles: dd.Styles{
 			Width:      screen.Width,
-			Height:    	1,
+			Height:     1,
 			Background: dd.MakeRGBBackground(80, 40, 100),
 			// Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 		},
@@ -113,7 +113,7 @@ func main() {
 	}
 
 	stdin_buffer := make([]byte, 1)
-	for screen.EventLoopIsRunning{
+	for screen.EventLoopIsRunning {
 		for len(screen.RenderQueue) > 0 {
 			item_to_render := screen.RenderQueue[0]
 			fmt.Print(item_to_render)
