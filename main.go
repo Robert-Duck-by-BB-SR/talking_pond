@@ -205,6 +205,8 @@ func main() {
 
 	content.Components = []dd.Component{item_three, item_four}
 
+	screen.Windows = append(screen.Windows, sidebar, content, input_bar)
+
 	screen.RenderQueue = append(screen.RenderQueue, sidebar.Render())
 	screen.RenderQueue = append(screen.RenderQueue, content.Render())
 	screen.RenderQueue = append(screen.RenderQueue, status_bar.Render())
