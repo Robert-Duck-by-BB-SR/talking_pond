@@ -87,7 +87,6 @@ func cycle_index(new, len int) int {
 }
 
 func (self *Screen) change_window(direction int) {
-	// TODO: select active item and deselect it visually
 	old_window := self.Windows[self.ActiveWindowId]
 	old_window.Border.Style = RoundedBorder
 	self.ActiveWindowId = cycle_index(self.ActiveWindowId+direction, len(self.Windows))
@@ -157,11 +156,11 @@ func (*NormalMode) HandleKeypress(screen *Screen, keys []byte) {
 	case ':':
 		screen.State = &Command
 		screen.StatusBar.Components[0].Buffer = COMMAND
-		screen.RenderQueue = append(screen.RenderQueue, screen.StatusBar.Components[0].Render())
+		screen.RenderQueue = append(screen.RenderQueue, screen.StatusBar.Render())
 	case 'i':
 		screen.State = &Insert
 		screen.StatusBar.Components[0].Buffer = INSERT
-		screen.RenderQueue = append(screen.RenderQueue, screen.StatusBar.Components[0].Render())
+		screen.RenderQueue = append(screen.RenderQueue, screen.StatusBar.Render())
 	}
 }
 
@@ -174,7 +173,7 @@ func (*InsertMode) HandleKeypress(screen *Screen, keys []byte) {
 	case '':
 		screen.State = &Normal
 		screen.StatusBar.Components[0].Buffer = NORMAL
-		screen.RenderQueue = append(screen.RenderQueue, screen.StatusBar.Components[0].Render())
+		screen.RenderQueue = append(screen.RenderQueue, screen.StatusBar.Render())
 	case 'j':
 		screen.RenderQueue = append(screen.RenderQueue, "jjjjjjjj")
 	case 'i':
@@ -191,7 +190,7 @@ func (*CommandMode) HandleKeypress(screen *Screen, keys []byte) {
 	case '':
 		screen.State = &Normal
 		screen.StatusBar.Components[0].Buffer = NORMAL
-		screen.RenderQueue = append(screen.RenderQueue, screen.StatusBar.Components[0].Render())
+		screen.RenderQueue = append(screen.RenderQueue, screen.StatusBar.Render())
 	}
 }
 
