@@ -10,6 +10,7 @@ type Component struct {
 	Styles
 	Content         string
 	Buffer          string
+	Parent			*Window
 	ChildComponents []Component
 	// NOTE: we should really think about it
 	// maybe it would be better if we just made a bunch of functions

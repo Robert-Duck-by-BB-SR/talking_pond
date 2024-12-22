@@ -129,6 +129,7 @@ func main() {
 
 	sidebar := dd.Window{
 		Position: dd.Position{StartingRow: 1, StartingCol: 1},
+		Screen: &screen,
 		Styles: dd.Styles{
 			Width:      50,
 			Height:     screen.Height - 1,
@@ -139,6 +140,7 @@ func main() {
 
 	content := dd.Window{
 		Position: dd.Position{StartingRow: 1, StartingCol: uint(sidebar.Styles.Width) + 1},
+		Screen: &screen,
 		Styles: dd.Styles{
 			Width:      screen.Width - sidebar.Styles.Width - 1,
 			Height:     int(float32(screen.Height)*0.7) + 1,
@@ -149,6 +151,7 @@ func main() {
 
 	input_bar := dd.Window{
 		Position: dd.Position{StartingRow: uint(content.Height) + 1, StartingCol: uint(sidebar.Width) + 1},
+		Screen: &screen,
 		Styles: dd.Styles{
 			Width:      screen.Width - sidebar.Styles.Width - 1,
 			Height:     int(float32(screen.Height)*0.3) - 1,
@@ -199,29 +202,29 @@ func main() {
 
 	sidebar.Components = []dd.Component{item, item_two}
 
-	item_three := dd.Component{
-		Position: dd.Position{StartingRow: 2, StartingCol: uint(content.StartingCol) + 2},
-		Buffer:   "|SIMD|",
-		Styles: dd.Styles{
-			Width:      screen.Width - sidebar.Styles.Width - 1,
-			Height:     screen.Height,
-			Background: dd.MakeRGBBackground(80, 40, 100),
-			// Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
-		},
-	}
+	// item_three := dd.Component{
+	// 	Position: dd.Position{StartingRow: 2, StartingCol: uint(content.StartingCol) + 2},
+	// 	Buffer:   "|SIMD|",
+	// 	Styles: dd.Styles{
+	// 		Width:      screen.Width - sidebar.Styles.Width - 1,
+	// 		Height:     screen.Height,
+	// 		Background: dd.MakeRGBBackground(80, 40, 100),
+	// 		// Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+	// 	},
+	// }
+	//
+	// item_four := dd.Component{
+	// 	Position: dd.Position{StartingRow: 4, StartingCol: uint(content.StartingCol) + 2},
+	// 	Buffer:   "|Ligma?|",
+	// 	Styles: dd.Styles{
+	// 		Width:      screen.Width - sidebar.Styles.Width - 1,
+	// 		Height:     screen.Height,
+	// 		Background: dd.MakeRGBBackground(80, 40, 100),
+	// 		// Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+	// 	},
+	// }
 
-	item_four := dd.Component{
-		Position: dd.Position{StartingRow: 4, StartingCol: uint(content.StartingCol) + 2},
-		Buffer:   "|Ligma?|",
-		Styles: dd.Styles{
-			Width:      screen.Width - sidebar.Styles.Width - 1,
-			Height:     screen.Height,
-			Background: dd.MakeRGBBackground(80, 40, 100),
-			// Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
-		},
-	}
-
-	content.Components = []dd.Component{item_three, item_four}
+	// content.Components = []dd.Component{item_three, item_four}
 
 	screen.Windows = append(screen.Windows, sidebar, content, input_bar)
 

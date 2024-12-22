@@ -7,12 +7,16 @@ import (
 
 type Window struct {
 	Position
+	Parent            *Screen
 	Styles
 	ActiveComponentId int
 	Components        []Component
 }
 
 func (self *Window) Render() string {
+	if self.Styles.Border.Color != "" && self.Height < 3 {
+		panic("Min height with border should be 3")
+	}
 	window_with_components := self.render_background()
 
 	// TODO: use better way if border is assigned
@@ -20,13 +24,12 @@ func (self *Window) Render() string {
 		window_with_components += render_border(self.Position, &self.Styles)
 	}
 
-	for _, component := range(self.Components){
+	for _, component := range self.Components {
 		window_with_components += component.Render()
 	}
 
 	return window_with_components
 }
-
 
 func (self *Window) render_background() string {
 	var bg_builder strings.Builder
@@ -41,4 +44,14 @@ func (self *Window) render_background() string {
 	bg_builder.WriteString(RESET_STYLES)
 
 	return bg_builder.String()
+}
+
+func assert_dimentions(w *Window) {
+	if w.Styles.Width <= 0 || w.Styles.Height <= 0 {
+		panic("Width and height should be bigger than 0")
+	}
+
+	if w.Styles.Border.Color != "" && w.Height < 3 {
+		panic("Min height with border should be 3")
+	}
 }
