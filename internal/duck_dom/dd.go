@@ -55,11 +55,11 @@ func (self *Screen) Render() {
 		self.RenderQueue = append(self.RenderQueue, window.Render())
 	}
 
+	self.RenderQueue = append(self.RenderQueue, self.StatusBar.Render())
+
 	for renderable := range self.RenderQueue {
 		fmt.Print(renderable)
 	}
-
-	self.RenderQueue = append(self.RenderQueue, self.StatusBar.Render())
 }
 
 func ClearScreen() {
