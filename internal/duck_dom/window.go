@@ -31,7 +31,7 @@ func (self *Window) Render() string {
 	return window_with_components
 }
 
-func (self *Window) AddChild(c *Component) {
+func (self *Window) AddComponent(c *Component) {
 	c.Parent = self
 	// provide relative positioning
 	self.Components = append(self.Components, c)

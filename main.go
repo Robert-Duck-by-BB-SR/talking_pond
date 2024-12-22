@@ -33,7 +33,7 @@ func main() {
 		},
 	}
 
-	sidebar.AddChild(
+	sidebar.AddComponent(
 		&dd.Component{
 			Position: dd.Position{StartingRow: 3, StartingCol: uint(sidebar.StartingCol) + 2},
 			Buffer:   "|Deez nuts|",
@@ -45,7 +45,7 @@ func main() {
 			},
 		})
 
-	sidebar.AddChild(
+	sidebar.AddComponent(
 		&dd.Component{
 			Position: dd.Position{StartingRow: 5, StartingCol: uint(sidebar.StartingCol) + 2},
 			Buffer:   "|got em|",
@@ -57,7 +57,7 @@ func main() {
 			},
 		})
 
-	screen.AddChild(&sidebar)
+	screen.AddWindow(&sidebar)
 
 	content := dd.Window{
 		Position: dd.Position{StartingRow: 1, StartingCol: uint(sidebar.Styles.Width) + 1},
@@ -68,7 +68,7 @@ func main() {
 			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 		},
 	}
-	content.AddChild(
+	content.AddComponent(
 		&dd.Component{
 			Position: dd.Position{StartingRow: 2, StartingCol: uint(content.StartingCol) + 2},
 			Buffer:   "|SIMD|",
@@ -80,7 +80,7 @@ func main() {
 			},
 		})
 
-	content.AddChild(
+	content.AddComponent(
 		&dd.Component{
 			Position: dd.Position{StartingRow: 4, StartingCol: uint(content.StartingCol) + 2},
 			Buffer:   "|Ligma?|",
@@ -92,7 +92,7 @@ func main() {
 			},
 		})
 
-	screen.AddChild(&content)
+	screen.AddWindow(&content)
 
 	input_bar := dd.Window{
 		Position: dd.Position{StartingRow: uint(content.Height) + 1, StartingCol: uint(sidebar.Width) + 1},
@@ -104,7 +104,7 @@ func main() {
 		},
 	}
 	
-	screen.AddChild(&input_bar)
+	screen.AddWindow(&input_bar)
 
 	screen.StatusBar = dd.Window{
 		Position: dd.Position{StartingRow: uint(screen.Height), StartingCol: 1},
@@ -114,7 +114,7 @@ func main() {
 			Background: dd.MakeRGBBackground(80, 40, 100),
 		},
 	}
-	screen.StatusBar.AddChild(
+	screen.StatusBar.AddComponent(
 		&dd.Component{
 			Position: dd.Position{StartingRow: uint(screen.Height), StartingCol: 2},
 			Buffer:   dd.NORMAL,
