@@ -2,4 +2,5 @@ images/
 tmp_frames/
 video*
 .s*
+*debug*
 

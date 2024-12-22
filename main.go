@@ -16,21 +16,12 @@ var frame_chars = []byte{' ', '`', '.', ',', '~', '+', '*', '&', '#', '@'}
 
 func request_convo_id(config [2]string, conn net.Conn) []byte {
 	// NOTE: simulating conversation creation
-	writer := bufio.NewWriter(conn)
 	data := []byte{1}
 	data = append(data, "create:conversation;key:"...)
 	data = append(data, []byte(config[1])...)
 	data = append(data, ";users:tredstart"...)
 	data = append(data, '\n')
-	i, err := writer.Write(data)
-	log.Println(i)
-	if err != nil {
-		log.Fatalf("Write error: %v", err)
-	}
-	err = writer.Flush()
-	if err != nil {
-		log.Fatalf("Flush error: %v", err)
-	}
+	send(conn, data)
 
 	message, _, err := bufio.NewReader(conn).ReadLine()
 	fmt.Println(string(message))
@@ -43,15 +34,25 @@ func request_convo_id(config [2]string, conn net.Conn) []byte {
 
 func request_messages(config [2]string, conn net.Conn, convo []byte) {
 	// NOTE: simulating conversation creation
-	writer := bufio.NewWriter(conn)
 	data := []byte{1}
 	data = append(data, "get:messages;key:"...)
 	data = append(data, []byte(config[1])...)
 	data = append(data, ";conversation:"...)
 	data = append(data, convo...)
 	data = append(data, '\n')
-	i, err := writer.Write(data)
-	log.Println(i)
+	send(conn, data)
+}
+
+func request_to_connect(key string, conn net.Conn) {
+	data := []byte{2}
+	data = append(data, key...)
+	data = append(data, '\n')
+	send(conn, data)
+}
+
+func send(conn net.Conn, data []byte) {
+	writer := bufio.NewWriter(conn)
+	_, err := writer.Write(data)
 	if err != nil {
 		log.Fatalf("Write error: %v", err)
 	}
@@ -114,6 +115,8 @@ func main() {
 	// Set up interrupt handling for graceful shutdown
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
+
+	request_to_connect(config[1], conn)
 
 	// convo := request_convo_id(config, conn)
 	// request_messages(config, conn, convo)
