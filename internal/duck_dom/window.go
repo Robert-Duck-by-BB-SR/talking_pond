@@ -10,7 +10,7 @@ type Window struct {
 	Parent            *Screen
 	Styles
 	ActiveComponentId int
-	Components        []Component
+	Components        []*Component
 }
 
 func (self *Window) Render() string {
@@ -29,6 +29,12 @@ func (self *Window) Render() string {
 	}
 
 	return window_with_components
+}
+
+func (self *Window) AddChild(c *Component) {
+	c.Parent = self
+	// provide relative positioning
+	self.Components = append(self.Components, c)
 }
 
 func (self *Window) render_background() string {

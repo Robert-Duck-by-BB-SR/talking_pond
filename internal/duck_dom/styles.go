@@ -6,6 +6,12 @@ import (
 )
 
 // oh boy CSS is comming
+type Display int
+
+const (
+	Block Display = iota
+	Inline
+)
 
 type Styles struct {
 	Width      int
@@ -14,6 +20,7 @@ type Styles struct {
 	Maaargin   int
 	Background string
 	TextColor  string
+	Display
 	Border
 }
 

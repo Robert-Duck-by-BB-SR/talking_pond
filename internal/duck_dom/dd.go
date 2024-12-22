@@ -46,7 +46,7 @@ type Screen struct {
 	StatusBar          Window
 	State
 	// fuck Windows, all my homies use Linux
-	Windows     []Window
+	Windows     []*Window
 	RenderQueue []string
 }
 
@@ -112,7 +112,7 @@ func (self *Screen) change_window(direction int) {
 }
 
 func (self *Screen) change_component(direction int) {
-	active_window := &self.Windows[self.ActiveWindowId]
+	active_window := self.Windows[self.ActiveWindowId]
 	if len(active_window.Components) > 0 {
 		prev_component := active_window.Components[active_window.ActiveComponentId]
 		self.RenderQueue = append(
@@ -132,6 +132,12 @@ func (self *Screen) change_component(direction int) {
 
 func (self *Screen) Activate() {
 	self.change_component(0)
+}
+
+func (self *Screen) AddChild(w *Window) {
+	w.Parent = self
+	// provide relative positioning
+	self.Windows = append(self.Windows, w)
 }
 
 func (*NormalMode) HandleKeypress(screen *Screen, keys []byte) {
