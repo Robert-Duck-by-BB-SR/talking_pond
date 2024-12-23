@@ -63,7 +63,7 @@ func CreateComponent(buffer string, styles Styles) *Component {
 
 func assert_component_dimentions(w, h int) {
 	if w <= 0 || h <= 0 {
-		panic("Width and height should be bigger than 0")
+		panic("Component width and height should be bigger than 0")
 	}
 }
 

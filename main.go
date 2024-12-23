@@ -127,16 +127,13 @@ func main() {
 	screen.Width = width
 	screen.Height = height
 
-	sidebar := dd.Window{
-		Position: dd.Position{StartingRow: 1, StartingCol: 1},
-		Styles: dd.Styles{
+	sidebar := dd.CreateWindow(dd.Styles{
 			Width:      50,
 			Height:     screen.Height - 1,
 			Background: dd.MakeRGBBackground(69, 150, 100),
 			Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
-		},
-	}
-
+		})
+	
 	sidebar.AddComponent(
 		dd.CreateComponent("|Deez nuts|", dd.Styles{
 				Width: len("|Deez nuts|"),
@@ -160,7 +157,7 @@ func main() {
 	// 		},
 	// 	})
 
-	screen.AddWindow(&sidebar)
+	screen.AddWindow(sidebar)
 
 	// content := dd.Window{
 	// 	Position: dd.Position{StartingRow: 1, StartingCol: uint(sidebar.Styles.Width) + 1},
