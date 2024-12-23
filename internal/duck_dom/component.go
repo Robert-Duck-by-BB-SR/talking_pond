@@ -10,12 +10,61 @@ type Component struct {
 	Styles
 	Content         string
 	Buffer          string
-	Parent			*Window
+	Parent          *Window
 	ChildComponents []Component
 	// NOTE: we should really think about it
 	// maybe it would be better if we just made a bunch of functions
 	// that take *Component as an input and does some actions with it
 	Action func()
+}
+
+func CreateComponent(buffer string, styles Styles) *Component {
+	// check styles 
+	// change width of component in case if buffer is bigger than provided 
+
+	assert_component_dimentions(styles.Width, styles.Height)
+
+	if styles.Border.Style != NoBorder{
+		// right now I'm concerned about it, future me will be mad
+		if styles.Height < 2 {
+			styles.Height += 2
+		}
+		if styles.Height < 3 {
+			styles.Height += 1
+		}
+
+		if styles.Width < 2 {
+			styles.Width += 2
+		}
+		if styles.Width < 3 {
+			styles.Width += 1
+		}
+	}
+
+	component := Component{
+		Buffer: buffer,
+		Styles: styles,
+	}
+
+	// &dd.Component{
+	// 	// Position: dd.Position{StartingRow: 3, StartingCol: uint(sidebar.StartingCol) + 2},
+	// 	Buffer: "|Deez nuts|",
+	// 	Styles: dd.Styles{
+	// 		Width: len("|Deez nuts|"),
+	// 		// Width:      screen.Width - sidebar.Styles.Width - 1,
+	// 		Height:     1,
+	// 		Background: dd.MakeRGBBackground(80, 40, 100),
+	// 		// Border: dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+	// 	},
+	// }
+
+	return &component
+}
+
+func assert_component_dimentions(w, h int) {
+	if w <= 0 || h <= 0 {
+		panic("Width and height should be bigger than 0")
+	}
 }
 
 func (self *Component) ExecuteAction() {

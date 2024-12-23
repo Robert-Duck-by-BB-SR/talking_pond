@@ -17,7 +17,7 @@ func (self *Window) Render() string {
 	window_with_components := self.render_background()
 
 	// TODO: use better way if border is assigned
-	if self.Styles.Border.Color != "" {
+	if self.Styles.Border.Style != NoBorder {
 		window_with_components += render_border(self.Position, &self.Styles)
 	}
 
@@ -31,36 +31,30 @@ func (self *Window) Render() string {
 func (self *Window) AddComponent(c *Component) {
 	c.Parent = self
 
-	if c.Styles.Display == Block {
-
-	}
-	// ASSERT DIMENTIONS BUT I WILL DO IT LATER
-
 	if len(self.Components) == 0 {
-		if self.Border.Color == "" {
+		if self.Border.Style == NoBorder {
 			c.Position = Position{StartingRow: 1, StartingCol: 1}
 		} else {
 			c.Position = Position{StartingRow: 2, StartingCol: 2}
 		}
 	} else {
-		last_component := self.Components[len(self.Components)-1]
-		lastRow := last_component.StartingRow + last_component.Height - 1
-		// can be 1 or 2
-		lastCol := last_component.StartingCol
+		if c.Styles.Direction == Block {
+			last_component := self.Components[len(self.Components)-1]
+			lastRow := last_component.StartingRow + last_component.Height - 1
+			// can be 1 or 2
+			lastCol := last_component.StartingCol
+			newRow := lastRow + c.Height
+			assert_component_placement(newRow, lastCol + c.Width, self)
 
-		// TODO: COMBINE WITH BORDER
-		// if(newRow + some shit I havent figured out yet)
+			c.Position = Position{StartingRow: newRow, StartingCol: lastCol}
+		} else {
+			last_component := self.Components[len(self.Components)-1]
+			lastRow := last_component.StartingRow
+			lastCol := last_component.StartingCol + last_component.Width
+			assert_component_placement(lastRow + c.Height, lastCol + c.Width, self)
 
-		newRow := lastRow + c.Height
-		if newRow > self.Height {
-			panic("Component height will not fit, do a math, you dumbass")
+			c.Position = Position{StartingRow: lastRow, StartingCol: lastCol}
 		}
-
-		if lastCol+c.Width > self.Width {
-			panic("Component width will not fit, do a math, you dumbass")
-		}
-
-		c.Position = Position{StartingRow: newRow, StartingCol: lastCol}
 	}
 
 	self.Components = append(self.Components, c)
@@ -81,12 +75,12 @@ func (self *Window) render_background() string {
 	return bg_builder.String()
 }
 
-func assert_dimentions(w *Window) {
-	if w.Styles.Width <= 0 || w.Styles.Height <= 0 {
-		panic("Width and height should be bigger than 0")
+func assert_component_placement(r, c int, w *Window) {
+	if r > w.Height {
+		panic("Component height will not fit, do a math, you dumbass")
 	}
 
-	if w.Styles.Border.Color != "" && w.Height < 3 {
-		panic("Min height with border should be 3")
+	if c > w.Width {
+		panic("Component width will not fit, do a math, you dumbass")
 	}
 }

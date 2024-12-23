@@ -6,10 +6,10 @@ import (
 )
 
 // oh boy CSS is comming
-type Display int
+type Direction int
 
 const (
-	Block Display = iota
+	Block Direction = iota
 	Inline
 )
 
@@ -20,7 +20,7 @@ type Styles struct {
 	Maaargin   int
 	Background string
 	TextColor  string
-	Display
+	Direction
 	Border
 }
 
