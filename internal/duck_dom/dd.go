@@ -32,7 +32,7 @@ const (
 )
 
 type Position struct {
-	StartingRow, StartingCol uint
+	StartingRow, StartingCol int
 }
 
 type Screen struct {

@@ -7,16 +7,13 @@ import (
 
 type Window struct {
 	Position
-	Parent            *Screen
+	Parent *Screen
 	Styles
 	ActiveComponentId int
 	Components        []*Component
 }
 
 func (self *Window) Render() string {
-	if self.Styles.Border.Color != "" && self.Height < 3 {
-		panic("Min height with border should be 3")
-	}
 	window_with_components := self.render_background()
 
 	// TODO: use better way if border is assigned
@@ -33,7 +30,39 @@ func (self *Window) Render() string {
 
 func (self *Window) AddComponent(c *Component) {
 	c.Parent = self
-	// provide relative positioning
+
+	if c.Styles.Display == Block {
+
+	}
+	// ASSERT DIMENTIONS BUT I WILL DO IT LATER
+
+	if len(self.Components) == 0 {
+		if self.Border.Color == "" {
+			c.Position = Position{StartingRow: 1, StartingCol: 1}
+		} else {
+			c.Position = Position{StartingRow: 2, StartingCol: 2}
+		}
+	} else {
+		last_component := self.Components[len(self.Components)-1]
+		lastRow := last_component.StartingRow + last_component.Height - 1
+		// can be 1 or 2
+		lastCol := last_component.StartingCol
+
+		// TODO: COMBINE WITH BORDER
+		// if(newRow + some shit I havent figured out yet)
+
+		newRow := lastRow + c.Height
+		if newRow > self.Height {
+			panic("Component height will not fit, do a math, you dumbass")
+		}
+
+		if lastCol+c.Width > self.Width {
+			panic("Component width will not fit, do a math, you dumbass")
+		}
+
+		c.Position = Position{StartingRow: newRow, StartingCol: lastCol}
+	}
+
 	self.Components = append(self.Components, c)
 }
 
@@ -44,7 +73,7 @@ func (self *Window) render_background() string {
 	fillament := strings.Repeat(" ", self.Styles.Width)
 
 	for i := 0; i < self.Styles.Height; i += 1 {
-		bg_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, self.StartingRow+uint(i), self.Position.StartingCol))
+		bg_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, self.StartingRow+i, self.Position.StartingCol))
 		bg_builder.WriteString(fillament)
 	}
 	bg_builder.WriteString(RESET_STYLES)
