@@ -138,30 +138,27 @@ func main() {
 	}
 
 	sidebar.AddComponent(
-		&dd.Component{
-			// Position: dd.Position{StartingRow: 3, StartingCol: uint(sidebar.StartingCol) + 2},
-			Buffer: "|Deez nuts|",
-			Styles: dd.Styles{
+		dd.CreateComponent("|Deez nuts|", dd.Styles{
 				Width: len("|Deez nuts|"),
-				// Width:      screen.Width - sidebar.Styles.Width - 1,
 				Height: 1,
 				Background: dd.MakeRGBBackground(80, 40, 100),
-				// Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+				Border: dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 			},
-		})
+		),
+	)
 
-	sidebar.AddComponent(
-		&dd.Component{
-			// Position: dd.Position{StartingRow: 5, StartingCol: uint(sidebar.StartingCol) + 2},
-			Buffer: "|got em|",
-			Styles: dd.Styles{
-				Width: len("|got em|"),
-				// Width:      screen.Width - sidebar.Styles.Width - 1,
-				Height:     1,
-				Background: dd.MakeRGBBackground(80, 40, 100),
-				// Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
-			},
-		})
+	// sidebar.AddComponent(
+	// 	&dd.Component{
+	// 		// Position: dd.Position{StartingRow: 5, StartingCol: uint(sidebar.StartingCol) + 2},
+	// 		Buffer: "|got em|",
+	// 		Styles: dd.Styles{
+	// 			Width: len("|got em|"),
+	// 			Direction: dd.Inline,
+	// 			Height:     1,
+	// 			Background: dd.MakeRGBBackground(80, 40, 100),
+	// 			// Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+	// 		},
+	// 	})
 
 	screen.AddWindow(&sidebar)
 

@@ -27,6 +27,21 @@ type BorderStyle struct {
 }
 
 var (
+	NoBorder = BorderStyle{
+		Top:          "",
+		Bottom:       "",
+		Left:         "",
+		Right:        "",
+		TopLeft:      "",
+		TopRight:     "",
+		BottomLeft:   "",
+		BottomRight:  "",
+		MiddleLeft:   "",
+		MiddleRight:  "",
+		Middle:       "",
+		MiddleTop:    "",
+		MiddleBottom: "",
+	}
 	NormalBorder = BorderStyle{
 		Top:          "─",
 		Bottom:       "─",
