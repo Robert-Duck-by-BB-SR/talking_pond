@@ -72,6 +72,13 @@ func (self *Component) ExecuteAction() {
 }
 
 func (self *Component) Render() string {
+	// component := self.render_background()
+
+	// if self.Styles.Border.Style != NoBorder {
+	// 	component += render_border(self.Position, &self.Styles)
+	// }
+
+	// return component
 	var builder strings.Builder
 	builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, self.Position.StartingRow, self.Position.StartingCol))
 	builder.WriteString(self.Styles.Compile())
@@ -80,3 +87,19 @@ func (self *Component) Render() string {
 	self.Content = builder.String()
 	return self.Content
 }
+
+func (self *Component) render_background() string {
+	var bg_builder strings.Builder
+	bg_builder.WriteString(self.Styles.Background)
+	bg_builder.WriteString(self.Styles.Color)
+	fillament := strings.Repeat(" ", self.Styles.Width)
+
+	for i := 0; i < self.Styles.Height; i += 1 {
+		bg_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, self.StartingRow+i, self.Position.StartingCol))
+		bg_builder.WriteString(fillament)
+	}
+	bg_builder.WriteString(RESET_STYLES)
+
+	return bg_builder.String()
+}
+
