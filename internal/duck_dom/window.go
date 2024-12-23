@@ -48,7 +48,6 @@ func assert_window_dimentions(w, h int) {
 func (self *Window) Render() string {
 	window_with_components := self.render_background()
 
-	// TODO: use better way if border is assigned
 	if self.Styles.Border.Style != NoBorder {
 		window_with_components += render_border(self.Position, &self.Styles)
 	}
@@ -69,6 +68,7 @@ func (self *Window) AddComponent(c *Component) {
 		} else {
 			c.Position = Position{StartingRow: 2, StartingCol: 2}
 		}
+		assert_component_placement(c.StartingRow + c.Styles.Height, c.StartingCol + c.Width, self)
 	} else {
 		if c.Styles.Direction == Block {
 			last_component := self.Components[len(self.Components)-1]
