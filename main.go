@@ -139,11 +139,12 @@ func main() {
 
 	sidebar.AddComponent(
 		&dd.Component{
-			Position: dd.Position{StartingRow: 3, StartingCol: uint(sidebar.StartingCol) + 2},
-			Buffer:   "|Deez nuts|",
+			// Position: dd.Position{StartingRow: 3, StartingCol: uint(sidebar.StartingCol) + 2},
+			Buffer: "|Deez nuts|",
 			Styles: dd.Styles{
-				Width:      screen.Width - sidebar.Styles.Width - 1,
-				Height:     screen.Height,
+				Width: len("|Deez nuts|"),
+				// Width:      screen.Width - sidebar.Styles.Width - 1,
+				Height: 1,
 				Background: dd.MakeRGBBackground(80, 40, 100),
 				// Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 			},
@@ -151,11 +152,12 @@ func main() {
 
 	sidebar.AddComponent(
 		&dd.Component{
-			Position: dd.Position{StartingRow: 5, StartingCol: uint(sidebar.StartingCol) + 2},
-			Buffer:   "|got em|",
+			// Position: dd.Position{StartingRow: 5, StartingCol: uint(sidebar.StartingCol) + 2},
+			Buffer: "|got em|",
 			Styles: dd.Styles{
-				Width:      screen.Width - sidebar.Styles.Width - 1,
-				Height:     screen.Height,
+				Width: len("|got em|"),
+				// Width:      screen.Width - sidebar.Styles.Width - 1,
+				Height:     1,
 				Background: dd.MakeRGBBackground(80, 40, 100),
 				// Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 			},
@@ -163,70 +165,70 @@ func main() {
 
 	screen.AddWindow(&sidebar)
 
-	content := dd.Window{
-		Position: dd.Position{StartingRow: 1, StartingCol: uint(sidebar.Styles.Width) + 1},
-		Styles: dd.Styles{
-			Width:      screen.Width - sidebar.Styles.Width - 1,
-			Height:     int(float32(screen.Height)*0.7) + 1,
-			Background: dd.MakeRGBBackground(69, 150, 100),
-			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
-		},
-	}
-	content.AddComponent(
-		&dd.Component{
-			Position: dd.Position{StartingRow: 2, StartingCol: uint(content.StartingCol) + 2},
-			Buffer:   "|SIMD|",
-			Styles: dd.Styles{
-				Width:      screen.Width - sidebar.Styles.Width - 1,
-				Height:     screen.Height,
-				Background: dd.MakeRGBBackground(80, 40, 100),
-				// Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
-			},
-		})
+	// content := dd.Window{
+	// 	Position: dd.Position{StartingRow: 1, StartingCol: uint(sidebar.Styles.Width) + 1},
+	// 	Styles: dd.Styles{
+	// 		Width:      screen.Width - sidebar.Styles.Width - 1,
+	// 		Height:     int(float32(screen.Height)*0.7) + 1,
+	// 		Background: dd.MakeRGBBackground(69, 150, 100),
+	// 		Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+	// 	},
+	// }
+	// content.AddComponent(
+	// 	&dd.Component{
+	// 		Position: dd.Position{StartingRow: 2, StartingCol: uint(content.StartingCol) + 2},
+	// 		Buffer:   "|SIMD|",
+	// 		Styles: dd.Styles{
+	// 			Width:      screen.Width - sidebar.Styles.Width - 1,
+	// 			Height:     screen.Height,
+	// 			Background: dd.MakeRGBBackground(80, 40, 100),
+	// 			// Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+	// 		},
+	// 	})
+	//
+	// content.AddComponent(
+	// 	&dd.Component{
+	// 		Position: dd.Position{StartingRow: 4, StartingCol: uint(content.StartingCol) + 2},
+	// 		Buffer:   "|Ligma?|",
+	// 		Styles: dd.Styles{
+	// 			Width:      screen.Width - sidebar.Styles.Width - 1,
+	// 			Height:     screen.Height,
+	// 			Background: dd.MakeRGBBackground(80, 40, 100),
+	// 			// Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+	// 		},
+	// 	})
 
-	content.AddComponent(
-		&dd.Component{
-			Position: dd.Position{StartingRow: 4, StartingCol: uint(content.StartingCol) + 2},
-			Buffer:   "|Ligma?|",
-			Styles: dd.Styles{
-				Width:      screen.Width - sidebar.Styles.Width - 1,
-				Height:     screen.Height,
-				Background: dd.MakeRGBBackground(80, 40, 100),
-				// Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
-			},
-		})
+	// screen.AddWindow(&content)
+	//
+	// input_bar := dd.Window{
+	// 	Position: dd.Position{StartingRow: uint(content.Height) + 1, StartingCol: uint(sidebar.Width) + 1},
+	// 	Styles: dd.Styles{
+	// 		Width:      screen.Width - sidebar.Styles.Width - 1,
+	// 		Height:     int(float32(screen.Height)*0.3) - 1,
+	// 		Background: dd.MakeRGBBackground(150, 150, 40),
+	// 		Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+	// 	},
+	// }
 
-	screen.AddWindow(&content)
-
-	input_bar := dd.Window{
-		Position: dd.Position{StartingRow: uint(content.Height) + 1, StartingCol: uint(sidebar.Width) + 1},
-		Styles: dd.Styles{
-			Width:      screen.Width - sidebar.Styles.Width - 1,
-			Height:     int(float32(screen.Height)*0.3) - 1,
-			Background: dd.MakeRGBBackground(150, 150, 40),
-			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
-		},
-	}
-	
-	screen.AddWindow(&input_bar)
-
-	screen.StatusBar = dd.Window{
-		Position: dd.Position{StartingRow: uint(screen.Height), StartingCol: 1},
-		Styles: dd.Styles{
-			Width:      screen.Width,
-			Height:     1,
-			Background: dd.MakeRGBBackground(80, 40, 100),
-		},
-	}
-	screen.StatusBar.AddComponent(
-		&dd.Component{
-			Position: dd.Position{StartingRow: uint(screen.Height), StartingCol: 2},
-			Buffer:   dd.NORMAL,
-			Styles: dd.Styles{
-				Width:  screen.Width,
-				Height: 1,
-			},
-		})
+	// screen.AddWindow(&input_bar)
+	//
+	// screen.StatusBar = dd.Window{
+	// 	Position: dd.Position{StartingRow: uint(screen.Height), StartingCol: 1},
+	// 	Styles: dd.Styles{
+	// 		Width:      screen.Width,
+	// 		Height:     1,
+	// 		Background: dd.MakeRGBBackground(80, 40, 100),
+	// 	},
+	// }
+	// screen.StatusBar.AddComponent(
+	// 	&dd.Component{
+	// 		Position: dd.Position{StartingRow: uint(screen.Height), StartingCol: 2},
+	// 		Buffer:   dd.NORMAL,
+	// 		Styles: dd.Styles{
+	// 			Width:  screen.Width,
+	// 			Height: 1,
+	// 		},
+	// 	})
 
 	screen.Activate()
 	screen.Render()
