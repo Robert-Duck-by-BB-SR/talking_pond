@@ -18,18 +18,18 @@ func CreateWindow(styles Styles) *Window{
 
 	if styles.Border.Style != NoBorder{
 		// right now I'm concerned about it, future me will be mad
-		if styles.Height < 2 {
+		switch {
+		case styles.Height < 2:
 			styles.Height += 2
-		}
-		if styles.Height < 3 {
+		case styles.Height < 3:
 			styles.Height += 1
 		}
 
-		if styles.Width < 2 {
-			styles.Width += 2
-		}
-		if styles.Width < 3 {
-			styles.Width += 1
+		switch {
+		case styles.Width < 2:
+			styles.Height += 2
+		case styles.Width < 3:
+			styles.Height += 1
 		}
 	}
 

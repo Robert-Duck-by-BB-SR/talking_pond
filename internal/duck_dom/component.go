@@ -19,25 +19,25 @@ type Component struct {
 }
 
 func CreateComponent(buffer string, styles Styles) *Component {
-	// check styles 
-	// change width of component in case if buffer is bigger than provided 
+	// check styles
+	// change width of component in case if buffer is bigger than provided
 
 	assert_component_dimentions(styles.Width, styles.Height)
 
-	if styles.Border.Style != NoBorder{
+	if styles.Border.Style != NoBorder {
 		// right now I'm concerned about it, future me will be mad
-		if styles.Height < 2 {
+		switch {
+		case styles.Height < 2:
 			styles.Height += 2
-		}
-		if styles.Height < 3 {
+		case styles.Height < 3:
 			styles.Height += 1
 		}
 
-		if styles.Width < 2 {
-			styles.Width += 2
-		}
-		if styles.Width < 3 {
-			styles.Width += 1
+		switch {
+		case styles.Width < 2:
+			styles.Height += 2
+		case styles.Width < 3:
+			styles.Height += 1
 		}
 	}
 
@@ -45,18 +45,6 @@ func CreateComponent(buffer string, styles Styles) *Component {
 		Buffer: buffer,
 		Styles: styles,
 	}
-
-	// &dd.Component{
-	// 	// Position: dd.Position{StartingRow: 3, StartingCol: uint(sidebar.StartingCol) + 2},
-	// 	Buffer: "|Deez nuts|",
-	// 	Styles: dd.Styles{
-	// 		Width: len("|Deez nuts|"),
-	// 		// Width:      screen.Width - sidebar.Styles.Width - 1,
-	// 		Height:     1,
-	// 		Background: dd.MakeRGBBackground(80, 40, 100),
-	// 		// Border: dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
-	// 	},
-	// }
 
 	return &component
 }
@@ -73,19 +61,29 @@ func (self *Component) ExecuteAction() {
 
 func (self *Component) Render() string {
 	// component := self.render_background()
-
+	//
 	// if self.Styles.Border.Style != NoBorder {
 	// 	component += render_border(self.Position, &self.Styles)
 	// }
 
+	// later somewhere here I will implement
+	// 1. padding 
+	// 2. text-align
+
+
+
+
 	// return component
 	var builder strings.Builder
-	builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, self.Position.StartingRow, self.Position.StartingCol))
+	// WE USE + 1 because border takes one char around
+	// NEEDS TO BE UPDATED
+	builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, self.Position.StartingRow + 1, self.Position.StartingCol + 1))
 	builder.WriteString(self.Styles.Compile())
 	builder.WriteString(self.Buffer)
+	builder.WriteString(strings.Repeat(" ", self.Styles.Width - len(self.Buffer)))
 	builder.WriteString(RESET_STYLES)
 	self.Content = builder.String()
-	return self.Content
+	return self.Content + render_border(self.Position, &self.Styles)
 }
 
 func (self *Component) render_background() string {
@@ -102,4 +100,3 @@ func (self *Component) render_background() string {
 
 	return bg_builder.String()
 }
-

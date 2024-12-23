@@ -13,13 +13,23 @@ const (
 	Inline
 )
 
+type TextAlingment int
+
+const (
+	Left TextAlingment = iota
+	Center
+	Right
+)
 type Styles struct {
 	Width      int
+	MinWidth   int
+	MaxWidth   int
 	Height     int
 	Paddding   int
 	Maaargin   int
 	Background string
 	TextColor  string
+	TextAling  TextAlingment
 	Direction
 	Border
 }

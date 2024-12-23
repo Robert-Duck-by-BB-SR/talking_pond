@@ -136,7 +136,7 @@ func main() {
 	
 	sidebar.AddComponent(
 		dd.CreateComponent("|Deez nuts|", dd.Styles{
-				Width: len("|Deez nuts|"),
+				Width: len("|Deez nuts|") + 10,
 				Height: 1,
 				Background: dd.MakeRGBBackground(80, 40, 100),
 				Border: dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
