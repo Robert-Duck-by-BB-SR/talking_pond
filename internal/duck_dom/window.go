@@ -13,6 +13,38 @@ type Window struct {
 	Components        []*Component
 }
 
+func CreateWindow(styles Styles) *Window{
+	assert_window_dimentions(styles.Width, styles.Height)
+
+	if styles.Border.Style != NoBorder{
+		// right now I'm concerned about it, future me will be mad
+		if styles.Height < 2 {
+			styles.Height += 2
+		}
+		if styles.Height < 3 {
+			styles.Height += 1
+		}
+
+		if styles.Width < 2 {
+			styles.Width += 2
+		}
+		if styles.Width < 3 {
+			styles.Width += 1
+		}
+	}
+
+	return &Window{
+		Position: Position{StartingRow: 1, StartingCol: 1},
+		Styles: styles,
+	}
+}
+
+func assert_window_dimentions(w, h int) {
+	if w <= 0 || h <= 0 {
+		panic("Window width and height should be bigger than 0")
+	}
+}
+
 func (self *Window) Render() string {
 	window_with_components := self.render_background()
 
