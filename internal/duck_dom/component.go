@@ -22,24 +22,28 @@ func CreateComponent(buffer string, styles Styles) *Component {
 	// check styles
 	// change width of component in case if buffer is bigger than provided
 
-	assert_component_dimentions(styles.Width, styles.Height)
+	assert_component_dimentions(&styles)
 
 	if styles.Border.Style != NoBorder {
 		// right now I'm concerned about it, future me will be mad
+		// if we use border, min width and height should be 2
 		switch {
 		case styles.Height < 2:
 			styles.Height += 2
-		case styles.Height < 3:
+		case styles.Height < 2:
 			styles.Height += 1
 		}
 
 		switch {
 		case styles.Width < 2:
 			styles.Height += 2
-		case styles.Width < 3:
+		case styles.Width < 2:
 			styles.Height += 1
 		}
+
+		// if len(buffer) 
 	}
+
 
 	component := Component{
 		Buffer: buffer,
@@ -49,8 +53,12 @@ func CreateComponent(buffer string, styles Styles) *Component {
 	return &component
 }
 
-func assert_component_dimentions(w, h int) {
-	if w <= 0 || h <= 0 {
+func assert_component_dimentions(styles *Styles) {
+	if styles.Border.Style != NoBorder && styles.Width < 3 || styles.Border.Style != NoBorder && styles.Height < 3{
+		panic("Component width and height should be bigger than 3 when border was added")
+	}
+
+	if styles.Width < 1 || styles.Height < 1 {
 		panic("Component width and height should be bigger than 0")
 	}
 }
@@ -60,43 +68,53 @@ func (self *Component) ExecuteAction() {
 }
 
 func (self *Component) Render() string {
-	// component := self.render_background()
-	//
-	// if self.Styles.Border.Style != NoBorder {
-	// 	component += render_border(self.Position, &self.Styles)
-	// }
-
+	// TODO: test me 
 	// later somewhere here I will implement
 	// 1. padding 
 	// 2. text-align
 
+	// TODO: test me 
+	// We use +1 because border takes one char around
 
+	// OKEY +1 MEANS THAT I MOVE BY ONE BUT BORDER TAKES 2 CHARS FROM BOTH SIDES
+	// we should have two chars free from both sides (top bottom, left right)
 
-
-	// return component
 	var builder strings.Builder
-	// WE USE + 1 because border takes one char around
-	// NEEDS TO BE UPDATED
-	builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, self.Position.StartingRow + 1, self.Position.StartingCol + 1))
 	builder.WriteString(self.Styles.Compile())
-	builder.WriteString(self.Buffer)
-	builder.WriteString(strings.Repeat(" ", self.Styles.Width - len(self.Buffer)))
+
+	shift_cursor_by_border := 0
+	if self.Styles.Border.Style != NoBorder {
+		shift_cursor_by_border += 1
+	}
+
+	builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, self.Position.StartingRow + shift_cursor_by_border, self.Position.StartingCol + shift_cursor_by_border))
+
+
+	// space (padding)
+	// text (might be truncated
+	// space (padding + lefovers)
+	fillament := strings.Repeat(" ", self.Styles.Width - shift_cursor_by_border)
+	fillament_minus_text := strings.Repeat(" ", self.Styles.Width - len(self.Buffer) - shift_cursor_by_border)
+	
+	// based on padding i can start from 0 or i + padding
+	for i := shift_cursor_by_border; i < self.Styles.Height; i += 1 {
+		// add padding handling later here
+		if i == shift_cursor_by_border{
+			builder.WriteString(self.Buffer)
+			builder.WriteString(fillament_minus_text)
+		} else{
+			builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, self.StartingRow+i, self.Position.StartingCol))
+			builder.WriteString(fillament)
+		}
+	}
 	builder.WriteString(RESET_STYLES)
 	self.Content = builder.String()
-	return self.Content + render_border(self.Position, &self.Styles)
-}
 
-func (self *Component) render_background() string {
-	var bg_builder strings.Builder
-	bg_builder.WriteString(self.Styles.Background)
-	bg_builder.WriteString(self.Styles.Color)
-	fillament := strings.Repeat(" ", self.Styles.Width)
-
-	for i := 0; i < self.Styles.Height; i += 1 {
-		bg_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, self.StartingRow+i, self.Position.StartingCol))
-		bg_builder.WriteString(fillament)
+	// TODO: test me 
+	if self.Styles.Border.Style != NoBorder {
+		self.Content += render_border(self.Position, &self.Styles)
 	}
-	bg_builder.WriteString(RESET_STYLES)
-
-	return bg_builder.String()
+	
+	return self.Content
 }
+

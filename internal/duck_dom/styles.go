@@ -47,6 +47,16 @@ func (self *Styles) SetWidth(w int) *Styles {
 	return self
 }
 
+func (self *Styles) SetMinWidth(w int) *Styles {
+	self.MinWidth = w
+	return self
+}
+
+func (self *Styles) SetMaxWidth(w int) *Styles {
+	self.MaxWidth = w
+	return self
+}
+
 func (self *Styles) SetHeight(h int) *Styles {
 	self.Height = h
 	return self
@@ -69,6 +79,11 @@ func (self *Styles) SetBackground(b string) *Styles {
 
 func (self *Styles) SetTextColor(tc string) *Styles {
 	self.TextColor = tc
+	return self
+}
+
+func (self *Styles) SetTextAlignment(ta TextAlingment) *Styles {
+	self.TextAling = ta
 	return self
 }
 
