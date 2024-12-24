@@ -95,7 +95,6 @@ func (self *Window) AddComponent(c *Component) {
 func (self *Window) render_background() string {
 	var bg_builder strings.Builder
 	bg_builder.WriteString(self.Styles.Background)
-	bg_builder.WriteString(self.Styles.Color)
 	fillament := strings.Repeat(" ", self.Styles.Width)
 
 	for i := 0; i < self.Styles.Height; i += 1 {
