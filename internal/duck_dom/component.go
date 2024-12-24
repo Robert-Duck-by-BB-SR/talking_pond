@@ -90,17 +90,20 @@ func (self *Component) Render() string {
 	builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, self.Position.StartingRow + shift_cursor_by_border, self.Position.StartingCol + shift_cursor_by_border))
 
 
-	// space (padding)
-	// text (might be truncated
-	// space (padding + lefovers)
 	fillament := strings.Repeat(" ", self.Styles.Width - shift_cursor_by_border)
-	fillament_minus_text := strings.Repeat(" ", self.Styles.Width - len(self.Buffer) - shift_cursor_by_border)
+
+	fillament_minus_text := ""
+	// space (padding)
+	// text (might be truncated)
+	// space (padding + lefovers)
+	if self.Styles.Paddding != 0 {
+		// some bullshit here
+	} else{
+		fillament_minus_text = self.Buffer + strings.Repeat(" ", self.Styles.Width - len(self.Buffer) - shift_cursor_by_border)
+	}
 	
-	// based on padding i can start from 0 or i + padding
 	for i := shift_cursor_by_border; i < self.Styles.Height; i += 1 {
-		// add padding handling later here
 		if i == shift_cursor_by_border{
-			builder.WriteString(self.Buffer)
 			builder.WriteString(fillament_minus_text)
 		} else{
 			builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, self.StartingRow+i, self.Position.StartingCol))
