@@ -72,20 +72,18 @@ func (self *Window) AddComponent(c *Component) {
 	} else {
 		if c.Styles.Direction == Block {
 			last_component := self.Components[len(self.Components)-1]
-			lastRow := last_component.StartingRow + last_component.Height - 1
-			// can be 1 or 2
-			lastCol := last_component.StartingCol
-			newRow := lastRow + c.Height
-			assert_component_placement(newRow, lastCol + c.Width, self)
+			new_row := last_component.StartingRow + last_component.Height
+			new_col := last_component.StartingCol
+			assert_component_placement(new_row + c.Styles.Height, new_col + c.Width, self)
 
-			c.Position = Position{StartingRow: newRow, StartingCol: lastCol}
+			c.Position = Position{StartingRow: new_row, StartingCol: new_col}
 		} else {
 			last_component := self.Components[len(self.Components)-1]
-			lastRow := last_component.StartingRow
-			lastCol := last_component.StartingCol + last_component.Width
-			assert_component_placement(lastRow + c.Height, lastCol + c.Width, self)
+			new_row := last_component.StartingRow
+			new_col := last_component.StartingCol + last_component.Width
+			assert_component_placement(new_row + c.Height, new_col + c.Width, self)
 
-			c.Position = Position{StartingRow: lastRow, StartingCol: lastCol}
+			c.Position = Position{StartingRow: new_row, StartingCol: new_col}
 		}
 	}
 
