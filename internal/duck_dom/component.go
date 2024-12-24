@@ -41,9 +41,7 @@ func CreateComponent(buffer string, styles Styles) *Component {
 			styles.Height += 1
 		}
 
-		// if len(buffer) 
 	}
-
 
 	component := Component{
 		Buffer: buffer,
@@ -54,7 +52,7 @@ func CreateComponent(buffer string, styles Styles) *Component {
 }
 
 func assert_component_dimentions(styles *Styles) {
-	if styles.Border.Style != NoBorder && styles.Width < 3 || styles.Border.Style != NoBorder && styles.Height < 3{
+	if styles.Border.Style != NoBorder && styles.Width < 3 || styles.Border.Style != NoBorder && styles.Height < 3 {
 		panic("Component width and height should be bigger than 3 when border was added")
 	}
 
@@ -68,56 +66,68 @@ func (self *Component) ExecuteAction() {
 }
 
 func (self *Component) Render() string {
-	// TODO: test me 
+	// TODO: test me
 	// later somewhere here I will implement
-	// 1. padding 
+	// 1. padding -> deez nuts
 	// 2. text-align
-
-	// TODO: test me 
-	// We use +1 because border takes one char around
-
-	// OKEY +1 MEANS THAT I MOVE BY ONE BUT BORDER TAKES 2 CHARS FROM BOTH SIDES
-	// we should have two chars free from both sides (top bottom, left right)
 
 	var builder strings.Builder
 	builder.WriteString(self.Styles.Compile())
+	builder.WriteString(self.render_background())
+	builder.WriteString(self.render_buffer())
+	builder.WriteString(RESET_STYLES)
+	self.Content = builder.String()
+
+	// TODO: test me
+	if self.Styles.Border.Style != NoBorder {
+		self.Content += render_border(self.Position, &self.Styles)
+	}
+
+	return self.Content
+}
+
+func (self *Component) render_background() string{
+	var bg_builder strings.Builder
+	fillament := strings.Repeat(" ", self.Styles.Width)
+
+	for i := 0; i < self.Styles.Height; i += 1 {
+		bg_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, self.StartingRow+i, self.Position.StartingCol))
+		bg_builder.WriteString(fillament)
+	}
+
+	return bg_builder.String()
+}
+
+func (self *Component) render_buffer() string{
+	var buffer_builder strings.Builder
 
 	shift_cursor_by_border := 0
 	if self.Styles.Border.Style != NoBorder {
 		shift_cursor_by_border += 1
 	}
 
-	builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, self.Position.StartingRow + shift_cursor_by_border, self.Position.StartingCol + shift_cursor_by_border))
-
-
-	fillament := strings.Repeat(" ", self.Styles.Width - shift_cursor_by_border)
-
-	fillament_minus_text := ""
-	// space (padding)
-	// text (might be truncated)
-	// space (padding + lefovers)
-	if self.Styles.Paddding != 0 {
-		// some bullshit here
-	} else{
-		fillament_minus_text = self.Buffer + strings.Repeat(" ", self.Styles.Width - len(self.Buffer) - shift_cursor_by_border)
-	}
+	text_row := self.StartingRow + shift_cursor_by_border + self.Styles.Paddding
+	text_col := self.StartingCol + shift_cursor_by_border + self.Styles.Paddding
 	
-	for i := shift_cursor_by_border; i < self.Styles.Height; i += 1 {
-		if i == shift_cursor_by_border{
-			builder.WriteString(fillament_minus_text)
-		} else{
-			builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, self.StartingRow+i, self.Position.StartingCol))
-			builder.WriteString(fillament)
+	// if the whole word cannot fit in one line -> truncate
+	// MESSAGE FROM ME TO ME FROM THE FUTURE
+	// padding and border are 2chars (padding) and 2 chars(border)
+	// you need to set those boundaries
+	if text_col + len(self.Buffer) > self.Width - shift_cursor_by_border {
+		splited_buffer := strings.Split(self.Buffer, " ")	
+		for i := 0; i < len(splited_buffer); i+= 1{
+			FileDebugMeDaddy(fmt.Sprintf("%d", i))
+			// do something in case that single part is still too big
+			if text_col + len(splited_buffer[i]) < self.Width - shift_cursor_by_border{
+				buffer_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, text_row + i, text_col))
+				buffer_builder.WriteString(splited_buffer[i])
+			}
 		}
+	} else{
+		buffer_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, text_row, text_col))
+		buffer_builder.WriteString(self.Buffer)
 	}
-	builder.WriteString(RESET_STYLES)
-	self.Content = builder.String()
 
-	// TODO: test me 
-	if self.Styles.Border.Style != NoBorder {
-		self.Content += render_border(self.Position, &self.Styles)
-	}
-	
-	return self.Content
+
+	return buffer_builder.String()
 }
-

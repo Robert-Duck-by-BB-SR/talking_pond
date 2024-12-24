@@ -136,30 +136,27 @@ func main() {
 	
 	sidebar.AddComponent(
 		dd.CreateComponent("Deez nuts", dd.Styles{
-				Width: 15,
-				Height: 10,
-				// Background: dd.MakeRGBBackground(69, 150, 100),
+				Width: 10,
+				Height: 5,
 				Background: dd.MakeRGBBackground(250, 0, 0),
 				TextColor: dd.MakeRGBTextColor(0, 0, 0),
 				Paddding: 1,
-				Border: dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+				// Border: dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 			},
 		),
 	)
-
+	// FIX: I think that new block component after inline component should start from the beninging of a parent
 	// sidebar.AddComponent(
-	// 	&dd.Component{
-	// 		// Position: dd.Position{StartingRow: 5, StartingCol: uint(sidebar.StartingCol) + 2},
-	// 		Buffer: "|got em|",
-	// 		Styles: dd.Styles{
-	// 			Width: len("|got em|"),
-	// 			Direction: dd.Inline,
-	// 			Height:     1,
-	// 			Background: dd.MakeRGBBackground(80, 40, 100),
-	// 			// Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+	// 	dd.CreateComponent("Deez nuts", dd.Styles{
+	// 			Width: 10,
+	// 			Height: 10,
+	// 			Background: dd.MakeRGBBackground(250, 0, 0),
+	// 			TextColor: dd.MakeRGBTextColor(0, 0, 0),
+	// 			Paddding: 1,
+	// 			// Border: dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 	// 		},
-	// 	})
-
+	// 	),
+	// )
 	screen.AddWindow(sidebar)
 
 	// content := dd.Window{
