@@ -21,12 +21,10 @@ type Component struct {
 func CreateComponent(buffer string, styles Styles) *Component {
 	// check styles
 	// change width of component in case if buffer is bigger than provided
-
-	assert_component_dimensions(&styles)
+	//
+	// assert_component_dimensions(&styles)
 
 	if styles.Border.Style != NoBorder {
-		// if we use border, min width and height should be 2
-		// why tho?? your assert says it has to be bigger than 3????
 		if styles.Width < 3 {
 			styles.Width = 3
 		}
@@ -117,11 +115,11 @@ func (self *Component) render_buffer() string {
 
 		buffer_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, moved_row, moved_col))
 		buffer_builder.WriteString(self.Buffer[:allowed_space])
-        // this way we actually truncate by the character and not the space so we don't have to worry about moving to 
-        // next line, FIXME: HOWEVER we should consider the fact that we should be able to increase the height of the component
-        // depending on the content
-        // the way it's done now any message in chat what will be greater than the width of the component would be 
-        // truncated which is not the desired behaviour for a chat
+		// this way we actually truncate by the character and not the space so we don't have to worry about moving to
+		// next line, FIXME: HOWEVER we should consider the fact that we should be able to increase the height of the component
+		// depending on the content
+		// the way it's done now any message in chat what will be greater than the width of the component would be
+		// truncated which is not the desired behaviour for a chat
 	} else {
 		buffer_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, moved_row, moved_col))
 		buffer_builder.WriteString(self.Buffer)

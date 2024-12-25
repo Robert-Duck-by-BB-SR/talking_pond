@@ -146,83 +146,81 @@ func main() {
 		),
 	)
 	// FIX: I think that new block component after inline component should start from the beninging of a parent
-	// sidebar.AddComponent(
-	// 	dd.CreateComponent("Deez nuts", dd.Styles{
-	// 			Width: 10,
-	// 			Height: 10,
-	// 			Background: dd.MakeRGBBackground(250, 0, 0),
-	// 			TextColor: dd.MakeRGBTextColor(0, 0, 0),
-	// 			Paddding: 1,
-	// 			// Border: dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
-	// 		},
-	// 	),
-	// )
+	sidebar.AddComponent(
+		dd.CreateComponent("Deez nuts", dd.Styles{
+			Width:      10,
+			Height:     10,
+			Background: dd.MakeRGBBackground(250, 0, 0),
+			TextColor:  dd.MakeRGBTextColor(0, 0, 0),
+			Paddding:   1,
+			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+		},
+		),
+	)
 	screen.AddWindow(sidebar)
 
-	// content := dd.Window{
-	// 	Position: dd.Position{StartingRow: 1, StartingCol: uint(sidebar.Styles.Width) + 1},
-	// 	Styles: dd.Styles{
-	// 		Width:      screen.Width - sidebar.Styles.Width - 1,
-	// 		Height:     int(float32(screen.Height)*0.7) + 1,
-	// 		Background: dd.MakeRGBBackground(69, 150, 100),
-	// 		Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
-	// 	},
-	// }
-	// content.AddComponent(
-	// 	&dd.Component{
-	// 		Position: dd.Position{StartingRow: 2, StartingCol: uint(content.StartingCol) + 2},
-	// 		Buffer:   "|SIMD|",
-	// 		Styles: dd.Styles{
-	// 			Width:      screen.Width - sidebar.Styles.Width - 1,
-	// 			Height:     screen.Height,
-	// 			Background: dd.MakeRGBBackground(80, 40, 100),
-	// 			// Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
-	// 		},
-	// 	})
-	//
-	// content.AddComponent(
-	// 	&dd.Component{
-	// 		Position: dd.Position{StartingRow: 4, StartingCol: uint(content.StartingCol) + 2},
-	// 		Buffer:   "|Ligma?|",
-	// 		Styles: dd.Styles{
-	// 			Width:      screen.Width - sidebar.Styles.Width - 1,
-	// 			Height:     screen.Height,
-	// 			Background: dd.MakeRGBBackground(80, 40, 100),
-	// 			// Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
-	// 		},
-	// 	})
+	content := dd.CreateWindow(dd.Styles{
+		Width:      screen.Width - sidebar.Styles.Width - 1,
+		Height:     int(float32(screen.Height)*0.7) + 1,
+		Background: dd.MakeRGBBackground(69, 150, 100),
+		Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+	})
 
-	// screen.AddWindow(&content)
-	//
-	// input_bar := dd.Window{
-	// 	Position: dd.Position{StartingRow: uint(content.Height) + 1, StartingCol: uint(sidebar.Width) + 1},
-	// 	Styles: dd.Styles{
-	// 		Width:      screen.Width - sidebar.Styles.Width - 1,
-	// 		Height:     int(float32(screen.Height)*0.3) - 1,
-	// 		Background: dd.MakeRGBBackground(150, 150, 40),
-	// 		Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
-	// 	},
-	// }
+	content.Position.StartingCol = sidebar.StartingCol + sidebar.Width
+	content.Position.StartingRow = sidebar.StartingRow
+	content.AddComponent(
+		dd.CreateComponent(
+			"|SIMD|",
+			dd.Styles{
+				Width:      10,
+				Height:     10,
+				Background: dd.MakeRGBBackground(80, 40, 100),
+				Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+			},
+		))
+	content.AddComponent(
+		dd.CreateComponent(
+			"LIGMA???",
+			dd.Styles{
+				Width:      10,
+				Height:     10,
+				Background: dd.MakeRGBBackground(80, 40, 100),
+				Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+			},
+		))
 
-	// screen.AddWindow(&input_bar)
-	//
-	// screen.StatusBar = dd.Window{
-	// 	Position: dd.Position{StartingRow: uint(screen.Height), StartingCol: 1},
-	// 	Styles: dd.Styles{
-	// 		Width:      screen.Width,
-	// 		Height:     1,
-	// 		Background: dd.MakeRGBBackground(80, 40, 100),
-	// 	},
-	// }
-	// screen.StatusBar.AddComponent(
-	// 	&dd.Component{
-	// 		Position: dd.Position{StartingRow: uint(screen.Height), StartingCol: 2},
-	// 		Buffer:   dd.NORMAL,
-	// 		Styles: dd.Styles{
-	// 			Width:  screen.Width,
-	// 			Height: 1,
-	// 		},
-	// 	})
+	screen.AddWindow(content)
+
+	input_bar := &dd.Window{
+		Position: dd.Position{StartingRow: content.Height + 1, StartingCol: sidebar.Width + 1},
+		Styles: dd.Styles{
+			Width:      screen.Width - sidebar.Styles.Width - 1,
+			Height:     int(float32(screen.Height)*0.3) - 1,
+			Background: dd.MakeRGBBackground(150, 150, 40),
+			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+		},
+	}
+
+	screen.AddWindow(input_bar)
+
+	screen.StatusBar = dd.Window{
+		Position: dd.Position{StartingRow: screen.Height, StartingCol: 1},
+		Styles: dd.Styles{
+			Width:      screen.Width,
+			Height:     1,
+			Background: dd.MakeRGBBackground(80, 40, 100),
+		},
+	}
+	screen.StatusBar.Components = []*dd.Component{
+		{
+			Position: dd.Position{StartingRow: screen.Height, StartingCol: 2},
+			Buffer:   dd.NORMAL,
+			Styles: dd.Styles{
+				Width:  len(dd.COMMAND),
+				Height: 1,
+			},
+		},
+	}
 
 	screen.Activate()
 	screen.Render()
@@ -248,4 +246,5 @@ func main() {
 	}
 	// restart to default settings
 	fmt.Print(dd.SHOW_CURSOR)
+	// TODO: any assert should have show cursor
 }
