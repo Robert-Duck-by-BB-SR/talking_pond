@@ -14,17 +14,7 @@ type Window struct {
 }
 
 func CreateWindow(styles Styles) *Window {
-	assert_window_dimensions(styles.Width, styles.Height)
-
-	if styles.Border.Style != NoBorder {
-		if styles.Width < 3 {
-			styles.Width = 3
-		}
-
-		if styles.Height < 3 {
-			styles.Height = 3
-		}
-	}
+	assert_window_dimensions(&styles)
 
 	return &Window{
 		Position: Position{StartingRow: 1, StartingCol: 1},
@@ -32,9 +22,14 @@ func CreateWindow(styles Styles) *Window {
 	}
 }
 
-func assert_window_dimensions(w, h int) {
-	if w <= 0 || h <= 0 {
-		panic("Window width and height should be bigger than 0")
+func assert_window_dimensions(styles *Styles) {
+	if styles.Border.Style != NoBorder && styles.Width < 3 ||
+		styles.Border.Style != NoBorder && styles.Height < 3 {
+		panic("Component width and height should be at least 3 when border was added")
+	}
+
+	if styles.Width < 1 || styles.Height < 1 {
+		panic("Component width and height should be bigger than 0")
 	}
 }
 
