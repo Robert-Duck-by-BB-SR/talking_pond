@@ -86,7 +86,7 @@ func (self *Component) Render() string {
 	return self.Content
 }
 
-func (self *Component) render_background() string{
+func (self *Component) render_background() string {
 	var bg_builder strings.Builder
 	fillament := strings.Repeat(" ", self.Styles.Width)
 
@@ -98,7 +98,7 @@ func (self *Component) render_background() string{
 	return bg_builder.String()
 }
 
-func (self *Component) render_buffer() string{
+func (self *Component) render_buffer() string {
 	var buffer_builder strings.Builder
 
 	shift_cursor_by_border := 0
@@ -106,28 +106,26 @@ func (self *Component) render_buffer() string{
 		shift_cursor_by_border += 1
 	}
 
-	text_row := self.StartingRow + shift_cursor_by_border + self.Styles.Paddding
-	text_col := self.StartingCol + shift_cursor_by_border + self.Styles.Paddding
-	
-	// if the whole word cannot fit in one line -> truncate
 	// MESSAGE FROM ME TO ME FROM THE FUTURE
 	// padding and border are 2chars (padding) and 2 chars(border)
 	// you need to set those boundaries
-	if text_col + len(self.Buffer) > self.Width - shift_cursor_by_border {
-		splited_buffer := strings.Split(self.Buffer, " ")	
-		for i := 0; i < len(splited_buffer); i+= 1{
-			FileDebugMeDaddy(fmt.Sprintf("%d", i))
-			// do something in case that single part is still too big
-			if text_col + len(splited_buffer[i]) < self.Width - shift_cursor_by_border{
-				buffer_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, text_row + i, text_col))
-				buffer_builder.WriteString(splited_buffer[i])
-			}
+
+	moved_row := self.StartingRow + shift_cursor_by_border + self.Styles.Paddding
+	moved_col := self.StartingCol + shift_cursor_by_border + self.Styles.Paddding
+	allowed_space := self.Width - shift_cursor_by_border*2 - self.Styles.Paddding*2
+
+	// if the whole word cannot fit in one line -> truncate
+	if len(self.Buffer) > allowed_space {
+		splited_buffer := strings.Split(self.Buffer, " ")
+		for i := 0; i < len(splited_buffer); i += 1 {
+			// do something in case that single word is still too big
+			buffer_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, moved_row+i, moved_col))
+			buffer_builder.WriteString(splited_buffer[i])
 		}
-	} else{
-		buffer_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, text_row, text_col))
+	} else {
+		buffer_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, moved_row, moved_col))
 		buffer_builder.WriteString(self.Buffer)
 	}
-
 
 	return buffer_builder.String()
 }
