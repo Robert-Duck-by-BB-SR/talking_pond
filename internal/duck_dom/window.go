@@ -14,7 +14,7 @@ type Window struct {
 }
 
 func CreateWindow(styles Styles) *Window {
-	assert_window_dimentions(styles.Width, styles.Height)
+	assert_window_dimensions(styles.Width, styles.Height)
 
 	if styles.Border.Style != NoBorder {
 		if styles.Width < 3 {
@@ -32,7 +32,7 @@ func CreateWindow(styles Styles) *Window {
 	}
 }
 
-func assert_window_dimentions(w, h int) {
+func assert_window_dimensions(w, h int) {
 	if w <= 0 || h <= 0 {
 		panic("Window width and height should be bigger than 0")
 	}
@@ -57,16 +57,14 @@ func (self *Window) AddComponent(c *Component) {
 	c.Parent = self
 
 	if len(self.Components) == 0 {
-		if self.Border.Style == NoBorder {
-			c.Position = Position{StartingRow: 1, StartingCol: 1}
-		} else {
-			c.Position = Position{StartingRow: 2, StartingCol: 2}
+		if self.Border.Style != NoBorder {
+			c.Position = Position{StartingRow: self.StartingRow + 1, StartingCol: self.StartingCol + 1}
 		}
 		assert_component_placement(c.StartingRow+c.Styles.Height, c.StartingCol+c.Width, self)
 	} else {
 		if c.Styles.Direction == Block {
 			last_component := self.Components[len(self.Components)-1]
-			new_row := last_component.StartingRow + last_component.Height + 1
+			new_row := last_component.StartingRow + last_component.Height
 			new_col := last_component.StartingCol
 			assert_component_placement(new_row+c.Styles.Height, new_col+c.Width, self)
 
@@ -74,7 +72,7 @@ func (self *Window) AddComponent(c *Component) {
 		} else {
 			last_component := self.Components[len(self.Components)-1]
 			new_row := last_component.StartingRow
-			new_col := last_component.StartingCol + last_component.Width + 1
+			new_col := last_component.StartingCol + last_component.Width
 			assert_component_placement(new_row+c.Height, new_col+c.Width, self)
 
 			c.Position = Position{StartingRow: new_row, StartingCol: new_col}
