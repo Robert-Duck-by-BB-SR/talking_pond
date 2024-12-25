@@ -106,10 +106,6 @@ func (self *Component) render_buffer() string {
 		shift_cursor_by_border += 1
 	}
 
-	// MESSAGE FROM ME TO ME FROM THE FUTURE
-	// padding and border are 2chars (padding) and 2 chars(border)
-	// you need to set those boundaries
-
 	moved_row := self.StartingRow + shift_cursor_by_border + self.Styles.Paddding
 	moved_col := self.StartingCol + shift_cursor_by_border + self.Styles.Paddding
 	allowed_space := self.Width - shift_cursor_by_border*2 - self.Styles.Paddding*2
