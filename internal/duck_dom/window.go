@@ -13,29 +13,22 @@ type Window struct {
 	Components        []*Component
 }
 
-func CreateWindow(styles Styles) *Window{
+func CreateWindow(styles Styles) *Window {
 	assert_window_dimentions(styles.Width, styles.Height)
 
-	if styles.Border.Style != NoBorder{
-		// right now I'm concerned about it, future me will be mad
-		switch {
-		case styles.Height < 2:
-			styles.Height += 2
-		case styles.Height < 3:
-			styles.Height += 1
+	if styles.Border.Style != NoBorder {
+		if styles.Width < 3 {
+			styles.Width = 3
 		}
 
-		switch {
-		case styles.Width < 2:
-			styles.Height += 2
-		case styles.Width < 3:
-			styles.Height += 1
+		if styles.Height < 3 {
+			styles.Height = 3
 		}
 	}
 
 	return &Window{
 		Position: Position{StartingRow: 1, StartingCol: 1},
-		Styles: styles,
+		Styles:   styles,
 	}
 }
 
@@ -46,17 +39,18 @@ func assert_window_dimentions(w, h int) {
 }
 
 func (self *Window) Render() string {
-	window_with_components := self.render_background()
+	var window_with_components strings.Builder
+	window_with_components.WriteString(self.render_background())
 
 	if self.Styles.Border.Style != NoBorder {
-		window_with_components += render_border(self.Position, &self.Styles)
+		window_with_components.WriteString(render_border(self.Position, &self.Styles))
 	}
 
 	for _, component := range self.Components {
-		window_with_components += component.Render()
+		window_with_components.WriteString(component.Render())
 	}
 
-	return window_with_components
+	return window_with_components.String()
 }
 
 func (self *Window) AddComponent(c *Component) {
@@ -68,20 +62,20 @@ func (self *Window) AddComponent(c *Component) {
 		} else {
 			c.Position = Position{StartingRow: 2, StartingCol: 2}
 		}
-		assert_component_placement(c.StartingRow + c.Styles.Height, c.StartingCol + c.Width, self)
+		assert_component_placement(c.StartingRow+c.Styles.Height, c.StartingCol+c.Width, self)
 	} else {
 		if c.Styles.Direction == Block {
 			last_component := self.Components[len(self.Components)-1]
-			new_row := last_component.StartingRow + last_component.Height
+			new_row := last_component.StartingRow + last_component.Height + 1
 			new_col := last_component.StartingCol
-			assert_component_placement(new_row + c.Styles.Height, new_col + c.Width, self)
+			assert_component_placement(new_row+c.Styles.Height, new_col+c.Width, self)
 
 			c.Position = Position{StartingRow: new_row, StartingCol: new_col}
 		} else {
 			last_component := self.Components[len(self.Components)-1]
 			new_row := last_component.StartingRow
-			new_col := last_component.StartingCol + last_component.Width
-			assert_component_placement(new_row + c.Height, new_col + c.Width, self)
+			new_col := last_component.StartingCol + last_component.Width + 1
+			assert_component_placement(new_row+c.Height, new_col+c.Width, self)
 
 			c.Position = Position{StartingRow: new_row, StartingCol: new_col}
 		}
