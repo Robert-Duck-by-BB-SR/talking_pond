@@ -21,19 +21,7 @@ type Component struct {
 func CreateComponent(buffer string, styles Styles) *Component {
 	// check styles
 	// change width of component in case if buffer is bigger than provided
-	//
-	// assert_component_dimensions(&styles)
-
-	if styles.Border.Style != NoBorder {
-		if styles.Width < 3 {
-			styles.Width = 3
-		}
-
-		if styles.Height < 3 {
-			styles.Height = 3
-		}
-
-	}
+	assert_component_dimensions(&styles)
 
 	component := Component{
 		Buffer: buffer,
@@ -44,7 +32,8 @@ func CreateComponent(buffer string, styles Styles) *Component {
 }
 
 func assert_component_dimensions(styles *Styles) {
-	if styles.Border.Style != NoBorder && styles.Width < 3 || styles.Border.Style != NoBorder && styles.Height < 3 {
+	if styles.Border.Style != NoBorder && styles.Width < 3 ||
+		styles.Border.Style != NoBorder && styles.Height < 3 {
 		panic("Component width and height should be at least 3 when border was added")
 	}
 
