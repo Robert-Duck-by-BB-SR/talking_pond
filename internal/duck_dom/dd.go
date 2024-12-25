@@ -145,8 +145,7 @@ func (*NormalMode) HandleKeypress(screen *Screen, keys []byte) {
 	switch keys[0] {
 	case 'q':
 		screen.EventLoopIsRunning = false
-	// Ctrl+W (ASCII 23 or \x17)
-	case 23:
+	case '':
 		screen.State = &WM
 		screen.StatusBar.Components[0].Buffer = WINDOW
 		screen.RenderQueue = append(screen.RenderQueue, screen.StatusBar.Components[0].Render())

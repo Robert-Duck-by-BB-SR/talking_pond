@@ -22,23 +22,17 @@ func CreateComponent(buffer string, styles Styles) *Component {
 	// check styles
 	// change width of component in case if buffer is bigger than provided
 
-	assert_component_dimentions(&styles)
+	assert_component_dimensions(&styles)
 
 	if styles.Border.Style != NoBorder {
-		// right now I'm concerned about it, future me will be mad
 		// if we use border, min width and height should be 2
-		switch {
-		case styles.Height < 2:
-			styles.Height += 2
-		case styles.Height < 2:
-			styles.Height += 1
+		// why tho?? your assert says it has to be bigger than 3????
+		if styles.Width < 3 {
+			styles.Width = 3
 		}
 
-		switch {
-		case styles.Width < 2:
-			styles.Height += 2
-		case styles.Width < 2:
-			styles.Height += 1
+		if styles.Height < 3 {
+			styles.Height = 3
 		}
 
 	}
@@ -51,9 +45,9 @@ func CreateComponent(buffer string, styles Styles) *Component {
 	return &component
 }
 
-func assert_component_dimentions(styles *Styles) {
+func assert_component_dimensions(styles *Styles) {
 	if styles.Border.Style != NoBorder && styles.Width < 3 || styles.Border.Style != NoBorder && styles.Height < 3 {
-		panic("Component width and height should be bigger than 3 when border was added")
+		panic("Component width and height should be at least 3 when border was added")
 	}
 
 	if styles.Width < 1 || styles.Height < 1 {
@@ -112,12 +106,22 @@ func (self *Component) render_buffer() string {
 
 	// if the whole word cannot fit in one line -> truncate
 	if len(self.Buffer) > allowed_space {
-		splited_buffer := strings.Split(self.Buffer, " ")
-		for i := 0; i < len(splited_buffer); i += 1 {
-			// do something in case that single word is still too big
-			buffer_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, moved_row+i, moved_col))
-			buffer_builder.WriteString(splited_buffer[i])
-		}
+		// splited_buffer := strings.Split(self.Buffer, " ")
+		// for i := 0; i < len(splited_buffer); i += 1 {
+		// 	// do something in case that single word is still too big
+		// 	buffer_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, moved_row+i, moved_col))
+		// 	buffer_builder.WriteString(splited_buffer[i])
+		// }
+		//
+		// NOTE: proposal
+
+		buffer_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, moved_row, moved_col))
+		buffer_builder.WriteString(self.Buffer[:allowed_space])
+        // this way we actually truncate by the character and not the space so we don't have to worry about moving to 
+        // next line, FIXME: HOWEVER we should consider the fact that we should be able to increase the height of the component
+        // depending on the content
+        // the way it's done now any message in chat what will be greater than the width of the component would be 
+        // truncated which is not the desired behaviour for a chat
 	} else {
 		buffer_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, moved_row, moved_col))
 		buffer_builder.WriteString(self.Buffer)
