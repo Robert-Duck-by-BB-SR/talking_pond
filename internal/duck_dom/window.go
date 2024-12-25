@@ -80,20 +80,6 @@ func (self *Window) AddComponent(c *Component) {
 	self.Components = append(self.Components, c)
 }
 
-func (self *Window) render_background() string {
-	var bg_builder strings.Builder
-	bg_builder.WriteString(self.Styles.Background)
-	fillament := strings.Repeat(" ", self.Styles.Width)
-
-	for i := 0; i < self.Styles.Height; i += 1 {
-		bg_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, self.StartingRow+i, self.Position.StartingCol))
-		bg_builder.WriteString(fillament)
-	}
-	bg_builder.WriteString(RESET_STYLES)
-
-	return bg_builder.String()
-}
-
 func assert_component_placement(rows_will_take, cols_will_take int, c *Component, w *Window) {
 	if cols_will_take > w.Width {
 		panic(fmt.Sprintf(
@@ -108,3 +94,18 @@ func assert_component_placement(rows_will_take, cols_will_take int, c *Component
 		))
 	}
 }
+
+func (self *Window) render_background() string {
+	var bg_builder strings.Builder
+	bg_builder.WriteString(self.Styles.Background)
+	fillament := strings.Repeat(" ", self.Styles.Width)
+
+	for i := 0; i < self.Styles.Height; i += 1 {
+		bg_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, self.StartingRow+i, self.Position.StartingCol))
+		bg_builder.WriteString(fillament)
+	}
+	bg_builder.WriteString(RESET_STYLES)
+
+	return bg_builder.String()
+}
+
