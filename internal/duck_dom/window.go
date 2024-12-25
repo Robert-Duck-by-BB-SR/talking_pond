@@ -55,20 +55,23 @@ func (self *Window) AddComponent(c *Component) {
 		if self.Border.Style != NoBorder {
 			c.Position = Position{StartingRow: self.StartingRow + 1, StartingCol: self.StartingCol + 1}
 		}
-		assert_component_placement(c.StartingRow+c.Styles.Height, c.StartingCol+c.Width, self)
+		assert_component_placement(c.StartingRow+c.Styles.Height, c.StartingCol+c.Width, c, self)
 	} else {
 		if c.Styles.Direction == Block {
 			last_component := self.Components[len(self.Components)-1]
 			new_row := last_component.StartingRow + last_component.Height
 			new_col := last_component.StartingCol
-			assert_component_placement(new_row+c.Styles.Height, new_col+c.Width, self)
+
+			rows_will_take := new_row+c.Styles.Height
+			cols_will_take := new_col+c.Width
+			assert_component_placement(rows_will_take, cols_will_take, c, self)
 
 			c.Position = Position{StartingRow: new_row, StartingCol: new_col}
 		} else {
 			last_component := self.Components[len(self.Components)-1]
 			new_row := last_component.StartingRow
 			new_col := last_component.StartingCol + last_component.Width
-			assert_component_placement(new_row+c.Height, new_col+c.Width, self)
+			assert_component_placement(new_row+c.Height, new_col+c.Width, c, self)
 
 			c.Position = Position{StartingRow: new_row, StartingCol: new_col}
 		}
@@ -91,12 +94,17 @@ func (self *Window) render_background() string {
 	return bg_builder.String()
 }
 
-func assert_component_placement(r, c int, w *Window) {
-	if r > w.Height {
-		panic("Component height will not fit, do a math, you dumbass")
+func assert_component_placement(rows_will_take, cols_will_take int, c *Component, w *Window) {
+	if cols_will_take > w.Width {
+		panic(fmt.Sprintf(
+			"Component width is too big: window [r,c][%d,%d] [w,h][%d,%d] will not fit component [r,c][%d,%d] [w,h][%d,%d]",
+			w.StartingRow, w.StartingCol, w.Styles.Width, w.Styles.Height, c.StartingRow, c.StartingCol, c.Styles.Width, c.Styles.Height,
+		))
 	}
-
-	if c > w.Width {
-		panic("Component width will not fit, do a math, you dumbass")
+	if rows_will_take > w.Height {
+		panic(fmt.Sprintf(
+			"Component height is too big: window [r,c][%d,%d] [w,h][%d,%d] will not fit component [r,c][%d,%d] [w,h][%d,%d]",
+			w.StartingRow, w.StartingCol, w.Styles.Width, w.Styles.Height, c.StartingRow, c.StartingCol, c.Styles.Width, c.Styles.Height,
+		))
 	}
 }
