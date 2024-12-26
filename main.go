@@ -141,9 +141,8 @@ func main() {
 			Background: dd.MakeRGBBackground(250, 0, 0),
 			TextColor:  dd.MakeRGBTextColor(0, 0, 0),
 			// Paddding:   1,
-			Border: dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
-		},
-		),
+			Border: dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+		}),
 	)
 	// FIX: I think that new block component after inline component should start from the beninging of a parent
 	sidebar.AddComponent(
@@ -222,8 +221,8 @@ func main() {
 		},
 	}
 
-	screen.Activate()
 	screen.Render()
+	screen.Activate()
 
 	// TODO: Check if its possible to accept more than one byte
 	stdin_buffer := make([]byte, 1)

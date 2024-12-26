@@ -11,6 +11,7 @@ type Window struct {
 	Styles
 	ActiveComponentId int
 	Components        []*Component
+	Active            bool
 }
 
 func CreateWindow(styles Styles) *Window {
@@ -38,7 +39,7 @@ func (self *Window) Render() string {
 	window_with_components.WriteString(self.render_background())
 
 	if self.Styles.Border.Style != NoBorder {
-		window_with_components.WriteString(render_border(self.Position, &self.Styles))
+		window_with_components.WriteString(render_border(self.Position, self.Active, &self.Styles))
 	}
 
 	for _, component := range self.Components {
@@ -62,8 +63,8 @@ func (self *Window) AddComponent(c *Component) {
 			new_row := last_component.StartingRow + last_component.Height
 			new_col := last_component.StartingCol
 
-			rows_will_take := new_row+c.Styles.Height
-			cols_will_take := new_col+c.Width
+			rows_will_take := new_row + c.Styles.Height
+			cols_will_take := new_col + c.Width
 			assert_component_placement(rows_will_take, cols_will_take, c, self)
 
 			c.Position = Position{StartingRow: new_row, StartingCol: new_col}
@@ -108,4 +109,3 @@ func (self *Window) render_background() string {
 
 	return bg_builder.String()
 }
-

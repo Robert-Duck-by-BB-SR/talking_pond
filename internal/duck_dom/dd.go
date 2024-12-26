@@ -89,24 +89,29 @@ func cycle_index(new, len int) int {
 func (self *Screen) change_window(direction int) {
 	old_window := self.Windows[self.ActiveWindowId]
 	old_window.Border.Style = RoundedBorder
+	old_window.Active = false
 	self.ActiveWindowId = cycle_index(self.ActiveWindowId+direction, len(self.Windows))
 	new_window := self.Windows[self.ActiveWindowId]
-	new_window.Border.Style = BoldBorder
+	new_window.Active = true
 	self.RenderQueue = append(
 		self.RenderQueue,
-		render_border(old_window.Position, &old_window.Styles),
-		render_border(new_window.Position, &new_window.Styles),
+		render_border(old_window.Position, old_window.Active, &old_window.Styles),
+		render_border(new_window.Position, new_window.Active, &new_window.Styles),
 	)
 	if len(old_window.Components) > 0 {
+		old_active := old_window.Components[old_window.ActiveComponentId]
+		old_active.Active = false
 		self.RenderQueue = append(
 			self.RenderQueue,
-			RESET_STYLES+old_window.Components[old_window.ActiveComponentId].Render(),
+			old_active.Render(),
 		)
 	}
 	if len(new_window.Components) > 0 {
+		new_active := new_window.Components[new_window.ActiveComponentId]
+		new_active.Active = true
 		self.RenderQueue = append(
 			self.RenderQueue,
-			INVERT_STYLES+new_window.Components[new_window.ActiveComponentId].Render(),
+			new_active.Render(),
 		)
 	}
 }
@@ -115,16 +120,19 @@ func (self *Screen) change_component(direction int) {
 	active_window := self.Windows[self.ActiveWindowId]
 	if len(active_window.Components) > 0 {
 		prev_component := active_window.Components[active_window.ActiveComponentId]
+		prev_component.Active = false
 		self.RenderQueue = append(
 			self.RenderQueue,
-			RESET_STYLES+prev_component.Render())
+			prev_component.Render(),
+		)
 
 		active_window.ActiveComponentId = cycle_index(active_window.ActiveComponentId+direction, len(active_window.Components))
 		if len(active_window.Components) > 0 {
 			new_component := active_window.Components[active_window.ActiveComponentId]
+			new_component.Active = true
 			self.RenderQueue = append(
 				self.RenderQueue,
-				INVERT_STYLES+new_component.Render(),
+				new_component.Render(),
 			)
 		}
 	}
