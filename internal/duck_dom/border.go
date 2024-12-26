@@ -91,13 +91,19 @@ var (
 	}
 )
 
-func render_border(position Position, styles *Styles) string {
+func render_border(position Position, active bool, styles *Styles) string {
 	// box-sizing: border-box;
 	var border_builder strings.Builder
 
-	middle := strings.Repeat(styles.Border.Style.Bottom, styles.Width-2)
-	top := styles.Border.Style.TopLeft + middle + styles.Border.Style.TopRight
-	bottom := styles.Border.Style.BottomLeft + middle + styles.Border.Style.BottomRight
+	border_style := styles.Border.Style
+
+	if border_style != NoBorder && active {
+		border_style = BoldBorder
+	}
+
+	middle := strings.Repeat(border_style.Bottom, styles.Width-2)
+	top := border_style.TopLeft + middle + border_style.TopRight
+	bottom := border_style.BottomLeft + middle + border_style.BottomRight
 
 	border_builder.WriteString(RESET_STYLES)
 	border_builder.WriteString(styles.Border.Color)
@@ -107,7 +113,7 @@ func render_border(position Position, styles *Styles) string {
 	for i := 1; uint(i) < uint(styles.Height)-1; i += 1 {
 		left_wall := fmt.Sprintf(MOVE_CURSOR_TO_POSITION, position.StartingRow+i, position.StartingCol)
 		right_wall := fmt.Sprintf(MOVE_CURSOR_TO_POSITION, position.StartingRow+i, position.StartingCol+styles.Width-1)
-		wall := left_wall + styles.Border.Style.Left + right_wall + styles.Border.Style.Right
+		wall := left_wall + border_style.Left + right_wall + border_style.Right
 		border_builder.WriteString(wall)
 	}
 	border_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, styles.Height+int(position.StartingRow)-1, position.StartingCol))

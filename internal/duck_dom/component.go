@@ -12,15 +12,10 @@ type Component struct {
 	Buffer          string
 	Parent          *Window
 	ChildComponents []Component
-	// NOTE: we should really think about it
-	// maybe it would be better if we just made a bunch of functions
-	// that take *Component as an input and does some actions with it
-	Action func()
+	Active          bool
 }
 
 func CreateComponent(buffer string, styles Styles) *Component {
-	// check styles
-	// change width of component in case if buffer is bigger than provided
 	assert_component_dimensions(&styles)
 
 	component := Component{
@@ -42,10 +37,6 @@ func assert_component_dimensions(styles *Styles) {
 	}
 }
 
-func (self *Component) ExecuteAction() {
-	self.Action()
-}
-
 func (self *Component) Render() string {
 	// TODO: test me
 	// later somewhere here I will implement
@@ -53,17 +44,22 @@ func (self *Component) Render() string {
 	// 2. text-align
 
 	var builder strings.Builder
+	if self.Active {
+		builder.WriteString(INVERT_STYLES)
+	} else {
+		builder.WriteString(RESET_STYLES)
+	}
 	builder.WriteString(self.Styles.Compile())
 	builder.WriteString(self.render_background())
 	builder.WriteString(self.render_buffer())
 	builder.WriteString(RESET_STYLES)
-	self.Content = builder.String()
 
 	// TODO: test me
 	if self.Styles.Border.Style != NoBorder {
-		self.Content += render_border(self.Position, &self.Styles)
+		builder.WriteString(render_border(self.Position, self.Active, &self.Styles))
 	}
 
+	self.Content = builder.String()
 	return self.Content
 }
 
