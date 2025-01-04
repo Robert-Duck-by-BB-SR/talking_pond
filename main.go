@@ -12,16 +12,18 @@ import (
 	"strings"
 )
 
-var frame_chars = []byte{' ', '`', '.', ',', '~', '+', '*', '&', '#', '@'}
+// var frame_chars = []byte{' ', '`', '.', ',', '~', '+', '*', '&', '#', '@'}
 
-func request_convo_id(config [2]string, conn net.Conn) []byte {
-	// NOTE: simulating conversation creation
-	data := []byte{1}
-	data = append(data, "create:conversation;key:"...)
-	data = append(data, []byte(config[1])...)
-	data = append(data, ";users:tredstart"...)
-	data = append(data, '\n')
-	send(conn, data)
+func create_convesation(key string, conn net.Conn) []byte {
+	var data strings.Builder
+	data.WriteByte(1)
+	data.WriteString(key)
+	data.WriteByte(255)
+	data.WriteString("create")
+	data.WriteByte(255)
+	data.WriteString("tredstart") // TODO: should be a param
+	data.WriteByte('\n')
+	send(conn, []byte(data.String()))
 
 	message, _, err := bufio.NewReader(conn).ReadLine()
 	fmt.Println(string(message))
@@ -32,22 +34,28 @@ func request_convo_id(config [2]string, conn net.Conn) []byte {
 	return message
 }
 
-func request_messages(config [2]string, conn net.Conn, convo []byte) {
-	// NOTE: simulating conversation creation
-	data := []byte{1}
-	data = append(data, "get:messages;key:"...)
-	data = append(data, []byte(config[1])...)
-	data = append(data, ";conversation:"...)
-	data = append(data, convo...)
-	data = append(data, '\n')
-	send(conn, data)
+func request_messages(key string, conn net.Conn, convo []byte) {
+	var data strings.Builder
+	data.WriteByte(1)
+	data.WriteString(key)
+	data.WriteByte(255)
+	data.WriteString("get")
+	data.WriteByte(255)
+	data.WriteString("message")
+	data.WriteByte(255)
+	data.WriteString(string(convo))
+	data.WriteByte('\n')
+	send(conn, []byte(data.String()))
+
+	receive(conn)
 }
 
 func request_to_connect(key string, conn net.Conn) {
-	data := []byte{2}
-	data = append(data, key...)
-	data = append(data, '\n')
-	send(conn, data)
+	var data strings.Builder
+	data.WriteByte(2)
+	data.WriteString(key)
+	data.WriteByte('\n')
+	send(conn, []byte(data.String()))
 }
 
 func send(conn net.Conn, data []byte) {
@@ -60,6 +68,40 @@ func send(conn net.Conn, data []byte) {
 	if err != nil {
 		log.Fatalf("Flush error: %v", err)
 	}
+	log.Println("data sent")
+}
+
+func send_message(conn net.Conn, key, convo string, scanner *bufio.Scanner) {
+	var data strings.Builder
+	data.WriteByte(0)
+	data.WriteString(key)
+	data.WriteByte(255)
+	data.WriteString(convo)
+	data.WriteByte(255)
+	data.WriteByte(0) // message type
+	data.WriteByte(255)
+	data.WriteString(scanner.Text())
+	data.WriteByte('\n')
+	send(conn, []byte(data.String()))
+}
+
+func receive(conn net.Conn) error {
+	message, _, err := bufio.NewReader(conn).ReadLine()
+	log.Println(message)
+	if err != nil {
+		log.Println("Read error:", err)
+		return err
+	}
+	parts := strings.Split(string(message), string([]byte{254}))
+	log.Println(parts)
+	for _, part := range parts {
+		m := strings.Split(part, string([]byte{255}))
+		log.Println(len(m))
+		if len(m) == 5 {
+			fmt.Println(m[1], ":", m[4], "->", m[3])
+		}
+	}
+	return nil
 }
 
 func main() {
@@ -103,7 +145,6 @@ func main() {
 	}
 	server_addr := config[0] + server_port
 
-	// Dial the WebSocket server
 	log.Printf("Connecting to %s...", config[0])
 	conn, err := net.Dial("tcp", server_addr)
 	if err != nil {
@@ -118,26 +159,18 @@ func main() {
 
 	request_to_connect(config[1], conn)
 
-	// convo := request_convo_id(config, conn)
-	// request_messages(config, conn, convo)
-	convo := "76661755-0c6e-4f99-8c7e-5feb72698be5"
-	request_messages(config, conn, []byte(convo))
+	// convo := create_convesation(config[1], conn)
+	// request_messages(config[1], conn, convo)
+	convo := "a5c2fe80-22b7-495e-b2a6-79bf4eacf173"
+	request_messages(config[1], conn, []byte(convo))
 
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
 		for {
-			message, _, err := bufio.NewReader(conn).ReadLine()
-			if err != nil {
-				log.Println("Read error:", err)
-				return
-			}
-			parts := strings.Split(string(message), ";")
-			for _, part := range parts {
-				m := strings.Split(part, "|")
-				if len(m) == 5 {
-					fmt.Println(m[1], ":", m[4], "->", m[3])
-				}
+			log.Println("starting receive")
+			if err := receive(conn); err != nil {
+				break
 			}
 		}
 	}()
@@ -145,21 +178,7 @@ func main() {
 	go func() {
 		scanner := bufio.NewScanner(os.Stdin)
 		for scanner.Scan() {
-			data := []byte{0, 1, byte(len(config[1]))}
-			data = append(data, []byte(config[1])...)
-			data = append(data, convo...)
-			data = append(data, 0)
-			data = append(data, scanner.Bytes()...)
-			data = append(data, '\n')
-			writer := bufio.NewWriter(conn)
-			_, err := writer.Write(data)
-			if err != nil {
-				log.Fatalf("Write error: %v", err)
-			}
-			err = writer.Flush()
-			if err != nil {
-				log.Fatalf("Flush error: %v", err)
-			}
+			send_message(conn, config[1], string(convo), scanner)
 		}
 	}()
 
@@ -171,6 +190,7 @@ func main() {
 		case <-interrupt:
 			log.Println("Interrupt received, closing connection")
 			// Send a close message to the server
+			// FIXME: this is bs in the current setup
 			data := []byte{127}
 			data = append(data, "close please"...)
 			_, err = bufio.NewWriter(conn).Write(data)
