@@ -22,9 +22,9 @@ const (
 )
 type Styles struct {
 	Width      int
-	MinWidth   int
 	MaxWidth   int
 	Height     int
+	MaxHeight     int
 	Paddding   int
 	Maaargin   int
 	Background string
@@ -47,11 +47,6 @@ func (self *Styles) SetWidth(w int) *Styles {
 	return self
 }
 
-func (self *Styles) SetMinWidth(w int) *Styles {
-	self.MinWidth = w
-	return self
-}
-
 func (self *Styles) SetMaxWidth(w int) *Styles {
 	self.MaxWidth = w
 	return self
@@ -59,6 +54,11 @@ func (self *Styles) SetMaxWidth(w int) *Styles {
 
 func (self *Styles) SetHeight(h int) *Styles {
 	self.Height = h
+	return self
+}
+
+func (self *Styles) SetMaxHeight(w int) *Styles {
+	self.MaxHeight = w
 	return self
 }
 
