@@ -9,8 +9,8 @@ import (
 type Direction int
 
 const (
-	Block Direction = iota
-	Inline
+	BLOCK Direction = iota
+	INLINE
 )
 
 type TextAlingment int
@@ -20,11 +20,12 @@ const (
 	Center
 	Right
 )
+
 type Styles struct {
 	Width      int
 	MaxWidth   int
 	Height     int
-	MaxHeight     int
+	MaxHeight  int
 	Paddding   int
 	Maaargin   int
 	Background string

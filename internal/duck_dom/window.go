@@ -50,11 +50,7 @@ func (self *Window) Render() string {
 }
 
 func (self *Window) AddComponent(c *Component) {
-	if len(self.Components) > 0 {
-		c.Index = len(self.Components) + 1
-	} else{
-		c.Index = 0
-	}
+	c.Index = len(self.Components)
 	c.Parent = self
 	self.Components = append(self.Components, c)
 }

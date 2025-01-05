@@ -159,68 +159,70 @@ func main() {
 	)
 	screen.AddWindow(sidebar)
 
-	// content := dd.CreateWindow(dd.Styles{
-	// 	Width:      screen.Width - sidebar.Styles.Width - 1,
-	// 	Height:     int(float32(screen.Height)*0.7) + 1,
-	// 	Background: dd.MakeRGBBackground(69, 150, 100),
-	// 	Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
-	// })
-	//
-	// content.Position.Col = sidebar.Col + sidebar.Width
-	// content.Position.Row = sidebar.Row
-	// content.AddComponent(
-	// 	dd.CreateComponent(
-	// 		"|SIMD|",
-	// 		dd.Styles{
-	// 			Width:      10,
-	// 			Height:     10,
-	// 			Background: dd.MakeRGBBackground(80, 40, 100),
-	// 			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
-	// 		},
-	// 	))
-	// content.AddComponent(
-	// 	dd.CreateComponent(
-	// 		"LIGMA???",
-	// 		dd.Styles{
-	// 			Width:      10,
-	// 			Height:     10,
-	// 			Background: dd.MakeRGBBackground(80, 40, 100),
-	// 			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
-	// 		},
-	// 	))
-	//
-	// screen.AddWindow(content)
-	//
-	// input_bar := &dd.Window{
-	// 	Position: dd.Position{Row: content.Height + 1, Col: sidebar.Width + 1},
-	// 	Styles: dd.Styles{
-	// 		Width:      screen.Width - sidebar.Styles.Width - 1,
-	// 		Height:     int(float32(screen.Height)*0.3) - 1,
-	// 		Background: dd.MakeRGBBackground(150, 150, 40),
-	// 		Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
-	// 	},
-	// }
-	//
-	// screen.AddWindow(input_bar)
-	//
-	// screen.StatusBar = dd.Window{
-	// 	Position: dd.Position{Row: screen.Height, Col: 1},
-	// 	Styles: dd.Styles{
-	// 		Width:      screen.Width,
-	// 		Height:     1,
-	// 		Background: dd.MakeRGBBackground(80, 40, 100),
-	// 	},
-	// }
-	// screen.StatusBar.Components = []*dd.Component{
-	// 	{
-	// 		Position: dd.Position{Row: screen.Height, Col: 2},
-	// 		Buffer:   dd.NORMAL,
-	// 		Styles: dd.Styles{
-	// 			Width:  len(dd.COMMAND),
-	// 			Height: 1,
-	// 		},
-	// 	},
-	// }
+	content := dd.CreateWindow(dd.Styles{
+		Width:      screen.Width - sidebar.Styles.Width - 1,
+		Height:     int(float32(screen.Height)*0.7) + 1,
+		Background: dd.MakeRGBBackground(69, 150, 100),
+		Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+		Direction:  dd.INLINE,
+	})
+
+	content.Position.Col = sidebar.Col + sidebar.Width
+	content.Position.Row = sidebar.Row
+	content.AddComponent(
+		dd.CreateComponent(
+			"|SIMD|",
+			dd.Styles{
+				Width:      10,
+				Height:     10,
+				Background: dd.MakeRGBBackground(80, 40, 100),
+				Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+			},
+		))
+	content.AddComponent(
+		dd.CreateComponent(
+			"LIGMA???",
+			dd.Styles{
+				Width:      10,
+				Height:     10,
+				Background: dd.MakeRGBBackground(80, 40, 100),
+				Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+			},
+		))
+
+	screen.AddWindow(content)
+
+	input_bar := &dd.Window{
+		Position: dd.Position{Row: content.Height + 1, Col: sidebar.Width + 1},
+		Styles: dd.Styles{
+			Width:      screen.Width - sidebar.Styles.Width - 1,
+			Height:     int(float32(screen.Height)*0.3) - 1,
+			Background: dd.MakeRGBBackground(150, 150, 40),
+			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+		},
+	}
+
+	screen.AddWindow(input_bar)
+
+	screen.StatusBar = dd.Window{
+		Position: dd.Position{Row: screen.Height, Col: 1},
+		Styles: dd.Styles{
+			Width:      screen.Width,
+			Height:     1,
+			Background: dd.MakeRGBBackground(80, 40, 100),
+		},
+	}
+	screen.StatusBar.Components = []*dd.Component{
+		{
+			Parent:   &screen.StatusBar,
+			Position: dd.Position{Row: screen.Height, Col: 2},
+			Buffer:   dd.NORMAL,
+			Styles: dd.Styles{
+				Width:  len(dd.COMMAND),
+				Height: 1,
+			},
+		},
+	}
 
 	screen.Render()
 	screen.Activate()

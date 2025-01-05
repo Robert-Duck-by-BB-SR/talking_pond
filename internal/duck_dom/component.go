@@ -13,7 +13,7 @@ type Component struct {
 	Parent          *Window
 	ChildComponents []Component
 	Active          bool
-	Index			int
+	Index           int
 }
 
 func CreateComponent(buffer string, styles Styles) *Component {
@@ -82,73 +82,54 @@ func (self *Component) Render() string {
 	return self.Content
 }
 
-func (self *Component) rearrange_component(){
+func (self *Component) rearrange_component() {
 	if self.Index == 0 {
-		move_row_by := 0 
-		move_col_by := 0 
+		self.Row = self.Parent.Row
+		self.Col = self.Parent.Col
 
-		if self.Parent.Styles.Border.Style != NoBorder{
-			move_col_by += 1
-			move_row_by += 1
+		if self.Parent.Border.Style != NoBorder {
+			self.Row += 1
+			self.Col += 1
 		}
 
-		move_col_by += self.Parent.Styles.Paddding
-		move_row_by += self.Parent.Styles.Paddding
-
-		self.Position = Position{Row: self.Parent.Row + move_row_by, Col: self.Parent.Col + move_col_by}
-
-	} else{
-		siblings := self.Parent.Components
-		if self.Styles.Direction == Block {
-			last_component := siblings[len(siblings)-1]
-			new_row := last_component.Row + last_component.Height
-			new_col := last_component.Col
-
-			DebugMeDaddy(self.Parent.Parent, string(new_col))
-
-			// move to the next line in case it doesnt fit
-
-			// rows_will_take := new_row + self.Styles.Height
-			// cols_will_take := new_col + self.Width
-			// assert_component_placement(rows_will_take, cols_will_take, c, self)
-
-			self.Position = Position{Row: new_row, Col: new_col}
-		} else {
-			last_component := siblings[len(siblings)-1]
-			new_row := last_component.Row
-			new_col := last_component.Col + last_component.Width
-			// assert_component_placement(new_row+self.Height, new_col+self.Width, c, self)
-
-			self.Position = Position{Row: new_row, Col: new_col}
-		}
-		// arrange based on other siblings
+		return
 	}
 
-	// if len(siblings) == 1 {
-	// 	if self.Border.Style != NoBorder {
-	// 		self.Position = Position{StartingRow: self.StartingRow + 1, StartingCol: self.StartingCol + 1}
-	// 	}
-	// 	// assert_component_placement( self.StartingRow+self.Styles.Height, self.StartingCol+self.Width, self. self)
-	// } else {
-	// 	if self.Styles.Direction == Block {
-	// 		last_component := siblings[len(siblings)-1]
-	// 		new_row := last_component.StartingRow + last_component.Height
-	// 		new_col := last_component.StartingCol
-	//
-	// 		// rows_will_take := new_row + self.Styles.Height
-	// 		// cols_will_take := new_col + self.Width
-	// 		// assert_component_placement(rows_will_take, cols_will_take, c, self)
-	//
-	// 		self.Position = Position{StartingRow: new_row, StartingCol: new_col}
-	// 	} else {
-	// 		last_component := siblings[len(siblings)-1]
-	// 		new_row := last_component.StartingRow
-	// 		new_col := last_component.StartingCol + last_component.Width
-	// 		// assert_component_placement(new_row+self.Height, new_col+self.Width, c, self)
-	//
-	// 		self.Position = Position{StartingRow: new_row, StartingCol: new_col}
-	// 	}
-	// }
+	prev_component := self.Parent.Components[self.Index-1]
+	if self.Parent.Direction == BLOCK {
+		self.Row = prev_component.Row + prev_component.Height
+		self.Col = prev_component.Col
+	} else {
+		self.Row = prev_component.Row
+		self.Col = prev_component.Col + prev_component.Width
+	}
+}
+
+func (self *Component) calculate_dimensions() {
+	// width auto
+	styles := self.Styles
+	if styles.Width == 0 {
+		styles.Width = len(self.Buffer)
+	}
+	if styles.MaxWidth != 0 && len(self.Buffer) > styles.MaxWidth {
+		styles.Width = styles.MaxWidth
+	}
+
+	shift_cursor_by_border := 0
+	if self.Styles.Border.Style != NoBorder {
+		shift_cursor_by_border += 1
+	}
+
+	allowed_horizontal_space := self.Width - shift_cursor_by_border*2 - self.Styles.Paddding*2
+	lines_used := 0
+	content := self.Buffer
+	for len(content) > allowed_horizontal_space {
+		// buffer_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, moved_row+lines_used, moved_col))
+		// buffer_builder.WriteString(content[:allowed_horizontal_space])
+		content = content[allowed_horizontal_space:]
+		lines_used += 1
+	}
+	self.Height = lines_used
 }
 
 func (self *Component) render_background() string {
