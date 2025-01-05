@@ -92,6 +92,9 @@ func (self *Component) rearrange_component() {
 			self.Col += 1
 		}
 
+		self.Row += self.Parent.Paddding
+		self.Col += self.Parent.Paddding
+
 		return
 	}
 
