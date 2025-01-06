@@ -23,6 +23,7 @@ const (
 
 type Styles struct {
 	Width      int
+	MinWidth   int
 	MaxWidth   int
 	Height     int
 	MaxHeight  int

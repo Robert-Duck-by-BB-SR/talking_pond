@@ -10,9 +10,11 @@ type Component struct {
 	Styles
 	Content         string
 	Buffer          string
+	InsertBuffer 	*string
 	Parent          *Window
 	ChildComponents []Component
 	Active          bool
+	Inputable		bool
 	Index           int
 }
 
@@ -68,9 +70,13 @@ func (self *Component) rearrange_component() {
 	}
 
 	prev_component := self.Parent.Components[self.Index-1]
-	// component allows only block direction
-	self.Row = prev_component.Row + prev_component.Height
-	self.Col = prev_component.Col
+	if self.Direction == BLOCK {
+		self.Row = prev_component.Row + prev_component.Height
+		self.Col = prev_component.Col
+	} else {
+		self.Row = prev_component.Row
+		self.Col = prev_component.Col + prev_component.Width
+	}
 }
 
 // Changes dimentions of a component based on content
@@ -81,8 +87,11 @@ func (self *Component) calculate_dimensions() {
 		shift_cursor_by_border += 1
 	}
 
-	// width auto
-	if self.Width == 0 {
+	if self.MaxWidth == 0 && self.Width == 0 {
+		panic("MaxWidth and Width some of them at least should not be 0")
+	}
+
+	if self.MaxWidth != 0 && self.Width <= self.MaxWidth {
 		self.Width = len(self.Buffer)
 		self.Width += self.Paddding*2 + shift_cursor_by_border * 2
 	}

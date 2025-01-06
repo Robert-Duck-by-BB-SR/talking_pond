@@ -138,13 +138,16 @@ func (self *Screen) change_component(direction int) {
 	}
 }
 
+func (self *Screen) set_component(direction int) {
+	// TODO: set specific id for component to jump to it 
+}
+
 func (self *Screen) Activate() {
 	self.change_component(0)
 }
 
 func (self *Screen) AddWindow(w *Window) {
 	w.Oldfart = self
-	// provide relative positioning
 	self.Windows = append(self.Windows, w)
 }
 
@@ -171,9 +174,20 @@ func (*NormalMode) HandleKeypress(screen *Screen, keys []byte) {
 		screen.StatusBar.Components[0].Buffer = COMMAND
 		screen.RenderQueue = append(screen.RenderQueue, screen.StatusBar.Render())
 	case 'i':
+		active_window := screen.Windows[screen.ActiveWindowId]
+		active_component := active_window.Components[active_window.ActiveComponentId]
+		if active_component.Inputable {
+			screen.State = &Insert
+			screen.StatusBar.Components[0].Buffer = INSERT
+			screen.RenderQueue = append(screen.RenderQueue, screen.StatusBar.Render())
+		}
+	case 'I':
 		screen.State = &Insert
 		screen.StatusBar.Components[0].Buffer = INSERT
 		screen.RenderQueue = append(screen.RenderQueue, screen.StatusBar.Render())
+		screen.ActiveWindowId = len(screen.Windows) - 1
+		input_window := screen.Windows[screen.ActiveWindowId]
+		input_window.ActiveComponentId = 0
 	}
 }
 
@@ -184,14 +198,29 @@ var Insert InsertMode
 func (*InsertMode) HandleKeypress(screen *Screen, keys []byte) {
 	switch keys[0] {
 	case '':
+		fallthrough
+	case '':
 		screen.State = &Normal
 		screen.StatusBar.Components[0].Buffer = NORMAL
 		screen.RenderQueue = append(screen.RenderQueue, screen.StatusBar.Render())
-	case 'j':
-		screen.RenderQueue = append(screen.RenderQueue, "jjjjjjjj")
-	case 'i':
-		screen.RenderQueue = append(screen.RenderQueue, "iiiiiii")
-	}
+	default:
+		active_window := screen.Windows[screen.ActiveWindowId]
+		active_component := active_window.Components[active_window.ActiveComponentId]
+		if active_component.Inputable {
+		}
+		active_component.Buffer += string(keys[0])
+		screen.RenderQueue = append(screen.RenderQueue, active_window.Render())
+	} 
+}
+
+func to_normal(){
+	// TODO: copy everywhere
+	// USE CTRL C as well
+	// TODO: tredstart do it..., ppppklllleaaase
+
+	// screen.State = &Normal
+	// screen.StatusBar.Components[0].Buffer = NORMAL
+	// screen.RenderQueue = append(screen.RenderQueue, screen.StatusBar.Render())
 }
 
 type CommandMode struct{}
@@ -209,7 +238,6 @@ func (*CommandMode) HandleKeypress(screen *Screen, keys []byte) {
 
 type WindowMode struct{}
 
-// FIXME: PAPI RENAME
 var WM WindowMode
 
 func (*WindowMode) HandleKeypress(screen *Screen, keys []byte) {

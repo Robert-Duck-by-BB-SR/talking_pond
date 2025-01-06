@@ -138,8 +138,6 @@ func main() {
 	sidebar.AddComponent(
 		dd.CreateComponent("Deez nuts123123", dd.Styles{
 			MaxWidth: 10,
-			// Width:      10,
-			// Height:     5,
 			Background: dd.MakeRGBBackground(250, 0, 0),
 			TextColor:  dd.MakeRGBTextColor(0, 0, 0),
 			Paddding:   1,
@@ -149,13 +147,11 @@ func main() {
 
 	sidebar.AddComponent(
 		dd.CreateComponent("Deez nuts", dd.Styles{
-			// Width:      10,
-			// Height:     10,
+			MaxWidth: 10,
 			Background: dd.MakeRGBBackground(250, 0, 0),
 			TextColor:  dd.MakeRGBTextColor(0, 0, 0),
-			// Paddding:   1,
-			Border: dd.Border{Style: dd.NoBorder},
-			// Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+			Paddding:   1,
+			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 		},
 		),
 	)
@@ -163,7 +159,7 @@ func main() {
 
 	content := dd.CreateWindow(dd.Styles{
 		Width:      screen.Width - sidebar.Styles.Width - 1,
-		Height:     int(float32(screen.Height)*0.7) + 1,
+		Height:     int(float32(screen.Height)*0.9) + 1,
 		Background: dd.MakeRGBBackground(69, 150, 100),
 		Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 		Direction:  dd.INLINE,
@@ -175,22 +171,18 @@ func main() {
 		dd.CreateComponent(
 			"|SIMD|",
 			dd.Styles{
-				// Width:      10,
-				// Height:     10,
+				MaxWidth: 10,
 				Background: dd.MakeRGBBackground(80, 40, 100),
-				Border: dd.Border{Style: dd.NoBorder},
-				// Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+				Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 			},
 		))
 	content.AddComponent(
 		dd.CreateComponent(
-			"LIGMA??? Balls",
+			"LIGMA???",
 			dd.Styles{
-				// Width:      10,
-				// Height:     10,
+				MaxWidth: 10,
 				Background: dd.MakeRGBBackground(80, 40, 100),
-				Border: dd.Border{Style: dd.NoBorder},
-				// Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+				Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 			},
 		))
 
@@ -200,33 +192,43 @@ func main() {
 		Position: dd.Position{Row: content.Height + 1, Col: sidebar.Width + 1},
 		Styles: dd.Styles{
 			Width:      screen.Width - sidebar.Styles.Width - 1,
-			Height:     int(float32(screen.Height)*0.3) - 1,
-			Background: dd.MakeRGBBackground(150, 150, 40),
+			Height:     int(float32(screen.Height)*0.1) - 1,
 			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 		},
 	}
 
+	input_bar.AddComponent(
+		dd.CreateComponent(
+			"",
+			dd.Styles{
+				MinWidth: 10,
+				MaxWidth: input_bar.Width - 2,
+				Background: dd.MakeRGBBackground(100, 40, 100),
+			},
+		))
+
+	input_bar.Components[0].Inputable = true
 	screen.AddWindow(input_bar)
 
-	// screen.StatusBar = dd.Window{
-	// 	Position: dd.Position{Row: screen.Height, Col: 1},
-	// 	Styles: dd.Styles{
-	// 		Width:      screen.Width,
-	// 		Height:     1,
-	// 		Background: dd.MakeRGBBackground(80, 40, 100),
-	// 	},
-	// }
-	// screen.StatusBar.Components = []*dd.Component{
-	// 	{
-	// 		Parent:   &screen.StatusBar,
-	// 		Position: dd.Position{Row: screen.Height, Col: 2},
-	// 		Buffer:   dd.NORMAL,
-	// 		Styles: dd.Styles{
-	// 			Width:  len(dd.COMMAND),
-	// 			Height: 1,
-	// 		},
-	// 	},
-	// }
+	screen.StatusBar = dd.Window{
+		Position: dd.Position{Row: screen.Height, Col: 1},
+		Styles: dd.Styles{
+			Width:      screen.Width,
+			Height:     1,
+			Background: dd.MakeRGBBackground(80, 40, 100),
+		},
+	}
+	screen.StatusBar.Components = []*dd.Component{
+		{
+			Parent:   &screen.StatusBar,
+			Position: dd.Position{Row: screen.Height, Col: 2},
+			Buffer:   dd.NORMAL,
+			Styles: dd.Styles{
+				Width:  len(dd.COMMAND),
+				Height: 1,
+			},
+		},
+	}
 
 	screen.Render()
 	screen.Activate()

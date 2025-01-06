@@ -55,21 +55,6 @@ func (self *Window) AddComponent(c *Component) {
 	self.Components = append(self.Components, c)
 }
 
-func assert_component_placement(rows_will_take, cols_will_take int, c *Component, w *Window) {
-	if cols_will_take > w.Width {
-		panic(fmt.Sprintf(
-			"Component width is too big: window [r,c][%d,%d] [w,h][%d,%d] will not fit component [r,c][%d,%d] [w,h][%d,%d]",
-			w.Row, w.Col, w.Styles.Width, w.Styles.Height, c.Row, c.Col, c.Styles.Width, c.Styles.Height,
-		))
-	}
-	if rows_will_take > w.Height {
-		panic(fmt.Sprintf(
-			"Component height is too big: window [r,c][%d,%d] [w,h][%d,%d] will not fit component [r,c][%d,%d] [w,h][%d,%d]",
-			w.Row, w.Col, w.Styles.Width, w.Styles.Height, c.Row, c.Col, c.Styles.Width, c.Styles.Height,
-		))
-	}
-}
-
 func (self *Window) render_background() string {
 	var bg_builder strings.Builder
 	bg_builder.WriteString(self.Styles.Background)
