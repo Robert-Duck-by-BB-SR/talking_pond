@@ -7,7 +7,7 @@ import (
 
 type Window struct {
 	Position
-	Parent *Screen
+	Oldfart *Screen
 	Styles
 	ActiveComponentId int
 	Components        []*Component

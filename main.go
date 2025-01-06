@@ -137,23 +137,25 @@ func main() {
 
 	sidebar.AddComponent(
 		dd.CreateComponent("Deez nuts123123", dd.Styles{
-			Width:      10,
-			Height:     5,
+			MaxWidth: 10,
+			// Width:      10,
+			// Height:     5,
 			Background: dd.MakeRGBBackground(250, 0, 0),
 			TextColor:  dd.MakeRGBTextColor(0, 0, 0),
-			// Paddding:   1,
+			Paddding:   1,
 			Border: dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 		}),
 	)
 
 	sidebar.AddComponent(
 		dd.CreateComponent("Deez nuts", dd.Styles{
-			Width:      10,
-			Height:     10,
+			// Width:      10,
+			// Height:     10,
 			Background: dd.MakeRGBBackground(250, 0, 0),
 			TextColor:  dd.MakeRGBTextColor(0, 0, 0),
-			Paddding:   1,
-			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+			// Paddding:   1,
+			Border: dd.Border{Style: dd.NoBorder},
+			// Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 		},
 		),
 	)
@@ -173,20 +175,22 @@ func main() {
 		dd.CreateComponent(
 			"|SIMD|",
 			dd.Styles{
-				Width:      10,
-				Height:     10,
+				// Width:      10,
+				// Height:     10,
 				Background: dd.MakeRGBBackground(80, 40, 100),
-				Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+				Border: dd.Border{Style: dd.NoBorder},
+				// Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 			},
 		))
 	content.AddComponent(
 		dd.CreateComponent(
-			"LIGMA???",
+			"LIGMA??? Balls",
 			dd.Styles{
-				Width:      10,
-				Height:     10,
+				// Width:      10,
+				// Height:     10,
 				Background: dd.MakeRGBBackground(80, 40, 100),
-				Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+				Border: dd.Border{Style: dd.NoBorder},
+				// Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 			},
 		))
 
@@ -204,25 +208,25 @@ func main() {
 
 	screen.AddWindow(input_bar)
 
-	screen.StatusBar = dd.Window{
-		Position: dd.Position{Row: screen.Height, Col: 1},
-		Styles: dd.Styles{
-			Width:      screen.Width,
-			Height:     1,
-			Background: dd.MakeRGBBackground(80, 40, 100),
-		},
-	}
-	screen.StatusBar.Components = []*dd.Component{
-		{
-			Parent:   &screen.StatusBar,
-			Position: dd.Position{Row: screen.Height, Col: 2},
-			Buffer:   dd.NORMAL,
-			Styles: dd.Styles{
-				Width:  len(dd.COMMAND),
-				Height: 1,
-			},
-		},
-	}
+	// screen.StatusBar = dd.Window{
+	// 	Position: dd.Position{Row: screen.Height, Col: 1},
+	// 	Styles: dd.Styles{
+	// 		Width:      screen.Width,
+	// 		Height:     1,
+	// 		Background: dd.MakeRGBBackground(80, 40, 100),
+	// 	},
+	// }
+	// screen.StatusBar.Components = []*dd.Component{
+	// 	{
+	// 		Parent:   &screen.StatusBar,
+	// 		Position: dd.Position{Row: screen.Height, Col: 2},
+	// 		Buffer:   dd.NORMAL,
+	// 		Styles: dd.Styles{
+	// 			Width:  len(dd.COMMAND),
+	// 			Height: 1,
+	// 		},
+	// 	},
+	// }
 
 	screen.Render()
 	screen.Activate()

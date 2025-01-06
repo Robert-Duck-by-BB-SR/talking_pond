@@ -143,7 +143,7 @@ func (self *Screen) Activate() {
 }
 
 func (self *Screen) AddWindow(w *Window) {
-	w.Parent = self
+	w.Oldfart = self
 	// provide relative positioning
 	self.Windows = append(self.Windows, w)
 }
