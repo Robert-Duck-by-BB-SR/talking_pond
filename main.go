@@ -130,18 +130,16 @@ func main() {
 	sidebar := dd.CreateWindow(dd.Styles{
 		Width:      50,
 		Height:     screen.Height - 1,
-		Background: dd.MakeRGBBackground(69, 150, 100),
+		Background: dd.PRIMARY_THEME.PrimaryBg,
 		Paddding:   1,
-		Border:     dd.Border{Style: dd.BoldBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+		Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
 	})
 
 	sidebar.AddComponent(
 		dd.CreateComponent("Deez nuts123123", dd.Styles{
 			MaxWidth: 10,
-			Background: dd.MakeRGBBackground(250, 0, 0),
-			TextColor:  dd.MakeRGBTextColor(0, 0, 0),
+			TextColor:  dd.PRIMARY_THEME.SecondaryTextColor,
 			Paddding:   1,
-			Border: dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 		}),
 	)
 
@@ -160,8 +158,9 @@ func main() {
 	content := dd.CreateWindow(dd.Styles{
 		Width:      screen.Width - sidebar.Styles.Width - 1,
 		Height:     int(float32(screen.Height)*0.9) + 1,
-		Background: dd.MakeRGBBackground(69, 150, 100),
-		Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+		Background: dd.PRIMARY_THEME.PrimaryBg,
+		Paddding:   1,
+		Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
 		Direction:  dd.INLINE,
 	})
 
@@ -193,7 +192,8 @@ func main() {
 		Styles: dd.Styles{
 			Width:      screen.Width - sidebar.Styles.Width - 1,
 			Height:     int(float32(screen.Height)*0.1) - 1,
-			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
+			Background: dd.PRIMARY_THEME.PrimaryBg,
 		},
 	}
 

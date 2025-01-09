@@ -88,10 +88,13 @@ func cycle_index(new, len int) int {
 
 func (self *Screen) change_window(direction int) {
 	old_window := self.Windows[self.ActiveWindowId]
-	old_window.Border.Style = RoundedBorder
+	old_window.Border.Color = PRIMARY_THEME.SecondaryTextColor
+	old_window.Border.Style = NormalBorder
 	old_window.Active = false
 	self.ActiveWindowId = cycle_index(self.ActiveWindowId+direction, len(self.Windows))
 	new_window := self.Windows[self.ActiveWindowId]
+	new_window.Border.Color = PRIMARY_THEME.ActiveTextColor
+	new_window.Border.Style = BoldBorder
 	new_window.Active = true
 	self.RenderQueue = append(
 		self.RenderQueue,
@@ -143,6 +146,7 @@ func (self *Screen) set_component(direction int) {
 }
 
 func (self *Screen) Activate() {
+	self.change_window(0)
 	self.change_component(0)
 }
 
