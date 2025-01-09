@@ -137,15 +137,15 @@ func main() {
 
 	sidebar.AddComponent(
 		dd.CreateComponent("Deez nuts123123", dd.Styles{
-			MaxWidth: 10,
-			TextColor:  dd.PRIMARY_THEME.SecondaryTextColor,
-			Paddding:   1,
+			MaxWidth:  10,
+			TextColor: dd.PRIMARY_THEME.SecondaryTextColor,
+			Paddding:  1,
 		}),
 	)
 
 	sidebar.AddComponent(
 		dd.CreateComponent("Deez nuts", dd.Styles{
-			MaxWidth: 10,
+			MaxWidth:   10,
 			Background: dd.MakeRGBBackground(250, 0, 0),
 			TextColor:  dd.MakeRGBTextColor(0, 0, 0),
 			Paddding:   1,
@@ -170,7 +170,7 @@ func main() {
 		dd.CreateComponent(
 			"|SIMD|",
 			dd.Styles{
-				MaxWidth: 10,
+				MaxWidth:   10,
 				Background: dd.MakeRGBBackground(80, 40, 100),
 				Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 			},
@@ -179,7 +179,7 @@ func main() {
 		dd.CreateComponent(
 			"LIGMA???",
 			dd.Styles{
-				MaxWidth: 10,
+				MaxWidth:   10,
 				Background: dd.MakeRGBBackground(80, 40, 100),
 				Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 			},
@@ -201,8 +201,8 @@ func main() {
 		dd.CreateComponent(
 			"",
 			dd.Styles{
-				MinWidth: 10,
-				MaxWidth: input_bar.Width - 2,
+				MinWidth:   10,
+				MaxWidth:   input_bar.Width - 2,
 				Background: dd.MakeRGBBackground(100, 40, 100),
 			},
 		))
@@ -220,12 +220,11 @@ func main() {
 	}
 	screen.StatusBar.Components = []*dd.Component{
 		{
-			Parent:   &screen.StatusBar,
-			Position: dd.Position{Row: screen.Height, Col: 2},
-			Buffer:   dd.NORMAL,
+			Parent: &screen.StatusBar,
+			Buffer: dd.NORMAL,
 			Styles: dd.Styles{
-				Width:  len(dd.COMMAND),
-				Height: 1,
+				MaxWidth: screen.Width,
+				Height:   1,
 			},
 		},
 	}

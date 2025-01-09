@@ -86,12 +86,12 @@ func cycle_index(new, len int) int {
 	return new
 }
 
-func (self *Screen) change_window(direction int) {
+func (self *Screen) change_window(id int) {
 	old_window := self.Windows[self.ActiveWindowId]
 	old_window.Border.Color = PRIMARY_THEME.SecondaryTextColor
 	old_window.Border.Style = NormalBorder
 	old_window.Active = false
-	self.ActiveWindowId = cycle_index(self.ActiveWindowId+direction, len(self.Windows))
+	self.ActiveWindowId = id
 	new_window := self.Windows[self.ActiveWindowId]
 	new_window.Border.Color = PRIMARY_THEME.ActiveTextColor
 	new_window.Border.Style = BoldBorder
@@ -119,7 +119,7 @@ func (self *Screen) change_window(direction int) {
 	}
 }
 
-func (self *Screen) change_component(direction int) {
+func (self *Screen) change_component(id int) {
 	active_window := self.Windows[self.ActiveWindowId]
 	if len(active_window.Components) > 0 {
 		prev_component := active_window.Components[active_window.ActiveComponentId]
@@ -129,7 +129,7 @@ func (self *Screen) change_component(direction int) {
 			prev_component.Render(),
 		)
 
-		active_window.ActiveComponentId = cycle_index(active_window.ActiveComponentId+direction, len(active_window.Components))
+		active_window.ActiveComponentId = id
 		if len(active_window.Components) > 0 {
 			new_component := active_window.Components[active_window.ActiveComponentId]
 			new_component.Active = true
@@ -139,10 +139,6 @@ func (self *Screen) change_component(direction int) {
 			)
 		}
 	}
-}
-
-func (self *Screen) set_component(direction int) {
-	// TODO: set specific id for component to jump to it 
 }
 
 func (self *Screen) Activate() {
@@ -157,41 +153,34 @@ func (self *Screen) AddWindow(w *Window) {
 
 func (*NormalMode) HandleKeypress(screen *Screen, keys []byte) {
 	// big ass switch case
+	active_window := screen.Windows[screen.ActiveWindowId]
 	switch keys[0] {
 	case 'q':
 		screen.EventLoopIsRunning = false
 	case '':
-		screen.State = &WM
-		screen.StatusBar.Components[0].Buffer = WINDOW
-		screen.RenderQueue = append(screen.RenderQueue, screen.StatusBar.Components[0].Render())
+		screen.change_state(&WM, WINDOW)
 	case 'l':
 		fallthrough
 	case 'j':
-		screen.change_component(+1)
+		index := cycle_index(active_window.ActiveComponentId+1, len(active_window.Components))
+		screen.change_component(index)
 	case 'k':
 		fallthrough
 	case 'h':
-		screen.change_component(-1)
-	// switching modes
+		index := cycle_index(active_window.ActiveComponentId-1, len(active_window.Components))
+		screen.change_component(index)
 	case ':':
-		screen.State = &Command
-		screen.StatusBar.Components[0].Buffer = COMMAND
-		screen.RenderQueue = append(screen.RenderQueue, screen.StatusBar.Render())
+		screen.change_state(&Command, COMMAND)
 	case 'i':
 		active_window := screen.Windows[screen.ActiveWindowId]
 		active_component := active_window.Components[active_window.ActiveComponentId]
 		if active_component.Inputable {
-			screen.State = &Insert
-			screen.StatusBar.Components[0].Buffer = INSERT
-			screen.RenderQueue = append(screen.RenderQueue, screen.StatusBar.Render())
+			screen.change_state(&Insert, INSERT)
 		}
 	case 'I':
-		screen.State = &Insert
-		screen.StatusBar.Components[0].Buffer = INSERT
-		screen.RenderQueue = append(screen.RenderQueue, screen.StatusBar.Render())
-		screen.ActiveWindowId = len(screen.Windows) - 1
-		input_window := screen.Windows[screen.ActiveWindowId]
-		input_window.ActiveComponentId = 0
+		screen.change_state(&Insert, INSERT)
+		screen.change_window(len(screen.Windows) - 1)
+		screen.change_component(0)
 	}
 }
 
@@ -204,27 +193,19 @@ func (*InsertMode) HandleKeypress(screen *Screen, keys []byte) {
 	case '':
 		fallthrough
 	case '':
-		screen.State = &Normal
-		screen.StatusBar.Components[0].Buffer = NORMAL
-		screen.RenderQueue = append(screen.RenderQueue, screen.StatusBar.Render())
+		screen.change_state(&Normal, NORMAL)
 	default:
 		active_window := screen.Windows[screen.ActiveWindowId]
 		active_component := active_window.Components[active_window.ActiveComponentId]
-		if active_component.Inputable {
-		}
 		active_component.Buffer += string(keys[0])
 		screen.RenderQueue = append(screen.RenderQueue, active_window.Render())
-	} 
+	}
 }
 
-func to_normal(){
-	// TODO: copy everywhere
-	// USE CTRL C as well
-	// TODO: tredstart do it..., ppppklllleaaase
-
-	// screen.State = &Normal
-	// screen.StatusBar.Components[0].Buffer = NORMAL
-	// screen.RenderQueue = append(screen.RenderQueue, screen.StatusBar.Render())
+func (screen *Screen) change_state(state State, state_name string) {
+	screen.State = state
+	screen.StatusBar.Components[0].Buffer = state_name
+	screen.RenderQueue = append(screen.RenderQueue, screen.StatusBar.Render())
 }
 
 type CommandMode struct{}
@@ -233,10 +214,10 @@ var Command CommandMode
 
 func (*CommandMode) HandleKeypress(screen *Screen, keys []byte) {
 	switch keys[0] {
+	case '':
+		fallthrough
 	case '':
-		screen.State = &Normal
-		screen.StatusBar.Components[0].Buffer = NORMAL
-		screen.RenderQueue = append(screen.RenderQueue, screen.StatusBar.Render())
+		screen.change_state(&Normal, NORMAL)
 	}
 }
 
@@ -251,16 +232,16 @@ func (*WindowMode) HandleKeypress(screen *Screen, keys []byte) {
 	case '':
 		fallthrough
 	case '':
-		screen.State = &Normal
-		screen.StatusBar.Components[0].Buffer = NORMAL
-		screen.RenderQueue = append(screen.RenderQueue, screen.StatusBar.Components[0].Render())
+		screen.change_state(&Normal, NORMAL)
 	case 'l':
 		fallthrough
 	case 'j':
-		screen.change_window(+1)
+		id := cycle_index(screen.ActiveWindowId+1, len(screen.Windows))
+		screen.change_window(id)
 	case 'k':
 		fallthrough
 	case 'h':
-		screen.change_window(-1)
+		id := cycle_index(screen.ActiveWindowId-1, len(screen.Windows))
+		screen.change_window(id)
 	}
 }
