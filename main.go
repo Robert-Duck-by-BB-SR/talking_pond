@@ -10,7 +10,6 @@ import (
 	"golang.org/x/term"
 )
 
-<<<<<<< HEAD
 // var frame_chars = []byte{' ', '`', '.', ',', '~', '+', '*', '&', '#', '@'}
 
 // type CharMeDaddy struct {
@@ -110,8 +109,6 @@ import (
 // 	}
 // }
 
-=======
->>>>>>> a62a6fc (renderer: display items)
 func main() {
 	old_state, err := term.MakeRaw(int(os.Stdin.Fd()))
 	if err != nil {
