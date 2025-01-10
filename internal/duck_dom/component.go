@@ -10,11 +10,10 @@ type Component struct {
 	Styles
 	Content         string
 	Buffer          string
-	InsertBuffer 	*string
 	Parent          *Window
 	ChildComponents []Component
 	Active          bool
-	Inputable		bool
+	Inputable       bool
 	Index           int
 }
 
@@ -26,7 +25,6 @@ func CreateComponent(buffer string, styles Styles) *Component {
 
 	return &component
 }
-
 
 func (self *Component) Render() string {
 	self.rearrange_component()
@@ -45,7 +43,7 @@ func (self *Component) Render() string {
 	builder.WriteString(RESET_STYLES)
 
 	// TODO: test me
-	if self.Styles.Border.Style != NoBorder {
+	if self.Styles.Border != NoBorder {
 		builder.WriteString(render_border(self.Position, self.Active, &self.Styles))
 	}
 
@@ -58,7 +56,7 @@ func (self *Component) rearrange_component() {
 		self.Row = self.Parent.Row
 		self.Col = self.Parent.Col
 
-		if self.Parent.Border.Style != NoBorder {
+		if self.Parent.Border != NoBorder {
 			self.Row += 1
 			self.Col += 1
 		}
@@ -83,7 +81,8 @@ func (self *Component) rearrange_component() {
 // Content will be updated if it does not fit into one line
 func (self *Component) calculate_dimensions() {
 	shift_cursor_by_border := 0
-	if self.Styles.Border.Style != NoBorder {
+
+	if self.Styles.Border != NoBorder {
 		shift_cursor_by_border += 1
 	}
 
@@ -93,7 +92,10 @@ func (self *Component) calculate_dimensions() {
 
 	if self.MaxWidth != 0 && self.Width <= self.MaxWidth {
 		self.Width = len(self.Buffer)
-		self.Width += self.Paddding*2 + shift_cursor_by_border * 2
+		if self.MinWidth > self.Width {
+			self.Width = self.MinWidth
+		}
+		self.Width += self.Paddding*2 + shift_cursor_by_border*2
 	}
 
 	if self.MaxWidth != 0 && len(self.Buffer) > self.MaxWidth {
@@ -120,15 +122,15 @@ func (self *Component) calculate_dimensions() {
 	content_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, moved_row+lines_used, moved_col))
 	content_builder.WriteString(content)
 	self.Content = content_builder.String()
-	lines_used+= 1
+	lines_used += 1
 	self.Height = lines_used + shift_cursor_by_border*2 + self.Styles.Paddding*2
 }
 
 func assert_component_dimensions(styles *Styles) {
-	if styles.Border.Style != NoBorder && styles.Width < 3{
+	if styles.Border != NoBorder && styles.Width < 3 {
 		panic("Component width should be at least 3 when border was added")
 	}
-	if styles.Border.Style != NoBorder && styles.Height < 3 {
+	if styles.Border != NoBorder && styles.Height < 3 {
 		panic("Component height should be at least 3 when border was added")
 	}
 

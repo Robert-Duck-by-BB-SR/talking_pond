@@ -147,6 +147,7 @@ func (self *Screen) Activate() {
 }
 
 func (self *Screen) AddWindow(w *Window) {
+	w.Index = len(self.Windows)
 	w.Oldfart = self
 	self.Windows = append(self.Windows, w)
 }

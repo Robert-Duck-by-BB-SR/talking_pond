@@ -26,22 +26,9 @@ type BorderStyle struct {
 	MiddleBottom string
 }
 
+var NoBorder = Border{}
+
 var (
-	NoBorder = BorderStyle{
-		Top:          "",
-		Bottom:       "",
-		Left:         "",
-		Right:        "",
-		TopLeft:      "",
-		TopRight:     "",
-		BottomLeft:   "",
-		BottomRight:  "",
-		MiddleLeft:   "",
-		MiddleRight:  "",
-		Middle:       "",
-		MiddleTop:    "",
-		MiddleBottom: "",
-	}
 	NormalBorder = BorderStyle{
 		Top:          "─",
 		Bottom:       "─",
@@ -97,7 +84,7 @@ func render_border(position Position, active bool, styles *Styles) string {
 
 	border_style := styles.Border.Style
 
-	if border_style != NoBorder && active {
+	if styles.Border != NoBorder && active {
 		border_style = BoldBorder
 	}
 

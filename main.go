@@ -109,17 +109,7 @@ import (
 // 	}
 // }
 
-func main() {
-	old_state, err := term.MakeRaw(int(os.Stdin.Fd()))
-	if err != nil {
-		fmt.Println("Error enabling raw mode:", err)
-		return
-	}
-	defer term.Restore(int(os.Stdin.Fd()), old_state)
-
-	dd.ClearScreen()
-
-	screen := dd.Screen{State: &dd.Normal, EventLoopIsRunning: true}
+func create_main_window(screen *dd.Screen) {
 	width, height, _ := term.GetSize(int(os.Stdin.Fd()))
 	screen.Width = width
 	screen.Height = height
@@ -161,8 +151,6 @@ func main() {
 		Direction:  dd.INLINE,
 	})
 
-	content.Position.Col = sidebar.Col + sidebar.Width
-	content.Position.Row = sidebar.Row
 	content.AddComponent(
 		dd.CreateComponent(
 			"|SIMD|",
@@ -184,15 +172,14 @@ func main() {
 
 	screen.AddWindow(content)
 
-	input_bar := &dd.Window{
-		Position: dd.Position{Row: content.Height + 1, Col: sidebar.Width + 1},
-		Styles: dd.Styles{
+	input_bar := dd.CreateWindow(
+		dd.Styles{
 			Width:      screen.Width - sidebar.Styles.Width - 1,
 			Height:     int(float32(screen.Height)*0.1) - 1,
 			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
 			Background: dd.PRIMARY_THEME.PrimaryBg,
 		},
-	}
+	)
 
 	input_bar.AddComponent(
 		dd.CreateComponent(
@@ -225,9 +212,94 @@ func main() {
 			},
 		},
 	}
-
 	screen.Render()
 	screen.Activate()
+}
+
+func create_login_screen(screen *dd.Screen) {
+	width, height, _ := term.GetSize(int(os.Stdin.Fd()))
+	screen.Width = width
+	screen.Height = height
+
+	login := dd.CreateWindow(
+		dd.Styles{
+			Width:      40,
+			Height:     10,
+			Paddding:   1,
+			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
+			Background: dd.PRIMARY_THEME.PrimaryBg,
+		},
+	)
+	login.Position = dd.Position{Row: screen.Height/2 - 5, Col: screen.Width/2 - 20}
+
+	login.AddComponent(
+		dd.CreateComponent(
+			"",
+			dd.Styles{
+				MinWidth:   10,
+				MaxWidth:   login.Width - 2,
+				Background: dd.MakeRGBBackground(100, 40, 100),
+			},
+		))
+	login.AddComponent(
+		dd.CreateComponent(
+			"",
+			dd.Styles{
+				MinWidth:   10,
+				MaxWidth:   login.Width - 2,
+				Background: dd.MakeRGBBackground(100, 40, 100),
+			},
+		))
+	login.AddComponent(
+		dd.CreateComponent(
+			"login",
+			dd.Styles{
+				MinWidth:   10,
+				MaxWidth:   login.Width / 2,
+				Background: dd.MakeRGBBackground(100, 40, 100),
+				Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryBg},
+			},
+		))
+
+	login.Components[0].Inputable = true
+	login.Components[1].Inputable = true
+	screen.AddWindow(login)
+
+	screen.StatusBar = dd.Window{
+		Position: dd.Position{Row: screen.Height, Col: 1},
+		Styles: dd.Styles{
+			Width:      screen.Width,
+			Height:     1,
+			Background: dd.MakeRGBBackground(80, 40, 100),
+		},
+	}
+	screen.StatusBar.Components = []*dd.Component{
+		{
+			Parent: &screen.StatusBar,
+			Buffer: dd.NORMAL,
+			Styles: dd.Styles{
+				MaxWidth: screen.Width,
+				Height:   1,
+			},
+		},
+	}
+	screen.Render()
+	screen.Activate()
+}
+
+func main() {
+	old_state, err := term.MakeRaw(int(os.Stdin.Fd()))
+	if err != nil {
+		fmt.Println("Error enabling raw mode:", err)
+		return
+	}
+	defer term.Restore(int(os.Stdin.Fd()), old_state)
+
+	dd.ClearScreen()
+	screen := dd.Screen{State: &dd.Normal, EventLoopIsRunning: true}
+
+	create_main_window(&screen)
+	create_login_screen(&screen)
 
 	// TODO: Check if its possible to accept more than one byte
 	stdin_buffer := make([]byte, 1)
