@@ -283,6 +283,31 @@ func create_login_screen(screen *dd.Screen) {
 			},
 		},
 	}
+
+	ip := login.Components[0]
+	key := login.Components[1]
+
+	ip.Inputable = true
+	key.Inputable = true
+
+	login_button := login.Components[2]
+	login_button.Action = func() {
+		os.Create(".secrets")
+
+		f, err := os.Create(".secrets")
+		if err != nil {
+			panic(err)
+		}
+		_, err = f.Write([]byte(ip.Buffer + "\n" + key.Buffer + "\n"))
+		if err != nil {
+			panic(err)
+		}
+		screen.Client.ServerAddr = ip.Buffer + screen.Client.ServerPort
+		screen.Client.Config = [2]string{ip.Buffer, key.Buffer}
+		screen.Windows = []*dd.Window{}
+		create_main_window(screen)
+	}
+
 	screen.Render()
 	screen.Activate()
 }
@@ -298,34 +323,10 @@ func main() {
 	dd.ClearScreen()
 	screen := dd.Screen{State: &dd.Normal, EventLoopIsRunning: true}
 
-	client := tpc.Client{}
+	screen.Client = tpc.Client{}
 
-	if !client.LoadClient() {
+	if !screen.Client.LoadClient() {
 		create_login_screen(&screen)
-		login := screen.Windows[0]
-		ip := login.Components[0]
-		key := login.Components[1]
-
-		ip.Inputable = true
-		key.Inputable = true
-
-		login_button := login.Components[2]
-		login_button.Action = func() {
-			os.Create(".secrets")
-
-			f, err := os.Create(".secrets")
-			if err != nil {
-				panic(err)
-			}
-			_, err = f.Write([]byte(ip.Buffer + "\n" + key.Buffer + "\n"))
-			if err != nil {
-				panic(err)
-			}
-			client.ServerAddr = ip.Buffer + client.ServerPort
-			client.Config = [2]string{ip.Buffer, key.Buffer}
-			screen.Windows = []*dd.Window{}
-			create_main_window(&screen)
-		}
 	} else {
 		create_main_window(&screen)
 	}

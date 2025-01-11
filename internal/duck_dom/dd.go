@@ -2,6 +2,8 @@ package duckdom
 
 import (
 	"fmt"
+
+	tpc "github.com/Robert-Duck-by-BB-SR/talking_pond/internal/tps_client"
 )
 
 const (
@@ -48,6 +50,7 @@ type Screen struct {
 	// fuck Windows, all my homies use Linux
 	Windows     []*Window
 	RenderQueue []string
+	Client      tpc.Client
 }
 
 func (self *Screen) Render() {
