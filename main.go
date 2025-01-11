@@ -95,22 +95,6 @@ import (
 // 	}
 // }
 
-// func move_cursor(screen *dd.Screen, item dd.Renderable, direction int) {
-// 	new_index := item.ActiveIndex() + direction
-// 	if new_index >= 0 && new_index < len(screen.Windows) {
-// 		active_item := item.Active()
-// 		active_item.SetBackground("")
-//
-// 		item.SetActive(new_index)
-//
-// 		next_active_item := item.Active()
-// 		next_active_item.SetBackground(dd.INVERT_STYLES)
-//
-// 		screen.RenderQueue = append(screen.RenderQueue, active_item, next_active_item)
-// 		screen.CursorPos = next_active_item.GetPos()
-// 	}
-// }
-
 func create_main_window(screen *dd.Screen) {
 	width, height, _ := term.GetSize(int(os.Stdin.Fd()))
 	screen.Width = width
@@ -146,7 +130,7 @@ func create_main_window(screen *dd.Screen) {
 
 	content := dd.CreateWindow(dd.Styles{
 		Width:      screen.Width - sidebar.Styles.Width - 1,
-		Height:     int(float32(screen.Height)*0.9) + 1,
+		Height:     int(float32(screen.Height) * 0.8),
 		Background: dd.PRIMARY_THEME.PrimaryBg,
 		Paddding:   1,
 		Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
@@ -177,7 +161,7 @@ func create_main_window(screen *dd.Screen) {
 	input_bar := dd.CreateWindow(
 		dd.Styles{
 			Width:      screen.Width - sidebar.Styles.Width - 1,
-			Height:     int(float32(screen.Height)*0.1) - 1,
+			Height:     int(float32(screen.Height)*0.2) - 1,
 			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
 			Background: dd.PRIMARY_THEME.PrimaryBg,
 		},
@@ -196,6 +180,13 @@ func create_main_window(screen *dd.Screen) {
 	input_bar.Components[0].Inputable = true
 	screen.AddWindow(input_bar)
 
+	create_status_bar(screen)
+
+	screen.Render()
+	screen.Activate()
+}
+
+func create_status_bar(screen *dd.Screen) {
 	screen.StatusBar = dd.Window{
 		Position: dd.Position{Row: screen.Height, Col: 1},
 		Styles: dd.Styles{
@@ -214,8 +205,15 @@ func create_main_window(screen *dd.Screen) {
 			},
 		},
 	}
-	screen.Render()
-	screen.Activate()
+
+	status_line := screen.StatusBar.Components[0]
+	status_line.Action = func() {
+		buffer := status_line.Buffer[1:]
+		if buffer == "q" {
+			screen.EventLoopIsRunning = false
+			return
+		}
+	}
 }
 
 func create_login_screen(screen *dd.Screen) {
@@ -265,24 +263,7 @@ func create_login_screen(screen *dd.Screen) {
 
 	screen.AddWindow(login)
 
-	screen.StatusBar = dd.Window{
-		Position: dd.Position{Row: screen.Height, Col: 1},
-		Styles: dd.Styles{
-			Width:      screen.Width,
-			Height:     1,
-			Background: dd.MakeRGBBackground(80, 40, 100),
-		},
-	}
-	screen.StatusBar.Components = []*dd.Component{
-		{
-			Parent: &screen.StatusBar,
-			Buffer: dd.NORMAL,
-			Styles: dd.Styles{
-				MaxWidth: screen.Width,
-				Height:   1,
-			},
-		},
-	}
+	create_status_bar(screen)
 
 	ip := login.Components[0]
 	key := login.Components[1]

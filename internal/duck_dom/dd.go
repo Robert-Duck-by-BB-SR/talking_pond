@@ -174,7 +174,7 @@ func (*NormalMode) HandleKeypress(screen *Screen, keys []byte) {
 		index := cycle_index(active_window.ActiveComponentId-1, len(active_window.Components))
 		screen.change_component(index)
 	case ':':
-		screen.change_state(&Command, COMMAND)
+		screen.change_state(&Command, ":")
 	case 'i':
 		active_window := screen.Windows[screen.ActiveWindowId]
 		active_component := active_window.Components[active_window.ActiveComponentId]
@@ -221,11 +221,18 @@ type CommandMode struct{}
 var Command CommandMode
 
 func (*CommandMode) HandleKeypress(screen *Screen, keys []byte) {
+	status_line := screen.StatusBar.Components[0]
 	switch keys[0] {
 	case '':
 		fallthrough
 	case '':
 		screen.change_state(&Normal, NORMAL)
+	case '':
+		status_line.Action()
+		screen.change_state(&Normal, NORMAL)
+	default:
+		status_line.Buffer += string(keys[0])
+		screen.RenderQueue = append(screen.RenderQueue, status_line.Render())
 	}
 }
 
