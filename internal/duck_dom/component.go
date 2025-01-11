@@ -8,13 +8,13 @@ import (
 type Component struct {
 	Position
 	Styles
-	Content         string
-	Buffer          string
-	Parent          *Window
-	ChildComponents []Component
-	Active          bool
-	Inputable       bool
-	Index           int
+	Content   string
+	Buffer    string
+	Parent    *Window
+	Active    bool
+	Inputable bool
+	Index     int
+	Action    func()
 }
 
 func CreateComponent(buffer string, styles Styles) *Component {

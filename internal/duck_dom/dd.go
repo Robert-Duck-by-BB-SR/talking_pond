@@ -72,10 +72,6 @@ type State interface {
 	HandleKeypress(*Screen, []byte)
 }
 
-type NormalMode struct{}
-
-var Normal NormalMode
-
 func cycle_index(new, len int) int {
 	if new < 0 {
 		return len - 1
@@ -152,6 +148,10 @@ func (self *Screen) AddWindow(w *Window) {
 	self.Windows = append(self.Windows, w)
 }
 
+type NormalMode struct{}
+
+var Normal NormalMode
+
 func (*NormalMode) HandleKeypress(screen *Screen, keys []byte) {
 	// big ass switch case
 	active_window := screen.Windows[screen.ActiveWindowId]
@@ -182,6 +182,10 @@ func (*NormalMode) HandleKeypress(screen *Screen, keys []byte) {
 		screen.change_state(&Insert, INSERT)
 		screen.change_window(len(screen.Windows) - 1)
 		screen.change_component(0)
+	case '':
+		active_window := screen.Windows[screen.ActiveWindowId]
+		active_component := active_window.Components[active_window.ActiveComponentId]
+		active_component.Action()
 	}
 }
 

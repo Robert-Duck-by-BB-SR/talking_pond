@@ -263,8 +263,6 @@ func create_login_screen(screen *dd.Screen) {
 			},
 		))
 
-	login.Components[0].Inputable = true
-	login.Components[1].Inputable = true
 	screen.AddWindow(login)
 
 	screen.StatusBar = dd.Window{
@@ -304,6 +302,30 @@ func main() {
 
 	if !client.LoadClient() {
 		create_login_screen(&screen)
+		login := screen.Windows[0]
+		ip := login.Components[0]
+		key := login.Components[1]
+
+		ip.Inputable = true
+		key.Inputable = true
+
+		login_button := login.Components[2]
+		login_button.Action = func() {
+			os.Create(".secrets")
+
+			f, err := os.Create(".secrets")
+			if err != nil {
+				panic(err)
+			}
+			_, err = f.Write([]byte(ip.Buffer + "\n" + key.Buffer + "\n"))
+			if err != nil {
+				panic(err)
+			}
+			client.ServerAddr = ip.Buffer + client.ServerPort
+			client.Config = [2]string{ip.Buffer, key.Buffer}
+			screen.Windows = []*dd.Window{}
+			create_main_window(&screen)
+		}
 	} else {
 		create_main_window(&screen)
 	}

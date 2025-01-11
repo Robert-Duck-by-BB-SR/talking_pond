@@ -101,29 +101,28 @@ func receive(conn net.Conn) error {
 }
 
 type Client struct {
-	server_port string
-	server_addr string
-	config      [2]string
+	ServerPort string
+	ServerAddr string
+	Config     [2]string
 }
 
 func (client *Client) LoadClient() bool {
-	client.server_port = ":6969"
+	client.ServerPort = ":6969"
 	file, err := os.Open(".secrets")
 	defer file.Close()
-	log.Printf("%v, %v", file, err)
 
 	// read config from a file into a struct
 	if err == nil {
 		i := 0
 		scanner := bufio.NewScanner(file)
-		for i < len(client.config) && client.config[i] == "" {
+		for i < len(client.Config) && client.Config[i] == "" {
 			for scanner.Scan() {
-				client.config[i] = scanner.Text()
+				client.Config[i] = scanner.Text()
 				i += 1
 				break
 			}
 		}
-		return false
+		return true
 
 		// i := 0
 		// for i < len(client.config) && client.config[i] == "" {
@@ -150,8 +149,8 @@ func (client *Client) LoadClient() bool {
 
 func (client *Client) placeholder() {
 
-	log.Printf("Connecting to %s...", client.config[0])
-	conn, err := net.Dial("tcp", client.server_addr)
+	log.Printf("Connecting to %s...", client.Config[0])
+	conn, err := net.Dial("tcp", client.ServerAddr)
 	if err != nil {
 		log.Fatalf("Failed to connect: %v", err)
 	}
@@ -162,12 +161,12 @@ func (client *Client) placeholder() {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 
-	request_to_connect(client.config[1], conn)
+	request_to_connect(client.Config[1], conn)
 
 	// convo := create_convesation(config[1], conn)
 	// request_messages(config[1], conn, convo)
 	convo := "a5c2fe80-22b7-495e-b2a6-79bf4eacf173"
-	request_messages(client.config[1], conn, []byte(convo))
+	request_messages(client.Config[1], conn, []byte(convo))
 
 	done := make(chan struct{})
 	go func() {
@@ -183,7 +182,7 @@ func (client *Client) placeholder() {
 	go func() {
 		scanner := bufio.NewScanner(os.Stdin)
 		for scanner.Scan() {
-			send_message(conn, client.config[1], string(convo), scanner)
+			send_message(conn, client.Config[1], string(convo), scanner)
 		}
 	}()
 
