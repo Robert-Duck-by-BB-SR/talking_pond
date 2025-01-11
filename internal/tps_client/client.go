@@ -100,49 +100,58 @@ func receive(conn net.Conn) error {
 	return nil
 }
 
-func placeholder() {
+type Client struct {
+	server_port string
+	server_addr string
+	config      [2]string
+}
 
-	var config [2]string
-	server_port := ":6969"
-
+func (client *Client) LoadClient() bool {
+	client.server_port = ":6969"
 	file, err := os.Open(".secrets")
 	defer file.Close()
 	log.Printf("%v, %v", file, err)
-	if err != nil {
-		i := 0
-		for i < len(config) && config[i] == "" {
-			scanner := bufio.NewScanner(os.Stdin)
-			fmt.Print("-> ")
-			for scanner.Scan() {
-				config[i] = scanner.Text()
-				i += 1
-				break
-			}
-		}
-		f, err := os.Create(".secrets")
-		if err != nil {
-			panic(err)
-		}
-		_, err = f.Write([]byte(config[0] + "\n" + config[1] + "\n"))
-		if err != nil {
-			panic(err)
-		}
-	} else {
+
+	// read config from a file into a struct
+	if err == nil {
 		i := 0
 		scanner := bufio.NewScanner(file)
-		for i < len(config) && config[i] == "" {
+		for i < len(client.config) && client.config[i] == "" {
 			for scanner.Scan() {
-				fmt.Print(scanner.Text())
-				config[i] = scanner.Text()
+				client.config[i] = scanner.Text()
 				i += 1
 				break
 			}
 		}
-	}
-	server_addr := config[0] + server_port
+		return false
 
-	log.Printf("Connecting to %s...", config[0])
-	conn, err := net.Dial("tcp", server_addr)
+		// i := 0
+		// for i < len(client.config) && client.config[i] == "" {
+		// 	scanner := bufio.NewScanner(os.Stdin)
+		// 	for scanner.Scan() {
+		// 		client.config[i] = scanner.Text()
+		// 		i += 1
+		// 		break
+		// 	}
+		// }
+		// f, err := os.Create(".secrets")
+		// if err != nil {
+		// 	panic(err)
+		// }
+		// _, err = f.Write([]byte(client.config[0] + "\n" + client.config[1] + "\n"))
+		// if err != nil {
+		// 	panic(err)
+		// }
+		// client.server_addr = client.config[0] + client.server_port
+		// return true
+	}
+	return false
+}
+
+func (client *Client) placeholder() {
+
+	log.Printf("Connecting to %s...", client.config[0])
+	conn, err := net.Dial("tcp", client.server_addr)
 	if err != nil {
 		log.Fatalf("Failed to connect: %v", err)
 	}
@@ -153,12 +162,12 @@ func placeholder() {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 
-	request_to_connect(config[1], conn)
+	request_to_connect(client.config[1], conn)
 
 	// convo := create_convesation(config[1], conn)
 	// request_messages(config[1], conn, convo)
 	convo := "a5c2fe80-22b7-495e-b2a6-79bf4eacf173"
-	request_messages(config[1], conn, []byte(convo))
+	request_messages(client.config[1], conn, []byte(convo))
 
 	done := make(chan struct{})
 	go func() {
@@ -174,7 +183,7 @@ func placeholder() {
 	go func() {
 		scanner := bufio.NewScanner(os.Stdin)
 		for scanner.Scan() {
-			send_message(conn, config[1], string(convo), scanner)
+			send_message(conn, client.config[1], string(convo), scanner)
 		}
 	}()
 

@@ -8,6 +8,8 @@ import (
 
 	dd "github.com/Robert-Duck-by-BB-SR/talking_pond/internal/duck_dom"
 	"golang.org/x/term"
+
+	tpc "github.com/Robert-Duck-by-BB-SR/talking_pond/internal/tps_client"
 )
 
 // var frame_chars = []byte{' ', '`', '.', ',', '~', '+', '*', '&', '#', '@'}
@@ -252,7 +254,7 @@ func create_login_screen(screen *dd.Screen) {
 		))
 	login.AddComponent(
 		dd.CreateComponent(
-			"login",
+			"connect",
 			dd.Styles{
 				MinWidth:   10,
 				MaxWidth:   login.Width / 2,
@@ -298,8 +300,13 @@ func main() {
 	dd.ClearScreen()
 	screen := dd.Screen{State: &dd.Normal, EventLoopIsRunning: true}
 
-	create_main_window(&screen)
-	create_login_screen(&screen)
+	client := tpc.Client{}
+
+	if !client.LoadClient() {
+		create_login_screen(&screen)
+	} else {
+		create_main_window(&screen)
+	}
 
 	// TODO: Check if its possible to accept more than one byte
 	stdin_buffer := make([]byte, 1)
