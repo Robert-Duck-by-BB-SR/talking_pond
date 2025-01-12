@@ -145,8 +145,8 @@ func (self *Component) calculate_dimensions() {
 		content = content[allowed_horizontal_space*self.BufferVerticalFrom:]
 	}
 
-	if len(content) <= allowed_horizontal_space{
-		self.BufferHorizontalFrom = len(content) - allowed_horizontal_space
+	if allowed_horizontal_space + self.BufferHorizontalFrom > len(content){
+		self.BufferHorizontalFrom -= 1
 	}
 	if self.ScrollType == HORIZONTAL && allowed_vertical_space == 1{
 		content = content[self.BufferHorizontalFrom:]

@@ -122,7 +122,7 @@ func create_main_window(screen *dd.Screen) {
 
 	sidebar.AddComponent(
 		dd.CreateComponent("Deez nuts123123 hello there", dd.Styles{
-			MaxWidth:   10,
+			MaxWidth:   20,
 			MaxHeight:  3,
 			TextColor:  dd.PRIMARY_THEME.SecondaryTextColor,
 			Background: dd.PRIMARY_THEME.ActiveBg,
@@ -333,8 +333,7 @@ func main() {
 	stdin_buffer := make([]byte, 1)
 	for screen.EventLoopIsRunning {
 		for len(screen.RenderQueue) > 0 {
-			item_to_render := screen.RenderQueue[0]
-			fmt.Print(item_to_render)
+			fmt.Print(screen.RenderQueue[0])
 			screen.RenderQueue = screen.RenderQueue[1:]
 		}
 
