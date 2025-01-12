@@ -13,6 +13,8 @@ type Component struct {
 	Parent    *Window
 	Active    bool
 	Inputable bool
+	Scrollable bool
+	BufferStartsFrom int
 	Index     int
 	Action    func()
 }
@@ -29,7 +31,7 @@ func CreateComponent(buffer string, styles Styles) *Component {
 func (self *Component) Render() string {
 	self.rearrange_component()
 	self.calculate_dimensions()
-	assert_component_dimensions(&self.Styles)
+	self.assert_component_dimensions()
 
 	var builder strings.Builder
 	if self.Active {
@@ -102,40 +104,66 @@ func (self *Component) calculate_dimensions() {
 		self.Width = self.MaxWidth
 	}
 
+	if self.MaxHeight <= 0 {
+		self.MaxHeight = self.Parent.Styles.Height - self.Row
+	}
 	moved_row := self.Row + shift_cursor_by_border + self.Styles.Paddding
 	moved_col := self.Col + shift_cursor_by_border + self.Styles.Paddding
 
 	allowed_horizontal_space := self.Width - shift_cursor_by_border*2 - self.Styles.Paddding*2
+	if allowed_horizontal_space <= 0{
+		panic(fmt.Sprintf("Allowed horizontal space should be bigger than 0, actual value: %d", allowed_horizontal_space))
+	}
+
 	allowed_vertical_space := self.MaxHeight - shift_cursor_by_border*2 - self.Styles.Paddding*2
+	if self.MaxHeight > 0 && allowed_vertical_space <= 0{
+		panic(fmt.Sprintf("Allowed vertical space should be bigger than 0, actual value: %d", allowed_vertical_space))
+	}
 	lines_used := 0
-	content := self.Buffer
+	content := self.Buffer 
+	limit := len(content)/allowed_horizontal_space
+	if self.BufferStartsFrom > limit {
+		self.BufferStartsFrom = limit
+	}
+
+	if self.BufferStartsFrom < 0 {
+		self.BufferStartsFrom = 0
+	}
+	content = content[allowed_horizontal_space*self.BufferStartsFrom:]
 	var content_builder strings.Builder
 	for len(content) > allowed_horizontal_space {
 		content_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, moved_row+lines_used, moved_col))
 		content_builder.WriteString(content[:allowed_horizontal_space])
 		content = content[allowed_horizontal_space:]
 		lines_used += 1
-		if allowed_vertical_space > 0 && lines_used > allowed_vertical_space {
+		if allowed_vertical_space > 0 && lines_used >= allowed_vertical_space {
 			break
 		}
 	}
-	content_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, moved_row+lines_used, moved_col))
-	content_builder.WriteString(content)
+
+	if len(content) <= allowed_horizontal_space && lines_used < allowed_vertical_space{
+		content_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, moved_row+lines_used, moved_col))
+		content_builder.WriteString(content)
+		lines_used += 1
+	}
+
 	self.Content = content_builder.String()
-	lines_used += 1
-	self.Height = lines_used + shift_cursor_by_border*2 + self.Styles.Paddding*2
+
+	if self.Height == 0 {
+		self.Height = lines_used + shift_cursor_by_border*2 + self.Styles.Paddding*2
+	}
 }
 
-func assert_component_dimensions(styles *Styles) {
-	if styles.Border != NoBorder && styles.Width < 3 {
-		panic("Component width should be at least 3 when border was added")
+func (self *Component) assert_component_dimensions() {
+	if self.Border != NoBorder && self.Width < 3 {
+		panic(fmt.Sprintf("Window %d component %d width should be at least 3 when border was added", self.Parent.Index, self.Index))
 	}
-	if styles.Border != NoBorder && styles.Height < 3 {
-		panic("Component height should be at least 3 when border was added")
+	if self.Border != NoBorder && self.Height < 3 {
+		panic(fmt.Sprintf("Window %d component %d height should be at least 3 when border was added", self.Parent.Index, self.Index))
 	}
 
-	if styles.Width < 0 || styles.Height < 0 {
-		panic("Component width and height should be bigger than -1")
+	if self.Width < 0 || self.Height < 0 {
+		panic(fmt.Sprintf("Window %d component %d width and height should be bigger than -1", self.Parent.Index, self.Index))
 	}
 }
 

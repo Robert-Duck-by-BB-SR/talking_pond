@@ -170,6 +170,22 @@ func (*NormalMode) HandleKeypress(screen *Screen, keys []byte) {
 		screen.change_component(index)
 	case 'k':
 		fallthrough
+	case '':
+		active_window := screen.Windows[screen.ActiveWindowId]
+		active_component := active_window.Components[active_window.ActiveComponentId]
+		if active_component.Scrollable {
+			active_component.BufferStartsFrom -= 1
+			
+			screen.RenderQueue = append(screen.RenderQueue, active_component.Render())
+		}
+	case '':
+		active_window := screen.Windows[screen.ActiveWindowId]
+		active_component := active_window.Components[active_window.ActiveComponentId]
+		if active_component.Scrollable {
+			active_component.BufferStartsFrom += 1
+			
+			screen.RenderQueue = append(screen.RenderQueue, active_component.Render())
+		}
 	case 'h':
 		index := cycle_index(active_window.ActiveComponentId-1, len(active_window.Components))
 		screen.change_component(index)
@@ -248,6 +264,10 @@ func (*WindowMode) HandleKeypress(screen *Screen, keys []byte) {
 		fallthrough
 	case '':
 		screen.change_state(&Normal, NORMAL)
+	case '':
+		// move half page up
+	case '':
+		// move half page down
 	case 'l':
 		fallthrough
 	case 'j':
