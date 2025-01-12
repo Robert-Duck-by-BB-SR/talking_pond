@@ -109,12 +109,16 @@ func create_main_window(screen *dd.Screen) {
 	})
 
 	sidebar.AddComponent(
-		dd.CreateComponent("Deez nuts123123", dd.Styles{
+		dd.CreateComponent("Deez nuts123123 hello there", dd.Styles{
 			MaxWidth:  10,
+			MaxHeight: 5,
 			TextColor: dd.PRIMARY_THEME.SecondaryTextColor,
-			Paddding:  1,
-		}),
+			Background: dd.PRIMARY_THEME.ActiveBg,
+			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
+			}),
 	)
+
+	sidebar.Components[0].Scrollable = true
 
 	sidebar.AddComponent(
 		dd.CreateComponent("Deez nuts", dd.Styles{
@@ -200,8 +204,9 @@ func create_status_bar(screen *dd.Screen) {
 			Parent: &screen.StatusBar,
 			Buffer: dd.NORMAL,
 			Styles: dd.Styles{
+				TextColor: dd.PRIMARY_THEME.ActiveTextColor,
 				MaxWidth: screen.Width,
-				Height:   1,
+				MaxHeight:   1,
 			},
 		},
 	}
