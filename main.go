@@ -230,11 +230,49 @@ func create_status_bar(screen *dd.Screen) {
 	status_line := screen.StatusBar.Components[0]
 	status_line.Action = func() {
 		buffer := status_line.Buffer[1:]
-		if buffer == "q" {
+		switch buffer {
+		case "q":
 			screen.EventLoopIsRunning = false
 			return
+		case "new":
+			create_new_conversation(screen)
 		}
+
 	}
+}
+
+func create_new_conversation(screen *dd.Screen) {
+	width, height, _ := term.GetSize(int(os.Stdin.Fd()))
+	screen.Width = width
+	screen.Height = height
+
+	if len(screen.Windows) > 3 {
+		screen.Windows = screen.Windows[:3]
+	}
+	modal := dd.CreateWindow(
+		dd.Styles{
+			Width:      40,
+			Height:     10,
+			Paddding:   1,
+			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
+			Background: dd.PRIMARY_THEME.PrimaryBg,
+		},
+	)
+	modal.Position = dd.Position{Row: screen.Height/2 - 5, Col: screen.Width/2 - 20}
+
+	modal.AddComponent(dd.CreateComponent("",
+		dd.Styles{
+			MinWidth:   10,
+			MaxWidth:   modal.Width - 2,
+			Background: dd.MakeRGBBackground(100, 40, 100),
+			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
+		},
+	))
+
+	screen.AddWindow(modal)
+	screen.Activate()
+	screen.RenderFull()
+
 }
 
 func create_login_screen(screen *dd.Screen) {

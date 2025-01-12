@@ -56,6 +56,7 @@ type Screen struct {
 	Height             int
 	ActiveWindowId     int
 	EventLoopIsRunning bool
+	ModalIsActive      bool
 }
 
 func (self *Screen) RenderFull() {
@@ -291,12 +292,16 @@ func (*WindowMode) HandleKeypress(screen *Screen, keys []byte) {
 	case 'l':
 		fallthrough
 	case 'j':
-		id := cycle_index(screen.ActiveWindowId+1, len(screen.Windows))
-		screen.change_window(id)
+		if !screen.ModalIsActive {
+			id := cycle_index(screen.ActiveWindowId+1, len(screen.Windows))
+			screen.change_window(id)
+		}
 	case 'k':
 		fallthrough
 	case 'h':
-		id := cycle_index(screen.ActiveWindowId-1, len(screen.Windows))
-		screen.change_window(id)
+		if !screen.ModalIsActive {
+			id := cycle_index(screen.ActiveWindowId-1, len(screen.Windows))
+			screen.change_window(id)
+		}
 	}
 }
