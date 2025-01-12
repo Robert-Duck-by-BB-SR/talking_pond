@@ -8,16 +8,25 @@ import (
 type Component struct {
 	Position
 	Styles
-	Content   string
-	Buffer    string
-	Parent    *Window
-	Active    bool
-	Inputable bool
-	Scrollable bool
-	BufferStartsFrom int
-	Index     int
-	Action    func()
+	Content              string
+	Buffer               string
+	Parent               *Window
+	Active               bool
+	Inputable            bool
+	ScrollType           ScrollType
+	BufferVerticalFrom   int
+	BufferHorizontalFrom int
+	Index                int
+	Action               func()
 }
+
+type ScrollType int
+
+const (
+	NONE ScrollType = iota
+	VERTICAL
+	HORIZONTAL
+)
 
 func CreateComponent(buffer string, styles Styles) *Component {
 	component := Component{
@@ -111,26 +120,40 @@ func (self *Component) calculate_dimensions() {
 	moved_col := self.Col + shift_cursor_by_border + self.Styles.Paddding
 
 	allowed_horizontal_space := self.Width - shift_cursor_by_border*2 - self.Styles.Paddding*2
-	if allowed_horizontal_space <= 0{
+	if allowed_horizontal_space <= 0 {
 		panic(fmt.Sprintf("Allowed horizontal space should be bigger than 0, actual value: %d", allowed_horizontal_space))
 	}
 
 	allowed_vertical_space := self.MaxHeight - shift_cursor_by_border*2 - self.Styles.Paddding*2
-	if self.MaxHeight > 0 && allowed_vertical_space <= 0{
+	if self.MaxHeight > 0 && allowed_vertical_space <= 0 {
 		panic(fmt.Sprintf("Allowed vertical space should be bigger than 0, actual value: %d", allowed_vertical_space))
 	}
-	lines_used := 0
-	content := self.Buffer 
-	limit := len(content)/allowed_horizontal_space
-	if self.BufferStartsFrom > limit {
-		self.BufferStartsFrom = limit
+
+	if self.BufferVerticalFrom < 0 {
+		self.BufferVerticalFrom = 0
+	}
+	if self.BufferHorizontalFrom < 0 {
+		self.BufferHorizontalFrom = 0
+	}
+	
+	content := self.Buffer
+	vertical_scroll_limit := len(content) / allowed_horizontal_space
+	if self.BufferVerticalFrom > vertical_scroll_limit {
+		self.BufferVerticalFrom = vertical_scroll_limit
+	}
+	if self.ScrollType == VERTICAL{
+		content = content[allowed_horizontal_space*self.BufferVerticalFrom:]
 	}
 
-	if self.BufferStartsFrom < 0 {
-		self.BufferStartsFrom = 0
+	if len(content) <= allowed_horizontal_space{
+		self.BufferHorizontalFrom = len(content) - allowed_horizontal_space
 	}
-	content = content[allowed_horizontal_space*self.BufferStartsFrom:]
+	if self.ScrollType == HORIZONTAL && allowed_vertical_space == 1{
+		content = content[self.BufferHorizontalFrom:]
+	}
+
 	var content_builder strings.Builder
+	lines_used := 0
 	for len(content) > allowed_horizontal_space {
 		content_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, moved_row+lines_used, moved_col))
 		content_builder.WriteString(content[:allowed_horizontal_space])
@@ -141,12 +164,11 @@ func (self *Component) calculate_dimensions() {
 		}
 	}
 
-	if len(content) <= allowed_horizontal_space && lines_used < allowed_vertical_space{
+	if len(content) <= allowed_horizontal_space && lines_used < allowed_vertical_space {
 		content_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, moved_row+lines_used, moved_col))
 		content_builder.WriteString(content)
 		lines_used += 1
 	}
-
 	self.Content = content_builder.String()
 
 	if self.Height == 0 {
