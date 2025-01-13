@@ -151,6 +151,11 @@ func (self *Screen) AddWindow(w *Window) {
 	self.Windows = append(self.Windows, w)
 }
 
+func (self *Screen) get_active_component() *Component{
+	active_window := self.Windows[self.ActiveWindowId]
+	return active_window.Components[active_window.ActiveComponentId]
+}
+
 type NormalMode struct{}
 
 var Normal NormalMode
@@ -171,19 +176,27 @@ func (*NormalMode) HandleKeypress(screen *Screen, keys []byte) {
 	case 'k':
 		fallthrough
 	case '':
-		active_window := screen.Windows[screen.ActiveWindowId]
-		active_component := active_window.Components[active_window.ActiveComponentId]
-		if active_component.Scrollable {
-			active_component.BufferStartsFrom -= 1
-			
+		active_component := screen.get_active_component()
+		if active_component.ScrollType == VERTICAL{
+			active_component.BufferVerticalFrom -= 1
 			screen.RenderQueue = append(screen.RenderQueue, active_component.Render())
 		}
 	case '':
-		active_window := screen.Windows[screen.ActiveWindowId]
-		active_component := active_window.Components[active_window.ActiveComponentId]
-		if active_component.Scrollable {
-			active_component.BufferStartsFrom += 1
-			
+		active_component := screen.get_active_component()
+		if active_component.ScrollType == VERTICAL{
+			active_component.BufferVerticalFrom += 1
+			screen.RenderQueue = append(screen.RenderQueue, active_component.Render())
+		}
+	case 'w':
+		active_component := screen.get_active_component()
+		if active_component.ScrollType == HORIZONTAL{
+			active_component.BufferHorizontalFrom += 1
+			screen.RenderQueue = append(screen.RenderQueue, active_component.Render())
+		}
+	case 'b':
+		active_component := screen.get_active_component()
+		if active_component.ScrollType == HORIZONTAL{
+			active_component.BufferHorizontalFrom -= 1
 			screen.RenderQueue = append(screen.RenderQueue, active_component.Render())
 		}
 	case 'h':
@@ -192,8 +205,7 @@ func (*NormalMode) HandleKeypress(screen *Screen, keys []byte) {
 	case ':':
 		screen.change_state(&Command, ":")
 	case 'i':
-		active_window := screen.Windows[screen.ActiveWindowId]
-		active_component := active_window.Components[active_window.ActiveComponentId]
+		active_component := screen.get_active_component()
 		if active_component.Inputable {
 			screen.change_state(&Insert, INSERT)
 		}
@@ -202,8 +214,7 @@ func (*NormalMode) HandleKeypress(screen *Screen, keys []byte) {
 		screen.change_window(len(screen.Windows) - 1)
 		screen.change_component(0)
 	case '':
-		active_window := screen.Windows[screen.ActiveWindowId]
-		active_component := active_window.Components[active_window.ActiveComponentId]
+		active_component := screen.get_active_component()
 		active_component.Action()
 	}
 }
