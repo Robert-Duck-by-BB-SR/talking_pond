@@ -9,6 +9,8 @@ import (
 	tpc "github.com/Robert-Duck-by-BB-SR/talking_pond/internal/tps_client"
 )
 
+var DEBUG_MODE = false
+
 const (
 	NORMAL  = "NORMAL"
 	INSERT  = "INSERT"
@@ -213,7 +215,7 @@ func (*NormalMode) HandleKeypress(screen *Screen, keys []byte) {
 			active_component.Render(&screen.RenderQueue)
 		}
 	case ':':
-		screen.change_state(&Command, ":")
+		screen.change_state(&Command, CLEAR_ROW+":")
 	case 'i':
 		active_component := screen.get_active_component()
 		if active_component.Inputable {
@@ -225,7 +227,9 @@ func (*NormalMode) HandleKeypress(screen *Screen, keys []byte) {
 		screen.change_component(0)
 	case '':
 		active_component := screen.get_active_component()
-		active_component.Action()
+		if active_component.Action != nil {
+			active_component.Action()
+		}
 	}
 }
 

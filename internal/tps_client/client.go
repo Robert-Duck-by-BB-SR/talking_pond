@@ -10,40 +10,54 @@ import (
 	"strings"
 )
 
-func create_convesation(key string, conn net.Conn) []byte {
+func CreateConversation(key, users string, conn net.Conn) string {
 	var data strings.Builder
 	data.WriteByte(1)
 	data.WriteString(key)
 	data.WriteByte(255)
 	data.WriteString("create")
 	data.WriteByte(255)
-	data.WriteString("tredstart") // TODO: should be a param
+	data.WriteString(users)
 	data.WriteByte('\n')
 	send(conn, []byte(data.String()))
 
 	message, _, err := bufio.NewReader(conn).ReadLine()
-	fmt.Println(string(message))
 	if err != nil {
-		log.Println("Read error:", err)
-		return nil
+		// FIXME: move logging to a file
+		// log.Println("Read error:", err)
+		return ""
 	}
-	return message
+	return string(message)
 }
 
-func request_messages(key string, conn net.Conn, convo []byte) {
+func RequestMessages(key string, conn net.Conn, convo []byte) (error, []string) {
 	var data strings.Builder
 	data.WriteByte(1)
 	data.WriteString(key)
 	data.WriteByte(255)
 	data.WriteString("get")
 	data.WriteByte(255)
-	data.WriteString("message")
+	data.WriteString("users")
 	data.WriteByte(255)
 	data.WriteString(string(convo))
 	data.WriteByte('\n')
 	send(conn, []byte(data.String()))
 
-	receive(conn)
+	return receive(conn)
+}
+
+func RequestUsers(key string, conn net.Conn) (error, []string) {
+	var data strings.Builder
+	data.WriteByte(1)
+	data.WriteString(key)
+	data.WriteByte(255)
+	data.WriteString("get")
+	data.WriteByte(255)
+	data.WriteString("users")
+	data.WriteByte('\n')
+	send(conn, []byte(data.String()))
+
+	return receive(conn)
 }
 
 func request_to_connect(key string, conn net.Conn) {
@@ -81,29 +95,21 @@ func send_message(conn net.Conn, key, convo string, scanner *bufio.Scanner) {
 	send(conn, []byte(data.String()))
 }
 
-func receive(conn net.Conn) error {
+func receive(conn net.Conn) (error, []string) {
 	message, _, err := bufio.NewReader(conn).ReadLine()
 	log.Println(message)
 	if err != nil {
-		log.Println("Read error:", err)
-		return err
+		return err, []string{fmt.Sprint("Read error:", err)}
 	}
 	parts := strings.Split(string(message), string([]byte{254}))
-	log.Println(parts)
-	for _, part := range parts {
-		m := strings.Split(part, string([]byte{255}))
-		log.Println(len(m))
-		if len(m) == 5 {
-			fmt.Println(m[1], ":", m[4], "->", m[3])
-		}
-	}
-	return nil
+	return nil, parts
 }
 
 type Client struct {
 	ServerPort string
 	ServerAddr string
 	Config     [2]string
+	Conn       net.Conn
 }
 
 func (client *Client) LoadClient() bool {
@@ -118,10 +124,11 @@ func (client *Client) LoadClient() bool {
 		for i < len(client.Config) && client.Config[i] == "" {
 			for scanner.Scan() {
 				client.Config[i] = scanner.Text()
+				log.Println(client.Config[i])
 				i += 1
-				break
 			}
 		}
+		client.ServerAddr = client.Config[0] + client.ServerPort
 		return true
 
 		// i := 0
@@ -166,14 +173,15 @@ func (client *Client) placeholder() {
 	// convo := create_convesation(config[1], conn)
 	// request_messages(config[1], conn, convo)
 	convo := "a5c2fe80-22b7-495e-b2a6-79bf4eacf173"
-	request_messages(client.Config[1], conn, []byte(convo))
+	RequestMessages(client.Config[1], conn, []byte(convo))
 
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
 		for {
 			log.Println("starting receive")
-			if err := receive(conn); err != nil {
+			// FIXME: this should be resolved inside the content block
+			if err, _ := receive(conn); err != nil {
 				break
 			}
 		}

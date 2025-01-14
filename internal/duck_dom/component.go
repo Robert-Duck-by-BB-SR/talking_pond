@@ -107,19 +107,19 @@ func (self *Component) calculate_dimensions(content_builder *strings.Builder) {
 	}
 
 	if self.MaxHeight <= 0 {
-		self.MaxHeight = self.Parent.Styles.Height - self.Row
+		self.MaxHeight = self.Parent.Row + self.Parent.Styles.Height - self.Row
 	}
 	moved_row := self.Row + shift_cursor_by_border + self.Styles.Paddding
 	moved_col := self.Col + shift_cursor_by_border + self.Styles.Paddding
 
 	allowed_horizontal_space := self.Width - shift_cursor_by_border*2 - self.Styles.Paddding*2
 	if allowed_horizontal_space <= 0 {
-		panic(fmt.Sprintf("Allowed horizontal space should be bigger than 0, actual value: %d", allowed_horizontal_space))
+		panic(fmt.Sprintf("[W|C][%d|%d]Allowed horizontal space should be bigger than 0, actual value: %d", self.Parent.Index, self.Index, allowed_horizontal_space))
 	}
 
 	allowed_vertical_space := self.MaxHeight - shift_cursor_by_border*2 - self.Styles.Paddding*2
 	if self.MaxHeight > 0 && allowed_vertical_space <= 0 {
-		panic(fmt.Sprintf("Allowed vertical space should be bigger than 0, actual value: %d", allowed_vertical_space))
+		panic(fmt.Sprintf("[W|C][%d|%d]Allowed vertical space should be bigger than 0, actual value: %d", self.Parent.Index, self.Index, allowed_vertical_space))
 	}
 
 	if self.BufferVerticalFrom < 0 {
@@ -150,11 +150,17 @@ func (self *Component) calculate_dimensions(content_builder *strings.Builder) {
 	//######### - row + height and col + width
 
 	full_line_fillament := strings.Repeat(" ", self.Styles.Width)
+	FileDebugMeDaddy(fmt.Sprintln(self.Styles.Width))
 	if self.Paddding != 0 {
 		for i := range self.Paddding {
 			content_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, self.Row+shift_cursor_by_border+i, self.Col))
 			content_builder.WriteString(full_line_fillament)
 		}
+	}
+
+	if self.Buffer == "" && self.MinWidth != 0 {
+		content_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, self.Row+shift_cursor_by_border+self.Paddding, self.Col))
+		content_builder.WriteString(full_line_fillament)
 	}
 
 	lines_used := 0
@@ -197,14 +203,14 @@ func (self *Component) calculate_dimensions(content_builder *strings.Builder) {
 
 func (self *Component) assert_component_dimensions() {
 	if self.Border != NoBorder && self.Width < 3 {
-		panic(fmt.Sprintf("Window %d component %d width should be at least 3 when border was added", self.Parent.Index, self.Index))
+		panic(fmt.Sprintf("Window %d component %d width should be at least 3 when border was added: %+v", self.Parent.Index, self.Index, self))
 	}
 	if self.Border != NoBorder && self.Height < 3 {
-		panic(fmt.Sprintf("Window %d component %d height should be at least 3 when border was added", self.Parent.Index, self.Index))
+		panic(fmt.Sprintf("Window %d component %d height should be at least 3 when border was added: %+v", self.Parent.Index, self.Index, self))
 	}
 
 	if self.Width < 0 || self.Height < 0 {
-		panic(fmt.Sprintf("Window %d component %d width and height should be bigger than -1", self.Parent.Index, self.Index))
+		panic(fmt.Sprintf("Window %d component %d width and height should be bigger than -1: %+v", self.Parent.Index, self.Index, self))
 	}
 }
 
