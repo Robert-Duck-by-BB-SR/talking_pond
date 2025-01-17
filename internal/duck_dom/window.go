@@ -6,13 +6,13 @@ import (
 )
 
 type Window struct {
-	Position
 	Styles
+	Components []*Component
+	Position
 	Oldfart           *Screen
-	ActiveComponentId int
-	Components        []*Component
-	Active            bool
 	Index             int
+	ActiveComponentId int
+	Active            bool
 }
 
 func CreateWindow(styles Styles) *Window {
@@ -34,20 +34,18 @@ func assert_window_dimensions(styles *Styles) {
 	}
 }
 
-func (self *Window) Render() string {
+func (self *Window) Render(builder *strings.Builder) {
 	self.rearange_window()
-	var window_with_components strings.Builder
-	window_with_components.WriteString(self.render_background())
+	self.render_background(builder)
 
 	if self.Styles.Border != NoBorder {
-		window_with_components.WriteString(render_border(self.Position, self.Active, &self.Styles))
+		render_border(builder, self.Position, self.Active, &self.Styles)
 	}
 
 	for _, component := range self.Components {
-		window_with_components.WriteString(component.Render())
+		component.Render(builder)
 	}
 
-	return window_with_components.String()
 }
 
 func (self *Window) rearange_window() {
@@ -78,8 +76,7 @@ func (self *Window) AddComponent(c *Component) {
 	self.Components = append(self.Components, c)
 }
 
-func (self *Window) render_background() string {
-	var bg_builder strings.Builder
+func (self *Window) render_background(bg_builder *strings.Builder) {
 	bg_builder.WriteString(self.Styles.Background)
 	fillament := strings.Repeat(" ", self.Styles.Width)
 
@@ -88,6 +85,4 @@ func (self *Window) render_background() string {
 		bg_builder.WriteString(fillament)
 	}
 	bg_builder.WriteString(RESET_STYLES)
-
-	return bg_builder.String()
 }

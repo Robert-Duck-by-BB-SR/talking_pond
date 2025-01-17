@@ -78,10 +78,8 @@ var (
 	}
 )
 
-func render_border(position Position, active bool, styles *Styles) string {
-	// box-sizing: border-box;
-	var border_builder strings.Builder
-
+// box-sizing: border-box;
+func render_border(border_builder *strings.Builder, position Position, active bool, styles *Styles) {
 	border_style := styles.Border.Style
 
 	if styles.Border != NoBorder && active {
@@ -92,7 +90,6 @@ func render_border(position Position, active bool, styles *Styles) string {
 	top := border_style.TopLeft + middle + border_style.TopRight
 	bottom := border_style.BottomLeft + middle + border_style.BottomRight
 
-	border_builder.WriteString(RESET_STYLES)
 	border_builder.WriteString(styles.Border.Color)
 	border_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, position.Row, position.Col))
 	border_builder.WriteString(top)
@@ -106,6 +103,4 @@ func render_border(position Position, active bool, styles *Styles) string {
 	border_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, styles.Height+position.Row-1, position.Col))
 	border_builder.WriteString(bottom)
 	border_builder.WriteString(RESET_STYLES)
-
-	return border_builder.String()
 }

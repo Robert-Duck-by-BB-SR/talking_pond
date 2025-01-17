@@ -16,12 +16,15 @@ const (
 type TextAlingment int
 
 const (
-	Left TextAlingment = iota
-	Center
-	Right
+	LEFT TextAlingment = iota
+	CENTER
+	RIGHT
 )
 
 type Styles struct {
+	Border
+	Background string
+	TextColor  string
 	Width      int
 	MinWidth   int
 	MaxWidth   int
@@ -29,11 +32,8 @@ type Styles struct {
 	MaxHeight  int
 	Paddding   int
 	Maaargin   int
-	Background string
-	TextColor  string
 	TextAling  TextAlingment
 	Direction
-	Border
 }
 
 func MakeRGBBackground(r, g, b int) string {
@@ -94,9 +94,7 @@ func (self *Styles) SetBorder(b Border) *Styles {
 	return self
 }
 
-func (self *Styles) Compile() string {
-	var styles_builder strings.Builder
+func (self *Styles) Compile(styles_builder *strings.Builder) {
 	styles_builder.WriteString(self.Background)
 	styles_builder.WriteString(self.TextColor)
-	return styles_builder.String()
 }
