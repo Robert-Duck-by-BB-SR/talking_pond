@@ -147,6 +147,8 @@ func (self *Component) calculate_dimensions(content_builder *strings.Builder) {
 	}
 
 	lines_used := 0
+
+	// FIXME: render bg together with content to not override bg by content
 	for len(content) > allowed_horizontal_space {
 		content_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, moved_row+lines_used, moved_col))
 		content_builder.WriteString(content[:allowed_horizontal_space])
@@ -184,9 +186,8 @@ func (self *Component) assert_component_dimensions() {
 func (self *Component) render_background(bg_builder *strings.Builder) {
 	fillament := strings.Repeat(" ", self.Styles.Width)
 
-	for i := 0 + self.Paddding; i < self.Styles.Height; i += 1 {
+	for i := 0; i < self.Styles.Height; i += 1 {
 		bg_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, self.Row+i, self.Position.Col))
 		bg_builder.WriteString(fillament)
 	}
-	// bg_builder.WriteString(RESET_STYLES)
 }

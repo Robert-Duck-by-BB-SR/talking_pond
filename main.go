@@ -4,11 +4,10 @@ import (
 	"fmt"
 	_ "image/jpeg"
 	_ "image/png"
-	"log"
 	"os"
-	"runtime"
-	"runtime/pprof"
-	"runtime/trace"
+	// "runtime"
+	// "runtime/pprof"
+	// "runtime/trace"
 
 	dd "github.com/Robert-Duck-by-BB-SR/talking_pond/internal/duck_dom"
 	"golang.org/x/term"
@@ -139,10 +138,10 @@ func create_main_window(screen *dd.Screen) {
 	sidebar.AddComponent(
 		dd.CreateComponent("Deez nuts", dd.Styles{
 			MaxWidth:   10,
+			TextColor:  dd.PRIMARY_THEME.SecondaryTextColor,
 			Background: dd.PRIMARY_THEME.ActiveBg,
-			TextColor:  dd.MakeRGBTextColor(0, 0, 0),
 			Paddding:   1,
-			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
 		},
 		),
 	)
@@ -315,43 +314,43 @@ func create_login_screen(screen *dd.Screen) {
 }
 
 func main() {
-	runtime.MemProfileRate = 1
-	defer func() {
-		runtime.MemProfileRate = 512
-	}()
+	// runtime.MemProfileRate = 1
+	// defer func() {
+	// 	runtime.MemProfileRate = 512
+	// }()
 
-	cpu_prof_file, err := os.Create("cpu.prof")
-	if err != nil {
-		log.Fatalln(err)
-	}
-	defer cpu_prof_file.Close()
-	if err := pprof.StartCPUProfile(cpu_prof_file); err != nil {
-		log.Fatalln(err)
-	}
-	defer pprof.StopCPUProfile()
-
-	mem_prof_file, err := os.Create("mem.prof")
-	if err != nil {
-		log.Fatalln(err)
-	}
-	defer mem_prof_file.Close()
-
-	defer func() {
-		if err := pprof.WriteHeapProfile(mem_prof_file); err != nil {
-			log.Fatalln(err)
-		}
-	}()
-
-	trace_file, err := os.Create("trace.out")
-	if err != nil {
-		log.Fatalln(err)
-	}
-	defer trace_file.Close()
-
-	if err := trace.Start(trace_file); err != nil {
-		log.Fatalln(err)
-	}
-	defer trace.Stop()
+	// cpu_prof_file, err := os.Create("cpu.prof")
+	// if err != nil {
+	// 	log.Fatalln(err)
+	// }
+	// defer cpu_prof_file.Close()
+	// if err := pprof.StartCPUProfile(cpu_prof_file); err != nil {
+	// 	log.Fatalln(err)
+	// }
+	// defer pprof.StopCPUProfile()
+	//
+	// mem_prof_file, err := os.Create("mem.prof")
+	// if err != nil {
+	// 	log.Fatalln(err)
+	// }
+	// defer mem_prof_file.Close()
+	//
+	// defer func() {
+	// 	if err := pprof.WriteHeapProfile(mem_prof_file); err != nil {
+	// 		log.Fatalln(err)
+	// 	}
+	// }()
+	//
+	// trace_file, err := os.Create("trace.out")
+	// if err != nil {
+	// 	log.Fatalln(err)
+	// }
+	// defer trace_file.Close()
+	//
+	// if err := trace.Start(trace_file); err != nil {
+	// 	log.Fatalln(err)
+	// }
+	// defer trace.Stop()
 
 	old_state, err := term.MakeRaw(int(os.Stdin.Fd()))
 	if err != nil {

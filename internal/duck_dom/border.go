@@ -78,9 +78,8 @@ var (
 	}
 )
 
+// box-sizing: border-box;
 func render_border(border_builder *strings.Builder, position Position, active bool, styles *Styles) {
-	// box-sizing: border-box;
-
 	border_style := styles.Border.Style
 
 	if styles.Border != NoBorder && active {
@@ -104,5 +103,4 @@ func render_border(border_builder *strings.Builder, position Position, active bo
 	border_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, styles.Height+position.Row-1, position.Col))
 	border_builder.WriteString(bottom)
 	border_builder.WriteString(RESET_STYLES)
-
 }
