@@ -37,29 +37,23 @@ func CreateComponent(buffer string, styles Styles) *Component {
 	return &component
 }
 
-func (self *Component) Render() string {
+func (self *Component) Render(builder *strings.Builder) {
 	self.rearrange_component()
-	self.calculate_dimensions()
-	self.assert_component_dimensions()
-
-	var builder strings.Builder
 	if self.Active {
 		builder.WriteString(INVERT_STYLES)
 	} else {
 		builder.WriteString(RESET_STYLES)
 	}
-	builder.WriteString(self.Styles.Compile())
-	builder.WriteString(self.render_background())
-	builder.WriteString(self.Content)
-	builder.WriteString(RESET_STYLES)
+	self.Styles.Compile(builder)
+	self.render_background(builder)
+	self.calculate_dimensions(builder)
+	self.assert_component_dimensions()
 
 	// TODO: test me
 	if self.Styles.Border != NoBorder {
-		builder.WriteString(render_border(self.Position, self.Active, &self.Styles))
+		render_border(builder, self.Position, self.Active, &self.Styles)
 	}
-
-	self.Content = builder.String()
-	return self.Content
+	builder.WriteString(RESET_STYLES)
 }
 
 func (self *Component) rearrange_component() {
@@ -90,7 +84,7 @@ func (self *Component) rearrange_component() {
 
 // Changes dimentions of a component based on content
 // Content will be updated if it does not fit into one line
-func (self *Component) calculate_dimensions() {
+func (self *Component) calculate_dimensions(content_builder *strings.Builder) {
 	shift_cursor_by_border := 0
 
 	if self.Styles.Border != NoBorder {
@@ -135,24 +129,23 @@ func (self *Component) calculate_dimensions() {
 	if self.BufferHorizontalFrom < 0 {
 		self.BufferHorizontalFrom = 0
 	}
-	
+
 	content := self.Buffer
 	vertical_scroll_limit := len(content) / allowed_horizontal_space
 	if self.BufferVerticalFrom > vertical_scroll_limit {
 		self.BufferVerticalFrom = vertical_scroll_limit
 	}
-	if self.ScrollType == VERTICAL{
+	if self.ScrollType == VERTICAL {
 		content = content[allowed_horizontal_space*self.BufferVerticalFrom:]
 	}
 
-	if allowed_horizontal_space + self.BufferHorizontalFrom > len(content){
+	if allowed_horizontal_space+self.BufferHorizontalFrom > len(content) {
 		self.BufferHorizontalFrom -= 1
 	}
-	if self.ScrollType == HORIZONTAL && allowed_vertical_space == 1{
+	if self.ScrollType == HORIZONTAL && allowed_vertical_space == 1 {
 		content = content[self.BufferHorizontalFrom:]
 	}
 
-	var content_builder strings.Builder
 	lines_used := 0
 	for len(content) > allowed_horizontal_space {
 		content_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, moved_row+lines_used, moved_col))
@@ -169,7 +162,6 @@ func (self *Component) calculate_dimensions() {
 		content_builder.WriteString(content)
 		lines_used += 1
 	}
-	self.Content = content_builder.String()
 
 	if self.Height == 0 {
 		self.Height = lines_used + shift_cursor_by_border*2 + self.Styles.Paddding*2
@@ -189,14 +181,12 @@ func (self *Component) assert_component_dimensions() {
 	}
 }
 
-func (self *Component) render_background() string {
-	var bg_builder strings.Builder
+func (self *Component) render_background(bg_builder *strings.Builder) {
 	fillament := strings.Repeat(" ", self.Styles.Width)
 
-	for i := 0; i < self.Styles.Height; i += 1 {
+	for i := 0 + self.Paddding; i < self.Styles.Height; i += 1 {
 		bg_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, self.Row+i, self.Position.Col))
 		bg_builder.WriteString(fillament)
 	}
-
-	return bg_builder.String()
+	// bg_builder.WriteString(RESET_STYLES)
 }

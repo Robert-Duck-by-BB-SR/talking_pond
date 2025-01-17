@@ -5,3 +5,6 @@ video*
 *debug*
 .sec*
 *debug*
+*.out
+*.prof
+talking_pond
