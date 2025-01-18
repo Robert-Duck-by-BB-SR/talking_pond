@@ -4,10 +4,11 @@ import (
 	"fmt"
 	_ "image/jpeg"
 	_ "image/png"
+	"log"
 	"os"
-	// "runtime"
-	// "runtime/pprof"
-	// "runtime/trace"
+	"runtime"
+	"runtime/pprof"
+	"runtime/trace"
 
 	dd "github.com/Robert-Duck-by-BB-SR/talking_pond/internal/duck_dom"
 	"golang.org/x/term"
@@ -313,45 +314,70 @@ func create_login_screen(screen *dd.Screen) {
 	screen.RenderFull()
 }
 
+func enable_tracing() {
+	trace_file, err := os.Create("trace.out")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	if err := trace.Start(trace_file); err != nil {
+		log.Fatalln(err)
+	}
+}
+
+func enable_mem() {
+	runtime.MemProfileRate = 1
+	mem_prof_file, err := os.Create("mem.prof")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer mem_prof_file.Close()
+	if err := pprof.WriteHeapProfile(mem_prof_file); err != nil {
+		log.Fatalln(err)
+	}
+
+	runtime.MemProfileRate = 512
+}
+func enable_cpu() {
+	cpu_prof_file, err := os.Create("cpu.prof")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	if err := pprof.StartCPUProfile(cpu_prof_file); err != nil {
+		log.Fatalln(err)
+	}
+}
+func enable_dev()  {}
+func disable_dev() {}
+
 func main() {
-	// runtime.MemProfileRate = 1
-	// defer func() {
-	// 	runtime.MemProfileRate = 512
-	// }()
 
-	// cpu_prof_file, err := os.Create("cpu.prof")
-	// if err != nil {
-	// 	log.Fatalln(err)
-	// }
-	// defer cpu_prof_file.Close()
-	// if err := pprof.StartCPUProfile(cpu_prof_file); err != nil {
-	// 	log.Fatalln(err)
-	// }
-	// defer pprof.StopCPUProfile()
-	//
-	// mem_prof_file, err := os.Create("mem.prof")
-	// if err != nil {
-	// 	log.Fatalln(err)
-	// }
-	// defer mem_prof_file.Close()
-	//
-	// defer func() {
-	// 	if err := pprof.WriteHeapProfile(mem_prof_file); err != nil {
-	// 		log.Fatalln(err)
-	// 	}
-	// }()
-	//
-	// trace_file, err := os.Create("trace.out")
-	// if err != nil {
-	// 	log.Fatalln(err)
-	// }
-	// defer trace_file.Close()
-	//
-	// if err := trace.Start(trace_file); err != nil {
-	// 	log.Fatalln(err)
-	// }
-	// defer trace.Stop()
+	var cpu_prof_file, trace_file *os.File
 
+	for _, arg := range os.Args {
+		switch arg {
+		case "trace":
+			enable_tracing()
+		case "cpu":
+			enable_cpu()
+		case "dev":
+			enable_dev()
+		}
+	}
+
+	defer func() {
+		for _, arg := range os.Args {
+			switch arg {
+			case "trace":
+				defer trace.Stop()
+				defer trace_file.Close()
+			case "cpu":
+				defer cpu_prof_file.Close()
+				defer pprof.StopCPUProfile()
+			case "mem":
+				enable_mem()
+			}
+		}
+	}()
 	old_state, err := term.MakeRaw(int(os.Stdin.Fd()))
 	if err != nil {
 		fmt.Println("Error enabling raw mode:", err)
@@ -387,4 +413,5 @@ func main() {
 	// restart to default settings
 	fmt.Print(dd.SHOW_CURSOR)
 	// TODO: any assert should have show cursor
+
 }
