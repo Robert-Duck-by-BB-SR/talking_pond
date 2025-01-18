@@ -1,7 +1,21 @@
 package duckdom
 
 import (
-	"fmt"
+	"bufio"
+	"log"
+	"os"
+	"strings"
+
+	tpc "github.com/Robert-Duck-by-BB-SR/talking_pond/internal/tps_client"
+)
+
+var DEBUG_MODE = false
+
+const (
+	NORMAL  = "NORMAL"
+	INSERT  = "INSERT"
+	COMMAND = "COMMAND"
+	WINDOW  = "WINDOW"
 )
 
 const (
@@ -25,37 +39,133 @@ const (
 )
 
 type Position struct {
-	StartingRow, StartingCol uint
+	Row, Col int
 }
 
 type Screen struct {
+	StatusBar Window
+	// fuck Windows, all my homies use Linux
+	Client      tpc.Client
+	Windows     []*Window
+	RenderQueue strings.Builder
+
+	CursorPosition Position
+	State
+
 	// Width = max number of columns for terminal window
 	Width int
 	// Height = max number of row for terminal window
 	Height             int
-	CursorPosition     Position
 	ActiveWindowId     int
 	EventLoopIsRunning bool
-	State
-	// fuck Windows, all my homies use Linux
-	Windows     []Window
-	RenderQueue []string
+	ModalIsActive      bool
+}
+
+func (self *Screen) RenderFull() {
+	for _, window := range self.Windows {
+		window.Render(&self.RenderQueue)
+	}
+
+	self.StatusBar.Render(&self.RenderQueue)
+
+	self.Render()
 }
 
 func (self *Screen) Render() {
-	for renderable := range self.RenderQueue {
-		fmt.Print(renderable)
+	writer := bufio.NewWriter(os.Stdout)
+	if _, err := writer.WriteString(self.RenderQueue.String()); err != nil {
+		log.Fatalln(err)
 	}
+	if err := writer.Flush(); err != nil {
+		log.Fatalln(err)
+	}
+	self.RenderQueue.Reset()
 }
 
 func ClearScreen() {
-	fmt.Print(CLEAR_SCREEN)
-	fmt.Print(MOVE_CURSOR_TO_THE_BENINGING)
-	fmt.Print(HIDE_CURSOR)
+	writer := bufio.NewWriter(os.Stdout)
+	if _, err := writer.WriteString(CLEAR_SCREEN); err != nil {
+		log.Fatalln(err)
+	}
+	if _, err := writer.WriteString(MOVE_CURSOR_TO_THE_BENINGING); err != nil {
+		log.Fatalln(err)
+	}
+	if _, err := writer.WriteString(HIDE_CURSOR); err != nil {
+		log.Fatalln(err)
+	}
+	if err := writer.Flush(); err != nil {
+		log.Fatalln(err)
+	}
 }
 
 type State interface {
 	HandleKeypress(*Screen, []byte)
+}
+
+func cycle_index(new, len int) int {
+	if new < 0 {
+		return len - 1
+	}
+	if new >= len {
+		return 0
+	}
+	return new
+}
+
+func (self *Screen) change_window(id int) {
+	old_window := self.Windows[self.ActiveWindowId]
+	old_window.Border.Color = PRIMARY_THEME.SecondaryTextColor
+	old_window.Border.Style = NormalBorder
+	old_window.Active = false
+	self.ActiveWindowId = id
+	new_window := self.Windows[self.ActiveWindowId]
+	new_window.Border.Color = PRIMARY_THEME.ActiveTextColor
+	new_window.Border.Style = BoldBorder
+	new_window.Active = true
+	render_border(&self.RenderQueue, old_window.Position, old_window.Active, &old_window.Styles)
+	render_border(&self.RenderQueue, new_window.Position, new_window.Active, &new_window.Styles)
+	if len(old_window.Components) > 0 {
+		old_active := old_window.Components[old_window.ActiveComponentId]
+		old_active.Active = false
+		old_active.Render(&self.RenderQueue)
+	}
+	if len(new_window.Components) > 0 {
+		new_active := new_window.Components[new_window.ActiveComponentId]
+		new_active.Active = true
+		new_active.Render(&self.RenderQueue)
+	}
+}
+
+func (self *Screen) change_component(id int) {
+	active_window := self.Windows[self.ActiveWindowId]
+	if len(active_window.Components) > 0 {
+		prev_component := active_window.Components[active_window.ActiveComponentId]
+		prev_component.Active = false
+		prev_component.Render(&self.RenderQueue)
+
+		active_window.ActiveComponentId = id
+		if len(active_window.Components) > 0 {
+			new_component := active_window.Components[active_window.ActiveComponentId]
+			new_component.Active = true
+			new_component.Render(&self.RenderQueue)
+		}
+	}
+}
+
+func (self *Screen) Activate() {
+	self.change_window(0)
+	self.change_component(0)
+}
+
+func (self *Screen) AddWindow(w *Window) {
+	w.Index = len(self.Windows)
+	w.Oldfart = self
+	self.Windows = append(self.Windows, w)
+}
+
+func (self *Screen) get_active_component() *Component {
+	active_window := self.Windows[self.ActiveWindowId]
+	return active_window.Components[active_window.ActiveComponentId]
 }
 
 type NormalMode struct{}
@@ -64,17 +174,62 @@ var Normal NormalMode
 
 func (*NormalMode) HandleKeypress(screen *Screen, keys []byte) {
 	// big ass switch case
+	active_window := screen.Windows[screen.ActiveWindowId]
 	switch keys[0] {
 	case 'q':
 		screen.EventLoopIsRunning = false
+	case '':
+		screen.change_state(&WM, WINDOW)
+	case 'l':
+		fallthrough
 	case 'j':
-		screen.RenderQueue = append(screen.RenderQueue, "yooooooo")
-
-	// switching modes
+		index := cycle_index(active_window.ActiveComponentId+1, len(active_window.Components))
+		screen.change_component(index)
+	case 'k':
+		fallthrough
+	case 'h':
+		index := cycle_index(active_window.ActiveComponentId-1, len(active_window.Components))
+		screen.change_component(index)
+	case '':
+		active_component := screen.get_active_component()
+		if active_component.ScrollType == VERTICAL {
+			active_component.BufferVerticalFrom -= 1
+			active_component.Render(&screen.RenderQueue)
+		}
+	case '':
+		active_component := screen.get_active_component()
+		if active_component.ScrollType == VERTICAL {
+			active_component.BufferVerticalFrom += 1
+			active_component.Render(&screen.RenderQueue)
+		}
+	case 'w':
+		active_component := screen.get_active_component()
+		if active_component.ScrollType == HORIZONTAL {
+			active_component.BufferHorizontalFrom += 1
+			active_component.Render(&screen.RenderQueue)
+		}
+	case 'b':
+		active_component := screen.get_active_component()
+		if active_component.ScrollType == HORIZONTAL {
+			active_component.BufferHorizontalFrom -= 1
+			active_component.Render(&screen.RenderQueue)
+		}
 	case ':':
-		screen.State = &Command
+		screen.change_state(&Command, CLEAR_ROW+":")
 	case 'i':
-		screen.State = &Insert
+		active_component := screen.get_active_component()
+		if active_component.Inputable {
+			screen.change_state(&Insert, INSERT)
+		}
+	case 'I':
+		screen.change_state(&Insert, INSERT)
+		screen.change_window(len(screen.Windows) - 1)
+		screen.change_component(0)
+	case '':
+		active_component := screen.get_active_component()
+		if active_component.Action != nil {
+			active_component.Action()
+		}
 	}
 }
 
@@ -85,12 +240,21 @@ var Insert InsertMode
 func (*InsertMode) HandleKeypress(screen *Screen, keys []byte) {
 	switch keys[0] {
 	case '':
-		screen.State = &Normal
-	case 'j':
-		screen.RenderQueue = append(screen.RenderQueue, "jjjjjjjj")
-	case 'i':
-		screen.RenderQueue = append(screen.RenderQueue, "iiiiiii")
+		fallthrough
+	case '':
+		screen.change_state(&Normal, NORMAL)
+	default:
+		active_window := screen.Windows[screen.ActiveWindowId]
+		active_component := active_window.Components[active_window.ActiveComponentId]
+		active_component.Buffer += string(keys[0])
+		active_component.Render(&screen.RenderQueue)
 	}
+}
+
+func (screen *Screen) change_state(state State, state_name string) {
+	screen.State = state
+	screen.StatusBar.Components[0].Buffer = state_name
+	screen.StatusBar.Render(&screen.RenderQueue)
 }
 
 type CommandMode struct{}
@@ -98,8 +262,50 @@ type CommandMode struct{}
 var Command CommandMode
 
 func (*CommandMode) HandleKeypress(screen *Screen, keys []byte) {
+	status_line := screen.StatusBar.Components[0]
 	switch keys[0] {
+	case '':
+		fallthrough
 	case '':
-		screen.State = &Normal
+		screen.change_state(&Normal, NORMAL)
+	case '':
+		status_line.Action()
+		screen.change_state(&Normal, NORMAL)
+	default:
+		status_line.Buffer += string(keys[0])
+		status_line.Render(&screen.RenderQueue)
+	}
+}
+
+type WindowMode struct{}
+
+var WM WindowMode
+
+func (*WindowMode) HandleKeypress(screen *Screen, keys []byte) {
+	switch keys[0] {
+	case '':
+		fallthrough
+	case '':
+		fallthrough
+	case '':
+		screen.change_state(&Normal, NORMAL)
+	case '':
+		// move half page up
+	case '':
+		// move half page down
+	case 'l':
+		fallthrough
+	case 'j':
+		if !screen.ModalIsActive {
+			id := cycle_index(screen.ActiveWindowId+1, len(screen.Windows))
+			screen.change_window(id)
+		}
+	case 'k':
+		fallthrough
+	case 'h':
+		if !screen.ModalIsActive {
+			id := cycle_index(screen.ActiveWindowId-1, len(screen.Windows))
+			screen.change_window(id)
+		}
 	}
 }

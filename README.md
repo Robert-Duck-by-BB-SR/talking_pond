@@ -7,4 +7,4 @@ WHATEVER_THIS_IS // for public consts
 snake_case // for anything else
 ```
 # Two idiots one terminal
-Row and Col start from 1
+Row and Col start from 1 -> so that was a small shot in the knee

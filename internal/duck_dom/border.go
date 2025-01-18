@@ -26,6 +26,8 @@ type BorderStyle struct {
 	MiddleBottom string
 }
 
+var NoBorder = Border{}
+
 var (
 	NormalBorder = BorderStyle{
 		Top:          "─",
@@ -76,28 +78,30 @@ var (
 	}
 )
 
-func render_border(position Position, styles *Styles) string {
-	// box-sizing: border-box;
-	var border_builder strings.Builder
+// box-sizing: border-box;
+func render_border(border_builder *strings.Builder, position Position, active bool, styles *Styles) {
+	border_style := styles.Border.Style
 
-	middle := strings.Repeat(styles.Border.Style.Bottom, styles.Width-2)
-	top := styles.Border.Style.TopLeft + middle + styles.Border.Style.TopRight
-	bottom := styles.Border.Style.BottomLeft + middle + styles.Border.Style.BottomRight
+	if styles.Border != NoBorder && active {
+		border_style = BoldBorder
+	}
 
-	border_builder.WriteString(RESET_STYLES)
+	middle := strings.Repeat(border_style.Bottom, styles.Width-2)
+	top := border_style.TopLeft + middle + border_style.TopRight
+	bottom := border_style.BottomLeft + middle + border_style.BottomRight
+
 	border_builder.WriteString(styles.Border.Color)
-	border_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, position.StartingRow, position.StartingCol))
+	border_builder.WriteString(styles.BorderBackground)
+	border_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, position.Row, position.Col))
 	border_builder.WriteString(top)
 
-	for i := 1; uint(i) < uint(styles.Height); i += 1 {
-		left_wall := fmt.Sprintf(MOVE_CURSOR_TO_POSITION, position.StartingRow+uint(i), position.StartingCol)
-		right_wall := fmt.Sprintf(MOVE_CURSOR_TO_POSITION, position.StartingRow+uint(i), position.StartingCol+uint(styles.Width)-1)
-		wall := left_wall + styles.Border.Style.Left + right_wall + styles.Border.Style.Right
+	for i := 1; i < styles.Height-1; i += 1 {
+		left_wall := fmt.Sprintf(MOVE_CURSOR_TO_POSITION, position.Row+i, position.Col)
+		right_wall := fmt.Sprintf(MOVE_CURSOR_TO_POSITION, position.Row+i, position.Col+styles.Width-1)
+		wall := left_wall + border_style.Left + right_wall + border_style.Right
 		border_builder.WriteString(wall)
 	}
-	border_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, styles.Height+int(position.StartingRow), position.StartingCol))
+	border_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, styles.Height+position.Row-1, position.Col))
 	border_builder.WriteString(bottom)
 	border_builder.WriteString(RESET_STYLES)
-
-	return border_builder.String()
 }
