@@ -118,7 +118,7 @@ func create_main_window(screen *dd.Screen) {
 			MaxHeight:  5,
 			TextColor:  dd.PRIMARY_THEME.SecondaryTextColor,
 			Background: dd.PRIMARY_THEME.ActiveBg,
-			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
+			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.RED_COLOR},
 		}),
 	)
 
@@ -130,7 +130,7 @@ func create_main_window(screen *dd.Screen) {
 			MaxHeight:  3,
 			TextColor:  dd.PRIMARY_THEME.SecondaryTextColor,
 			Background: dd.PRIMARY_THEME.ActiveBg,
-			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
+			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.RED_COLOR},
 		}),
 	)
 
@@ -142,7 +142,7 @@ func create_main_window(screen *dd.Screen) {
 			TextColor:  dd.PRIMARY_THEME.SecondaryTextColor,
 			Background: dd.PRIMARY_THEME.ActiveBg,
 			Paddding:   1,
-			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
+			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.RED_COLOR},
 		},
 		),
 	)

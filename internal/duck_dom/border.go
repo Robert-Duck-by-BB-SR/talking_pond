@@ -91,6 +91,7 @@ func render_border(border_builder *strings.Builder, position Position, active bo
 	bottom := border_style.BottomLeft + middle + border_style.BottomRight
 
 	border_builder.WriteString(styles.Border.Color)
+	border_builder.WriteString(styles.BorderBackground)
 	border_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, position.Row, position.Col))
 	border_builder.WriteString(top)
 

@@ -73,6 +73,7 @@ func (self *Window) rearange_window() {
 func (self *Window) AddComponent(c *Component) {
 	c.Index = len(self.Components)
 	c.Parent = self
+	c.Styles.BorderBackground = self.Background
 	self.Components = append(self.Components, c)
 }
 

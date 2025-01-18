@@ -23,16 +23,17 @@ const (
 
 type Styles struct {
 	Border
-	Background string
-	TextColor  string
-	Width      int
-	MinWidth   int
-	MaxWidth   int
-	Height     int
-	MaxHeight  int
-	Paddding   int
-	Maaargin   int
-	TextAling  TextAlingment
+	BorderBackground string
+	Background       string
+	TextColor        string
+	Width            int
+	MinWidth         int
+	MaxWidth         int
+	Height           int
+	MaxHeight        int
+	Paddding         int
+	Maaargin         int
+	TextAling        TextAlingment
 	Direction
 }
 

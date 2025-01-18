@@ -49,7 +49,6 @@ func (self *Component) Render(builder *strings.Builder) {
 	self.calculate_dimensions(builder)
 	self.assert_component_dimensions()
 
-	// TODO: test me
 	if self.Styles.Border != NoBorder {
 		render_border(builder, self.Position, self.Active, &self.Styles)
 	}
@@ -146,11 +145,26 @@ func (self *Component) calculate_dimensions(content_builder *strings.Builder) {
 		content = content[self.BufferHorizontalFrom:]
 	}
 
-	lines_used := 0
+	//######### - row col + width
+	//###123### - movedrow and movedcol = bg * padding - col, bg * padding - col + content line len
+	//######### - row + height and col + width
 
-	// FIXME: render bg together with content to not override bg by content
+	full_line_fillament := strings.Repeat(" ", self.Styles.Width)
+	if self.Paddding != 0 {
+		for i := range self.Paddding {
+			content_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, self.Row+shift_cursor_by_border+i, self.Col))
+			content_builder.WriteString(full_line_fillament)
+		}
+	}
+
+	lines_used := 0
 	for len(content) > allowed_horizontal_space {
+		if self.Paddding != 0 {
+			content_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, moved_row+lines_used, self.Col))
+			content_builder.WriteString(full_line_fillament)
+		}
 		content_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, moved_row+lines_used, moved_col))
+
 		content_builder.WriteString(content[:allowed_horizontal_space])
 		content = content[allowed_horizontal_space:]
 		lines_used += 1
@@ -160,6 +174,10 @@ func (self *Component) calculate_dimensions(content_builder *strings.Builder) {
 	}
 
 	if len(content) <= allowed_horizontal_space && lines_used < allowed_vertical_space {
+		if self.Paddding != 0 {
+			content_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, moved_row+lines_used, self.Col))
+			content_builder.WriteString(full_line_fillament)
+		}
 		content_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, moved_row+lines_used, moved_col))
 		content_builder.WriteString(content)
 		lines_used += 1
@@ -167,6 +185,13 @@ func (self *Component) calculate_dimensions(content_builder *strings.Builder) {
 
 	if self.Height == 0 {
 		self.Height = lines_used + shift_cursor_by_border*2 + self.Styles.Paddding*2
+	}
+
+	if self.Paddding != 0 {
+		for i := range self.Paddding {
+			content_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, self.Row+self.Height-shift_cursor_by_border*2-i, self.Col))
+			content_builder.WriteString(full_line_fillament)
+		}
 	}
 }
 
@@ -184,10 +209,4 @@ func (self *Component) assert_component_dimensions() {
 }
 
 func (self *Component) render_background(bg_builder *strings.Builder) {
-	fillament := strings.Repeat(" ", self.Styles.Width)
-
-	for i := 0; i < self.Styles.Height; i += 1 {
-		bg_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, self.Row+i, self.Position.Col))
-		bg_builder.WriteString(fillament)
-	}
 }
