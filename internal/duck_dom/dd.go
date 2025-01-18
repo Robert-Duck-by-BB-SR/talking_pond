@@ -9,6 +9,8 @@ import (
 	tpc "github.com/Robert-Duck-by-BB-SR/talking_pond/internal/tps_client"
 )
 
+var DEBUG_MODE = false
+
 const (
 	NORMAL  = "NORMAL"
 	INSERT  = "INSERT"
@@ -56,6 +58,7 @@ type Screen struct {
 	Height             int
 	ActiveWindowId     int
 	EventLoopIsRunning bool
+	ModalIsActive      bool
 }
 
 func (self *Screen) RenderFull() {
@@ -212,7 +215,7 @@ func (*NormalMode) HandleKeypress(screen *Screen, keys []byte) {
 			active_component.Render(&screen.RenderQueue)
 		}
 	case ':':
-		screen.change_state(&Command, ":")
+		screen.change_state(&Command, CLEAR_ROW+":")
 	case 'i':
 		active_component := screen.get_active_component()
 		if active_component.Inputable {
@@ -224,7 +227,9 @@ func (*NormalMode) HandleKeypress(screen *Screen, keys []byte) {
 		screen.change_component(0)
 	case '':
 		active_component := screen.get_active_component()
-		active_component.Action()
+		if active_component.Action != nil {
+			active_component.Action()
+		}
 	}
 }
 
@@ -291,12 +296,16 @@ func (*WindowMode) HandleKeypress(screen *Screen, keys []byte) {
 	case 'l':
 		fallthrough
 	case 'j':
-		id := cycle_index(screen.ActiveWindowId+1, len(screen.Windows))
-		screen.change_window(id)
+		if !screen.ModalIsActive {
+			id := cycle_index(screen.ActiveWindowId+1, len(screen.Windows))
+			screen.change_window(id)
+		}
 	case 'k':
 		fallthrough
 	case 'h':
-		id := cycle_index(screen.ActiveWindowId-1, len(screen.Windows))
-		screen.change_window(id)
+		if !screen.ModalIsActive {
+			id := cycle_index(screen.ActiveWindowId-1, len(screen.Windows))
+			screen.change_window(id)
+		}
 	}
 }

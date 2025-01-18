@@ -5,10 +5,12 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"log"
+	"net"
 	"os"
 	"runtime"
 	"runtime/pprof"
 	"runtime/trace"
+	"strings"
 
 	dd "github.com/Robert-Duck-by-BB-SR/talking_pond/internal/duck_dom"
 	"golang.org/x/term"
@@ -100,6 +102,17 @@ import (
 // }
 
 func create_main_window(screen *dd.Screen) {
+
+	if screen.Client.Conn == nil {
+		conn, err := net.Dial("tcp", screen.Client.ServerAddr)
+		if err != nil {
+			if !dd.DEBUG_MODE {
+				log.Fatalf("Failed to connect: %v", err)
+			}
+		}
+		screen.Client.Conn = conn
+	}
+
 	width, height, _ := term.GetSize(int(os.Stdin.Fd()))
 	screen.Width = width
 	screen.Height = height
@@ -191,7 +204,7 @@ func create_main_window(screen *dd.Screen) {
 		dd.CreateComponent(
 			"",
 			dd.Styles{
-				MinWidth:   10,
+				MinWidth:   1,
 				MaxWidth:   input_bar.Width - 2,
 				Background: dd.MakeRGBBackground(100, 40, 100),
 			},
@@ -215,6 +228,7 @@ func create_status_bar(screen *dd.Screen) {
 			Background: dd.MakeRGBBackground(80, 40, 100),
 		},
 	}
+	screen.StatusBar.Oldfart = screen
 	screen.StatusBar.Components = []*dd.Component{
 		{
 			Parent: &screen.StatusBar,
@@ -229,12 +243,68 @@ func create_status_bar(screen *dd.Screen) {
 
 	status_line := screen.StatusBar.Components[0]
 	status_line.Action = func() {
-		buffer := status_line.Buffer[1:]
-		if buffer == "q" {
+		buffer := strings.Split(status_line.Buffer, ":")
+		if len(buffer) < 2 {
+			dd.DebugMeDaddy(screen, "Brother this is not a command you dumb fuck")
+		}
+		switch buffer[1] {
+		case "q":
 			screen.EventLoopIsRunning = false
 			return
+		case "new":
+			create_new_conversation(screen)
 		}
+
 	}
+}
+
+func create_new_conversation(screen *dd.Screen) {
+	width, height, _ := term.GetSize(int(os.Stdin.Fd()))
+	screen.Width = width
+	screen.Height = height
+
+	modal := dd.CreateWindow(
+		dd.Styles{
+			Width:      40,
+			Height:     40,
+			Paddding:   1,
+			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
+			Background: dd.PRIMARY_THEME.PrimaryBg,
+		},
+	)
+	modal.Position = dd.Position{Row: screen.Height/2 - 20, Col: screen.Width/2 - 20}
+
+	modal.AddComponent(dd.CreateComponent("",
+		dd.Styles{
+			MinWidth:   10,
+			MaxWidth:   modal.Width - 2,
+			Background: dd.MakeRGBBackground(100, 40, 100),
+			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
+		},
+	))
+
+	err, users := tpc.RequestUsers(screen.Client.Config[1], screen.Client.Conn)
+	if err != nil {
+		users = []string{"bollocks, cannot retreive users at this time"}
+	}
+
+	for _, user := range users {
+		modal.AddComponent(dd.CreateComponent(user,
+			dd.Styles{
+				MaxWidth:   modal.Width - 2,
+				Background: dd.MakeRGBBackground(100, 40, 100),
+				Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
+			},
+		))
+	}
+
+	screen.AddWindow(modal)
+
+	create_status_bar(screen)
+
+	screen.Activate()
+	screen.RenderFull()
+
 }
 
 func create_login_screen(screen *dd.Screen) {
@@ -258,8 +328,9 @@ func create_login_screen(screen *dd.Screen) {
 			"",
 			dd.Styles{
 				MinWidth:   10,
-				MaxWidth:   login.Width - 2,
-				Background: dd.MakeRGBBackground(100, 40, 100),
+				MaxWidth:   login.Width - 3,
+				MaxHeight:  1,
+				Background: dd.MakeRGBBackground(80, 40, 100),
 			},
 		))
 	login.AddComponent(
@@ -267,18 +338,19 @@ func create_login_screen(screen *dd.Screen) {
 			"",
 			dd.Styles{
 				MinWidth:   10,
-				MaxWidth:   login.Width - 2,
-				Background: dd.MakeRGBBackground(100, 40, 100),
+				MaxWidth:   login.Width - 3,
+				MaxHeight:  3,
+				Background: dd.MakeRGBBackground(80, 40, 100),
+				Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 			},
 		))
 	login.AddComponent(
 		dd.CreateComponent(
 			"connect",
 			dd.Styles{
-				MinWidth:   10,
-				MaxWidth:   login.Width / 2,
-				Background: dd.MakeRGBBackground(100, 40, 100),
-				Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryBg},
+				MaxWidth:   10,
+				Background: dd.MakeRGBBackground(80, 40, 100),
+				Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 			},
 		))
 
@@ -304,8 +376,6 @@ func create_login_screen(screen *dd.Screen) {
 		if err != nil {
 			panic(err)
 		}
-		screen.Client.ServerAddr = ip.Buffer + screen.Client.ServerPort
-		screen.Client.Config = [2]string{ip.Buffer, key.Buffer}
 		screen.Windows = []*dd.Window{}
 		create_main_window(screen)
 	}
@@ -337,6 +407,7 @@ func enable_mem() {
 
 	runtime.MemProfileRate = 512
 }
+
 func enable_cpu() {
 	cpu_prof_file, err := os.Create("cpu.prof")
 	if err != nil {
@@ -346,8 +417,10 @@ func enable_cpu() {
 		log.Fatalln(err)
 	}
 }
-func enable_dev()  {}
-func disable_dev() {}
+
+func enable_dev() {
+	dd.DEBUG_MODE = true
+}
 
 func main() {
 
@@ -413,5 +486,5 @@ func main() {
 	// restart to default settings
 	fmt.Print(dd.SHOW_CURSOR)
 	// TODO: any assert should have show cursor
-
+	//screen.Client.Conn.Close()
 }
