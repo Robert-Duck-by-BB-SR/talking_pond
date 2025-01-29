@@ -262,6 +262,7 @@ func create_new_conversation(screen *dd.Screen) {
 	width, height, _ := term.GetSize(int(os.Stdin.Fd()))
 	screen.Width = width
 	screen.Height = height
+	screen.ModalIsActive = true
 
 	modal := dd.CreateWindow(
 		dd.Styles{
@@ -302,7 +303,7 @@ func create_new_conversation(screen *dd.Screen) {
 
 	create_status_bar(screen)
 
-	screen.Activate()
+	screen.ActivateModal()
 	screen.RenderFull()
 
 }
@@ -486,5 +487,7 @@ func main() {
 	// restart to default settings
 	fmt.Print(dd.SHOW_CURSOR)
 	// TODO: any assert should have show cursor
-	//screen.Client.Conn.Close()
+	if screen.Client.Conn != nil {
+		screen.Client.Conn.Close()
+	}
 }
