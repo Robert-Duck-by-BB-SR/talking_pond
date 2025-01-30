@@ -130,12 +130,13 @@ func (self *Component) calculate_dimensions(content_builder *strings.Builder) {
 	}
 
 	content := self.Buffer
-	vertical_scroll_limit := len(content) / allowed_horizontal_space
+	vertical_scroll_limit := len(content)/allowed_horizontal_space - allowed_vertical_space + 1
 	if self.BufferVerticalFrom > vertical_scroll_limit {
 		self.BufferVerticalFrom = vertical_scroll_limit
 	}
 	if self.ScrollType == VERTICAL {
 		content = content[allowed_horizontal_space*self.BufferVerticalFrom:]
+
 	}
 
 	if allowed_horizontal_space+self.BufferHorizontalFrom > len(content) {
@@ -179,10 +180,8 @@ func (self *Component) calculate_dimensions(content_builder *strings.Builder) {
 	}
 
 	if len(content) <= allowed_horizontal_space && lines_used < allowed_vertical_space {
-		if self.Paddding != 0 {
-			content_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, moved_row+lines_used, self.Col))
-			content_builder.WriteString(full_line_fillament)
-		}
+		content_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, moved_row+lines_used, self.Col))
+		content_builder.WriteString(full_line_fillament)
 		content_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, moved_row+lines_used, moved_col))
 		content_builder.WriteString(content)
 		lines_used += 1

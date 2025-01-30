@@ -277,9 +277,15 @@ func (*InsertMode) HandleKeypress(screen *Screen, keys []byte) {
 		fallthrough
 	case '':
 		screen.change_state(&Normal, NORMAL)
+	case 8, 127:
+		active_component := screen.get_active_component()
+		if len(active_component.Buffer) != 0{
+			active_component.Buffer = active_component.Buffer[:len(active_component.Buffer) - 1]
+			active_window := screen.Windows[screen.ActiveWindowId]
+			active_window.Render(&screen.RenderQueue)
+		}
 	default:
-		active_window := screen.Windows[screen.ActiveWindowId]
-		active_component := active_window.Components[active_window.ActiveComponentId]
+		active_component := screen.get_active_component()
 		active_component.Buffer += string(keys[0])
 		active_component.Render(&screen.RenderQueue)
 	}
