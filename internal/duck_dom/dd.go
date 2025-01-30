@@ -61,6 +61,7 @@ type Screen struct {
 	ModalIsActive      bool
 }
 
+// Renders everything there is in screen. Uses screen.Render
 func (self *Screen) RenderFull() {
 	for _, window := range self.Windows {
 		window.Render(&self.RenderQueue)
@@ -68,9 +69,15 @@ func (self *Screen) RenderFull() {
 
 	self.StatusBar.Render(&self.RenderQueue)
 
+	if self.ModalIsActive {
+		self.ActivateModal()
+	} else {
+		self.Activate()
+	}
 	self.Render()
 }
 
+// Dumps everything there is in RenderQueue into stdout and resets the RenderQueue.
 func (self *Screen) Render() {
 	writer := bufio.NewWriter(os.Stdout)
 	if _, err := writer.WriteString(self.RenderQueue.String()); err != nil {
@@ -152,9 +159,19 @@ func (self *Screen) change_component(id int) {
 	}
 }
 
+// rerenders first window and its active component
 func (self *Screen) Activate() {
 	self.change_window(0)
 	self.change_component(0)
+}
+
+// rerenders the last window and its active component
+func (self *Screen) ActivateModal() {
+	self.ModalIsActive = true
+	self.change_window(len(self.Windows) - 1)
+	self.change_component(0)
+	active_window := self.get_active_window()
+	active_window.Render(&self.RenderQueue)
 }
 
 func (self *Screen) AddWindow(w *Window) {
@@ -168,6 +185,21 @@ func (self *Screen) get_active_component() *Component {
 	return active_window.Components[active_window.ActiveComponentId]
 }
 
+func (self *Screen) get_active_window() *Window {
+	active_window := self.Windows[self.ActiveWindowId]
+	return active_window
+}
+
+func (screen *Screen) CloseModal() {
+	active_window := screen.Windows[screen.ActiveWindowId]
+	screen.change_window(0)
+	active_window = screen.Windows[0]
+	screen.change_component(active_window.ActiveComponentId)
+	screen.ModalIsActive = false
+	screen.Windows = screen.Windows[:len(screen.Windows)-1]
+	screen.RenderFull()
+}
+
 type NormalMode struct{}
 
 var Normal NormalMode
@@ -176,6 +208,11 @@ func (*NormalMode) HandleKeypress(screen *Screen, keys []byte) {
 	// big ass switch case
 	active_window := screen.Windows[screen.ActiveWindowId]
 	switch keys[0] {
+
+	case 'q':
+		if screen.ModalIsActive {
+			screen.CloseModal()
+		}
 	case '':
 		screen.change_state(&WM, WINDOW)
 	case 'l':
@@ -223,7 +260,8 @@ func (*NormalMode) HandleKeypress(screen *Screen, keys []byte) {
 		screen.change_state(&Insert, INSERT)
 		screen.change_window(len(screen.Windows) - 1)
 		screen.change_component(0)
-	case '':
+	case '
+':
 		active_component := screen.get_active_component()
 		if active_component.Action != nil {
 			active_component.Action()
@@ -272,7 +310,8 @@ func (*CommandMode) HandleKeypress(screen *Screen, keys []byte) {
 		fallthrough
 	case '':
 		screen.change_state(&Normal, NORMAL)
-	case '':
+	case '
+':
 		status_line.Action()
 		screen.change_state(&Normal, NORMAL)
 	default:
@@ -289,7 +328,8 @@ func (*WindowMode) HandleKeypress(screen *Screen, keys []byte) {
 	switch keys[0] {
 	case '':
 		fallthrough
-	case '':
+	case '
+':
 		fallthrough
 	case '':
 		screen.change_state(&Normal, NORMAL)

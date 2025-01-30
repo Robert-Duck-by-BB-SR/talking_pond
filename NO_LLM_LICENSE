@@ -1,0 +1,15 @@
+# No LLM Training Addendum
+
+This addendum applies **in addition to** the DWTFYW license. By using this work, you agree to the following restriction:
+
+1. **Prohibited Uses**
+   - You **must not** use this work, in whole or in part, to train, fine-tune, validate, or otherwise improve any:
+     - Large Language Model (LLM),
+     - Generative AI system,
+     - Or other machine learning, deep learning or any other models.
+
+2. **Redistribution Requirement**
+   - If you distribute this work or any derivatives, you **must include** this addendum in full.
+
+3. **Violation and Termination**
+   - Any violation of this addendum will result in the immediate termination of your rights to use this work.
