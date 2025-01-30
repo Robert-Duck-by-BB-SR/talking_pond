@@ -10,6 +10,20 @@ import (
 	"strings"
 )
 
+type Client struct {
+	ServerPort string
+	ServerAddr string
+	// {0: host, 1: key}
+	Config [2]string
+	Conn   net.Conn
+}
+
+var DebugFile *os.File
+
+func init() {
+	DebugFile, _ = os.Create("debug.log")
+}
+
 func CreateConversation(key, users string, conn net.Conn) string {
 	var data strings.Builder
 	data.WriteByte(1)
@@ -21,7 +35,7 @@ func CreateConversation(key, users string, conn net.Conn) string {
 	data.WriteByte('\n')
 	send(conn, []byte(data.String()))
 
-	message, _, err := bufio.NewReader(conn).ReadLine()
+	message, err := bufio.NewReader(conn).ReadString('\n')
 	if err != nil {
 		// FIXME: move logging to a file
 		// log.Println("Read error:", err)
@@ -46,6 +60,20 @@ func RequestMessages(key string, conn net.Conn, convo []byte) (error, []string) 
 	return receive(conn)
 }
 
+func RequestConversations(client Client) (error, []string) {
+	var data strings.Builder
+	data.WriteByte(1)
+	data.WriteString(client.Config[1])
+	data.WriteByte(255)
+	data.WriteString("get")
+	data.WriteByte(255)
+	data.WriteString("conversation")
+	data.WriteByte('\n')
+	send(client.Conn, []byte(data.String()))
+
+	return receive(client.Conn)
+}
+
 func RequestUsers(key string, conn net.Conn) (error, []string) {
 	var data strings.Builder
 	data.WriteByte(1)
@@ -57,15 +85,24 @@ func RequestUsers(key string, conn net.Conn) (error, []string) {
 	data.WriteByte('\n')
 	send(conn, []byte(data.String()))
 
-	return receive(conn)
+	err, users := receive(conn)
+	for _, user := range users {
+		file_debug(user)
+	}
+	return err, users
 }
 
-func request_to_connect(key string, conn net.Conn) {
+func file_debug(content any) {
+	DebugFile.Write([]byte(fmt.Sprintf("%+v\n", content)))
+}
+
+func RequestToConnect(client Client) (error, []string) {
 	var data strings.Builder
 	data.WriteByte(2)
-	data.WriteString(key)
+	data.WriteString(client.Config[1])
 	data.WriteByte('\n')
-	send(conn, []byte(data.String()))
+	send(client.Conn, []byte(data.String()))
+	return receive(client.Conn)
 }
 
 func send(conn net.Conn, data []byte) {
@@ -95,21 +132,15 @@ func send_message(conn net.Conn, key, convo string, scanner *bufio.Scanner) {
 	send(conn, []byte(data.String()))
 }
 
+// returns [strings] split by 254 (item) separator
 func receive(conn net.Conn) (error, []string) {
-	message, _, err := bufio.NewReader(conn).ReadLine()
-	log.Println(message)
+	message, err := bufio.NewReader(conn).ReadString('\n')
+	file_debug(message)
 	if err != nil {
 		return err, []string{fmt.Sprint("Read error:", err)}
 	}
-	parts := strings.Split(string(message), string([]byte{254}))
-	return nil, parts
-}
-
-type Client struct {
-	ServerPort string
-	ServerAddr string
-	Config     [2]string
-	Conn       net.Conn
+	message = strings.Trim(message, string([]byte{255, '\n'}))
+	return nil, strings.Split(message, string([]byte{254}))
 }
 
 func (client *Client) LoadClient() bool {
@@ -130,26 +161,6 @@ func (client *Client) LoadClient() bool {
 		}
 		client.ServerAddr = client.Config[0] + client.ServerPort
 		return true
-
-		// i := 0
-		// for i < len(client.config) && client.config[i] == "" {
-		// 	scanner := bufio.NewScanner(os.Stdin)
-		// 	for scanner.Scan() {
-		// 		client.config[i] = scanner.Text()
-		// 		i += 1
-		// 		break
-		// 	}
-		// }
-		// f, err := os.Create(".secrets")
-		// if err != nil {
-		// 	panic(err)
-		// }
-		// _, err = f.Write([]byte(client.config[0] + "\n" + client.config[1] + "\n"))
-		// if err != nil {
-		// 	panic(err)
-		// }
-		// client.server_addr = client.config[0] + client.server_port
-		// return true
 	}
 	return false
 }
@@ -168,7 +179,7 @@ func (client *Client) placeholder() {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 
-	request_to_connect(client.Config[1], conn)
+	// RequestToConnect(client.Config[1], conn)
 
 	// convo := create_convesation(config[1], conn)
 	// request_messages(config[1], conn, convo)

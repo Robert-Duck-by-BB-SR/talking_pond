@@ -101,30 +101,7 @@ import (
 // 	}
 // }
 
-func create_main_window(screen *dd.Screen) {
-
-	if screen.Client.Conn == nil {
-		conn, err := net.Dial("tcp", screen.Client.ServerAddr)
-		if err != nil {
-			if !dd.DEBUG_MODE {
-				log.Fatalf("Failed to connect: %v", err)
-			}
-		}
-		screen.Client.Conn = conn
-	}
-
-	width, height, _ := term.GetSize(int(os.Stdin.Fd()))
-	screen.Width = width
-	screen.Height = height
-
-	sidebar := dd.CreateWindow(dd.Styles{
-		Width:      50,
-		Height:     screen.Height - 1,
-		Background: dd.PRIMARY_THEME.PrimaryBg,
-		Paddding:   1,
-		Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
-	})
-
+func debug_sidebar(sidebar *dd.Window) {
 	sidebar.AddComponent(
 		dd.CreateComponent("Deez nuts123123 hello there", dd.Styles{
 			MaxWidth:   10,
@@ -159,17 +136,9 @@ func create_main_window(screen *dd.Screen) {
 		},
 		),
 	)
-	screen.AddWindow(sidebar)
+}
 
-	content := dd.CreateWindow(dd.Styles{
-		Width:      screen.Width - sidebar.Styles.Width - 1,
-		Height:     int(float32(screen.Height) * 0.8),
-		Background: dd.PRIMARY_THEME.PrimaryBg,
-		Paddding:   1,
-		Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
-		Direction:  dd.INLINE,
-	})
-
+func debug_content(content *dd.Window) {
 	content.AddComponent(
 		dd.CreateComponent(
 			"|SIMD|",
@@ -188,6 +157,85 @@ func create_main_window(screen *dd.Screen) {
 				Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 			},
 		))
+}
+
+func create_main_window(screen *dd.Screen) {
+	if screen.Client.Conn == nil {
+		conn, err := net.Dial("tcp", screen.Client.ServerAddr)
+		if err != nil {
+			if !dd.DEBUG_MODE {
+				log.Fatalf("Failed to connect: %v", err)
+			}
+		}
+		screen.Client.Conn = conn
+	}
+
+	err, _ := tpc.RequestToConnect(screen.Client)
+	if err != nil {
+		log.Println("boiii you're not allowed here")
+		screen.EventLoopIsRunning = false
+		return
+	}
+
+	width, height, _ := term.GetSize(int(os.Stdin.Fd()))
+	screen.Width = width
+	screen.Height = height
+
+	sidebar := dd.CreateWindow(dd.Styles{
+		Width:      50,
+		Height:     screen.Height - 1,
+		Background: dd.PRIMARY_THEME.PrimaryBg,
+		Paddding:   1,
+		Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
+	})
+
+	if dd.DEBUG_MODE {
+		debug_sidebar(sidebar)
+	} else {
+		sidebar.OnRender = func() {
+            // NOTE: quick fix to not add more components on rerender
+			sidebar.Components = []*dd.Component{}
+			err, conversations := tpc.RequestConversations(screen.Client)
+			if err != nil {
+				log.Println("can't fetch conversations")
+				screen.EventLoopIsRunning = false
+				return
+			}
+			for _, con := range conversations {
+				data := strings.Split(con, string([]byte{255}))
+
+				//FIXME: there is something funky happening here
+				if len(data) == 2 {
+					sidebar.AddComponent(dd.CreateComponent(
+						fmt.Sprint(data[1], "|", data[0]),
+						dd.Styles{
+							MaxWidth:   sidebar.Width - 4,
+							MaxHeight:  5,
+							TextColor:  dd.PRIMARY_THEME.SecondaryTextColor,
+							Background: dd.PRIMARY_THEME.ActiveBg,
+							Paddding:   1,
+							Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.RED_COLOR},
+						},
+					))
+				}
+			}
+		}
+	}
+
+	screen.AddWindow(sidebar)
+
+	content := dd.CreateWindow(dd.Styles{
+		Width:      screen.Width - sidebar.Styles.Width - 1,
+		Height:     int(float32(screen.Height) * 0.8),
+		Background: dd.PRIMARY_THEME.PrimaryBg,
+		Paddding:   1,
+		Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
+		Direction:  dd.INLINE,
+	})
+
+	if dd.DEBUG_MODE {
+		debug_content(content)
+	}
 
 	screen.AddWindow(content)
 
@@ -215,7 +263,6 @@ func create_main_window(screen *dd.Screen) {
 
 	create_status_bar(screen)
 
-	screen.Activate()
 	screen.RenderFull()
 }
 
@@ -289,22 +336,28 @@ func create_new_conversation(screen *dd.Screen) {
 	}
 
 	for _, user := range users {
-		modal.AddComponent(dd.CreateComponent(user,
+		available_user := dd.CreateComponent(user,
 			dd.Styles{
 				MaxWidth:   modal.Width - 2,
 				Background: dd.MakeRGBBackground(100, 40, 100),
 				Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
 			},
-		))
+		)
+
+		available_user.Action = func() {
+			tpc.CreateConversation(screen.Client.Config[1], user, screen.Client.Conn)
+			screen.CloseModal()
+		}
+
+		modal.AddComponent(available_user)
 	}
 
 	screen.AddWindow(modal)
 
 	create_status_bar(screen)
 
-	screen.Activate()
-	screen.RenderFull()
-
+	screen.ActivateModal()
+	screen.Render()
 }
 
 func create_login_screen(screen *dd.Screen) {
@@ -380,7 +433,6 @@ func create_login_screen(screen *dd.Screen) {
 		create_main_window(screen)
 	}
 
-	screen.Activate()
 	screen.RenderFull()
 }
 
@@ -486,5 +538,7 @@ func main() {
 	// restart to default settings
 	fmt.Print(dd.SHOW_CURSOR)
 	// TODO: any assert should have show cursor
-	//screen.Client.Conn.Close()
+	if screen.Client.Conn != nil {
+		screen.Client.Conn.Close()
+	}
 }
