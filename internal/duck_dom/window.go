@@ -13,6 +13,7 @@ type Window struct {
 	Index             int
 	ActiveComponentId int
 	Active            bool
+	OnRender          func()
 }
 
 func CreateWindow(styles Styles) *Window {
@@ -40,6 +41,10 @@ func (self *Window) Render(builder *strings.Builder) {
 
 	if self.Styles.Border != NoBorder {
 		render_border(builder, self.Position, self.Active, &self.Styles)
+	}
+
+	if self.OnRender != nil {
+		self.OnRender()
 	}
 
 	for _, component := range self.Components {
