@@ -126,7 +126,7 @@ func create_main_window(screen *dd.Screen) {
 	})
 
 	sidebar.AddComponent(
-		dd.CreateComponent("Deez nuts123123 hello there", dd.Styles{
+		dd.CreateComponent("Deez nuts 123 456 789 100 110", dd.Styles{
 			MaxWidth:   10,
 			MaxHeight:  5,
 			TextColor:  dd.PRIMARY_THEME.SecondaryTextColor,
@@ -206,7 +206,7 @@ func create_main_window(screen *dd.Screen) {
 			dd.Styles{
 				MinWidth:   1,
 				MaxWidth:   input_bar.Width - 2,
-				Background: dd.MakeRGBBackground(100, 40, 100),
+				Background: dd.MakeRGBBackground(200, 40, 100),
 			},
 		))
 
@@ -254,7 +254,6 @@ func create_status_bar(screen *dd.Screen) {
 		case "new":
 			create_new_conversation(screen)
 		}
-
 	}
 }
 
