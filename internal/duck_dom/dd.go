@@ -61,6 +61,7 @@ type Screen struct {
 	ModalIsActive      bool
 }
 
+// Renders everything there is in screen. Uses screen.Render
 func (self *Screen) RenderFull() {
 	for _, window := range self.Windows {
 		window.Render(&self.RenderQueue)
@@ -71,6 +72,7 @@ func (self *Screen) RenderFull() {
 	self.Render()
 }
 
+// Dumps everything there is in RenderQueue into stdout and resets the RenderQueue.
 func (self *Screen) Render() {
 	writer := bufio.NewWriter(os.Stdout)
 	if _, err := writer.WriteString(self.RenderQueue.String()); err != nil {
@@ -152,9 +154,16 @@ func (self *Screen) change_component(id int) {
 	}
 }
 
+// rerenders first window and its active component
 func (self *Screen) Activate() {
 	self.change_window(0)
 	self.change_component(0)
+}
+
+// rerenders the last window and its active component
+func (self *Screen) ActivateModal() {
+	self.change_window(len(self.Windows) - 1)
+	self.change_component(len(self.Windows) - 1)
 }
 
 func (self *Screen) AddWindow(w *Window) {
@@ -177,7 +186,14 @@ func (*NormalMode) HandleKeypress(screen *Screen, keys []byte) {
 	active_window := screen.Windows[screen.ActiveWindowId]
 	switch keys[0] {
 	case 'q':
-		screen.EventLoopIsRunning = false
+		if screen.ModalIsActive {
+			screen.change_window(0)
+			active_window = screen.Windows[0]
+			screen.change_component(active_window.ActiveComponentId)
+			screen.ModalIsActive = false
+			screen.Windows = screen.Windows[:len(screen.Windows)-1]
+			screen.RenderFull()
+		}
 	case '':
 		screen.change_state(&WM, WINDOW)
 	case 'l':
