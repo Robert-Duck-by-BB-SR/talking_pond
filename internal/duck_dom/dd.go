@@ -69,6 +69,11 @@ func (self *Screen) RenderFull() {
 
 	self.StatusBar.Render(&self.RenderQueue)
 
+	if self.ModalIsActive {
+		self.ActivateModal()
+	} else {
+		self.Activate()
+	}
 	self.Render()
 }
 
@@ -162,8 +167,11 @@ func (self *Screen) Activate() {
 
 // rerenders the last window and its active component
 func (self *Screen) ActivateModal() {
+	self.ModalIsActive = true
 	self.change_window(len(self.Windows) - 1)
-	self.change_component(len(self.Windows) - 1)
+	self.change_component(0)
+	active_window := self.get_active_window()
+	active_window.Render(&self.RenderQueue)
 }
 
 func (self *Screen) AddWindow(w *Window) {
@@ -177,6 +185,21 @@ func (self *Screen) get_active_component() *Component {
 	return active_window.Components[active_window.ActiveComponentId]
 }
 
+func (self *Screen) get_active_window() *Window {
+	active_window := self.Windows[self.ActiveWindowId]
+	return active_window
+}
+
+func (screen *Screen) CloseModal() {
+	active_window := screen.Windows[screen.ActiveWindowId]
+	screen.change_window(0)
+	active_window = screen.Windows[0]
+	screen.change_component(active_window.ActiveComponentId)
+	screen.ModalIsActive = false
+	screen.Windows = screen.Windows[:len(screen.Windows)-1]
+	screen.RenderFull()
+}
+
 type NormalMode struct{}
 
 var Normal NormalMode
@@ -187,12 +210,7 @@ func (*NormalMode) HandleKeypress(screen *Screen, keys []byte) {
 	switch keys[0] {
 	case 'q':
 		if screen.ModalIsActive {
-			screen.change_window(0)
-			active_window = screen.Windows[0]
-			screen.change_component(active_window.ActiveComponentId)
-			screen.ModalIsActive = false
-			screen.Windows = screen.Windows[:len(screen.Windows)-1]
-			screen.RenderFull()
+			screen.CloseModal()
 		}
 	case '':
 		screen.change_state(&WM, WINDOW)

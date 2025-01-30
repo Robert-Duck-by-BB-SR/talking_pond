@@ -150,7 +150,6 @@ func (self *Component) calculate_dimensions(content_builder *strings.Builder) {
 	//######### - row + height and col + width
 
 	full_line_fillament := strings.Repeat(" ", self.Styles.Width)
-	FileDebugMeDaddy(fmt.Sprintln(self.Styles.Width))
 	if self.Paddding != 0 {
 		for i := range self.Paddding {
 			content_builder.WriteString(fmt.Sprintf(MOVE_CURSOR_TO_POSITION, self.Row+shift_cursor_by_border+i, self.Col))
