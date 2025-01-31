@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+
+	"github.com/Robert-Duck-by-BB-SR/talking_pond/internal/utils"
 )
 
 type Client struct {
@@ -16,12 +18,6 @@ type Client struct {
 	// {0: host, 1: key}
 	Config [2]string
 	Conn   net.Conn
-}
-
-var DebugFile *os.File
-
-func init() {
-	DebugFile, _ = os.Create("debug.log")
 }
 
 func CreateConversation(key, users string, conn net.Conn) string {
@@ -87,13 +83,9 @@ func RequestUsers(key string, conn net.Conn) (error, []string) {
 
 	err, users := receive(conn)
 	for _, user := range users {
-		file_debug(user)
+		utils.FileDebug(user)
 	}
 	return err, users
-}
-
-func file_debug(content any) {
-	DebugFile.Write([]byte(fmt.Sprintf("%+v\n", content)))
 }
 
 func RequestToConnect(client Client) (error, []string) {
@@ -135,7 +127,7 @@ func send_message(conn net.Conn, key, convo string, scanner *bufio.Scanner) {
 // returns [strings] split by 254 (item) separator
 func receive(conn net.Conn) (error, []string) {
 	message, err := bufio.NewReader(conn).ReadString('\n')
-	file_debug(message)
+	utils.FileDebug(message)
 	if err != nil {
 		return err, []string{fmt.Sprint("Read error:", err)}
 	}
