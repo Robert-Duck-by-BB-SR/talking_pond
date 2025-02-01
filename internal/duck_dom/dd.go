@@ -31,8 +31,8 @@ const (
 	MOVE_CURSOR_TO_THE_BENINGING = "\033[H"
 	MOVE_CURSOR_TO_POSITION      = "\033[%d;%dH"
 	CLEAR_ROW                    = "\033[2K"
-	HIDE_CURSOR                  = "\x1b[?25l"
-	SHOW_CURSOR                  = "\x1b[?25h"
+	HIDE_CURSOR                  = "\033[?25l"
+	SHOW_CURSOR                  = "\033[?25h"
 
 	// NOTE: DEBUG ONLY. IF YOU USE IT IN PROD I WILL FIND YOU AND MAKE YOU SMELL MY SOCKS
 	DEBUG_STYLES = "\033[30;43m"
@@ -227,25 +227,25 @@ func (*NormalMode) HandleKeypress(screen *Screen, keys []byte) {
 	case '':
 		active_component := screen.get_active_component()
 		if active_component.ScrollType == VERTICAL {
-			active_component.BufferVerticalFrom -= 1
+			active_component.buffer_vertical_scroll_from -= 1
 			active_component.Render(&screen.RenderQueue)
 		}
 	case '':
 		active_component := screen.get_active_component()
 		if active_component.ScrollType == VERTICAL {
-			active_component.BufferVerticalFrom += 1
+			active_component.buffer_vertical_scroll_from += 1
 			active_component.Render(&screen.RenderQueue)
 		}
 	case 'w':
 		active_component := screen.get_active_component()
 		if active_component.ScrollType == HORIZONTAL {
-			active_component.BufferHorizontalFrom += 1
+			active_component.buffer_horizontal_scroll_from += 1
 			active_component.Render(&screen.RenderQueue)
 		}
 	case 'b':
 		active_component := screen.get_active_component()
 		if active_component.ScrollType == HORIZONTAL {
-			active_component.BufferHorizontalFrom -= 1
+			active_component.buffer_horizontal_scroll_from -= 1
 			active_component.Render(&screen.RenderQueue)
 		}
 	case ':':
@@ -279,14 +279,14 @@ func (*InsertMode) HandleKeypress(screen *Screen, keys []byte) {
 		screen.change_state(&Normal, NORMAL)
 	case 8, 127:
 		active_component := screen.get_active_component()
-		if len(active_component.Buffer) != 0{
-			active_component.Buffer = active_component.Buffer[:len(active_component.Buffer) - 1]
-			active_window := screen.Windows[screen.ActiveWindowId]
-			active_window.Render(&screen.RenderQueue)
+		if len(active_component.Buffer) != 0 {
+			active_component.Buffer = active_component.Buffer[:len(active_component.Buffer)-1]
+			active_component.Render(&screen.RenderQueue)
 		}
 	default:
 		active_component := screen.get_active_component()
 		active_component.Buffer += string(keys[0])
+		active_component.buffer_vertical_scroll_from += 1
 		active_component.Render(&screen.RenderQueue)
 	}
 }

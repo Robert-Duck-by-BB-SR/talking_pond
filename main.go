@@ -250,17 +250,19 @@ func create_main_window(screen *dd.Screen) {
 		},
 	)
 
-	input_bar.AddComponent(
-		dd.CreateComponent(
-			"",
-			dd.Styles{
-				MinWidth:   1,
-				MaxWidth:   input_bar.Width - 2,
-				Background: dd.MakeRGBBackground(200, 40, 100),
-			},
-		))
+	input := dd.CreateComponent(
+		"",
+		dd.Styles{
+			MinWidth:   1,
+			Width:      input_bar.Width - 2,
+			Background: dd.MakeRGBBackground(200, 40, 100),
+			Height:     input_bar.Height - 2,
+		},
+	)
 
-	input_bar.Components[0].Inputable = true
+	input_bar.AddComponent(input)
+	input.Inputable = true
+	input.ScrollType = dd.VERTICAL
 	screen.AddWindow(input_bar)
 
 	create_status_bar(screen)
