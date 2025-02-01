@@ -281,13 +281,13 @@ func (*InsertMode) HandleKeypress(screen *Screen, keys []byte) {
 		active_component := screen.get_active_component()
 		if len(active_component.Buffer) != 0 {
 			active_component.Buffer = active_component.Buffer[:len(active_component.Buffer)-1]
-			active_component.Render(&screen.RenderQueue)
+			active_component.render_content(&screen.RenderQueue)
 		}
 	default:
 		active_component := screen.get_active_component()
 		active_component.Buffer += string(keys[0])
 		active_component.buffer_vertical_scroll_from += 1
-		active_component.Render(&screen.RenderQueue)
+		active_component.render_content(&screen.RenderQueue)
 	}
 }
 
