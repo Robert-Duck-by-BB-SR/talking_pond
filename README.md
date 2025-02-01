@@ -10,6 +10,4 @@ snake_case // for anything else
 Row and Col start from 1 -> so that was a small shot in the knee
 
 # License
-
-This project is licensed under the DWTFYW License.  
-Note: Usage for training large language models (LLMs) is explicitly prohibited. See the [No LLM Training Addendum](NO_LLM_LICENSE) for details.
+Any company or individual shall be publicly shamed for breaking current license.
