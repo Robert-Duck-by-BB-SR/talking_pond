@@ -88,6 +88,13 @@ func (self *Component) render_background(content_builder *strings.Builder) {
 
 // Changes dimentions of a component based on content
 func (self *Component) calculate_dimensions() {
+	if self.Width == 0 && self.Inputable {
+		panic("Inputable components must have static width")
+	}
+	if self.Height == 0 && self.Inputable {
+		panic("Inputable components must have static height")
+	}
+
 	if self.allowed_horizontal_space != 0 && self.allowed_vertical_space != 0 {
 		return
 	}

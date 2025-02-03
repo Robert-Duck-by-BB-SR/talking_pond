@@ -31,8 +31,8 @@ const (
 	MOVE_CURSOR_TO_THE_BENINGING = "\033[H"
 	MOVE_CURSOR_TO_POSITION      = "\033[%d;%dH"
 	CLEAR_ROW                    = "\033[2K"
-	HIDE_CURSOR                  = "\033[?25l"
-	SHOW_CURSOR                  = "\033[?25h"
+	HIDDEN_CURSOR                = "\033[?25l"
+	VISIBLE_CURSOR               = "\033[?25h"
 
 	// NOTE: DEBUG ONLY. IF YOU USE IT IN PROD I WILL FIND YOU AND MAKE YOU SMELL MY SOCKS
 	DEBUG_STYLES = "\033[30;43m"
@@ -97,7 +97,7 @@ func ClearScreen() {
 	if _, err := writer.WriteString(MOVE_CURSOR_TO_THE_BENINGING); err != nil {
 		log.Fatalln(err)
 	}
-	if _, err := writer.WriteString(HIDE_CURSOR); err != nil {
+	if _, err := writer.WriteString(HIDDEN_CURSOR); err != nil {
 		log.Fatalln(err)
 	}
 	if err := writer.Flush(); err != nil {
@@ -277,6 +277,11 @@ func (*InsertMode) HandleKeypress(screen *Screen, keys []byte) {
 		fallthrough
 	case '':
 		screen.change_state(&Normal, NORMAL)
+	case '':
+		active_component := screen.get_active_component()
+		if active_component.Action != nil {
+			active_component.Action()
+		}
 	case 8, 127:
 		active_component := screen.get_active_component()
 		if len(active_component.Buffer) != 0 {
@@ -292,6 +297,12 @@ func (*InsertMode) HandleKeypress(screen *Screen, keys []byte) {
 }
 
 func (screen *Screen) change_state(state State, state_name string) {
+	if screen.State == &Insert || screen.State == &Command{
+		screen.RenderQueue.WriteString(HIDDEN_CURSOR)
+	}
+	if state == &Insert || state == &Command {
+		screen.RenderQueue.WriteString(VISIBLE_CURSOR)
+	}
 	screen.State = state
 	screen.StatusBar.Components[0].Buffer = state_name
 	screen.StatusBar.Render(&screen.RenderQueue)
@@ -311,6 +322,11 @@ func (*CommandMode) HandleKeypress(screen *Screen, keys []byte) {
 	case '':
 		status_line.Action()
 		screen.change_state(&Normal, NORMAL)
+	case 8, 127:
+		if len(status_line.Buffer) != 0 && status_line.Buffer[len(status_line.Buffer) - 1] != ':' {
+			status_line.Buffer = status_line.Buffer[:len(status_line.Buffer)-1]
+			status_line.Render(&screen.RenderQueue)
+		}
 	default:
 		status_line.Buffer += string(keys[0])
 		status_line.Render(&screen.RenderQueue)
