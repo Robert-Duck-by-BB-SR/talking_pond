@@ -284,10 +284,11 @@ func create_status_bar(screen *dd.Screen) {
 		{
 			Parent: &screen.StatusBar,
 			Buffer: dd.NORMAL,
+			Inputable: true,
 			Styles: dd.Styles{
 				TextColor: dd.PRIMARY_THEME.ActiveTextColor,
-				MaxWidth:  screen.Width,
-				MaxHeight: 1,
+				Width:  screen.Width,
+				Height: 1,
 			},
 		},
 	}
@@ -516,7 +517,7 @@ func main() {
 	defer term.Restore(int(os.Stdin.Fd()), old_state)
 
 	dd.ClearScreen()
-	screen := dd.Screen{State: &dd.Normal, EventLoopIsRunning: true}
+	screen := dd.Screen{ State: &dd.Normal, EventLoopIsRunning: true }
 
 	screen.Client = tpc.Client{}
 
@@ -541,7 +542,7 @@ func main() {
 		screen.State.HandleKeypress(&screen, stdin_buffer)
 	}
 	// restart to default settings
-	fmt.Print(dd.SHOW_CURSOR)
+	fmt.Print(dd.VISIBLE_CURSOR)
 	// TODO: any assert should have show cursor
 	if screen.Client.Conn != nil {
 		screen.Client.Conn.Close()
