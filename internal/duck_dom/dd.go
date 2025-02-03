@@ -297,7 +297,7 @@ func (*InsertMode) HandleKeypress(screen *Screen, keys []byte) {
 }
 
 func (screen *Screen) change_state(state State, state_name string) {
-	if screen.State == &Insert || screen.State == &Command{
+	if screen.State == &Insert || screen.State == &Command {
 		screen.RenderQueue.WriteString(HIDDEN_CURSOR)
 	}
 	if state == &Insert || state == &Command {
@@ -323,7 +323,7 @@ func (*CommandMode) HandleKeypress(screen *Screen, keys []byte) {
 		status_line.Action()
 		screen.change_state(&Normal, NORMAL)
 	case 8, 127:
-		if len(status_line.Buffer) != 0 && status_line.Buffer[len(status_line.Buffer) - 1] != ':' {
+		if len(status_line.Buffer) != 0 && status_line.Buffer[len(status_line.Buffer)-1] != ':' {
 			status_line.Buffer = status_line.Buffer[:len(status_line.Buffer)-1]
 			status_line.Render(&screen.RenderQueue)
 		}

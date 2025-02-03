@@ -11,7 +11,7 @@ Row and Col start from 1 -> so that was a small shot in the knee
 
 Inputable components must have static width
 Other components can have static and dynamic width
-If new data comes from the server, we will rerender the component or window (most likely) so dimentins will be recalculated
+If new data comes from the server, we will rerender the component or window (most likely) so dimensions will be recalculated
 Same goes to height
 
 # License
