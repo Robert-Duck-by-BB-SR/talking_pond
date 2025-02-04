@@ -59,34 +59,59 @@ type Screen struct {
 	ActiveWindowId     int
 	EventLoopIsRunning bool
 	ModalIsActive      bool
+	WriteToQ           chan string
+	ReadFromQ          chan q_reader
+}
+
+type q_reader struct {
+	response chan string
+}
+
+func (self *Screen) RenderQueueStart() {
+	self.WriteToQ = make(chan string)
+	self.ReadFromQ = make(chan q_reader)
+	for {
+		select {
+		case text := <-self.WriteToQ:
+			self.RenderQueue.WriteString(text)
+		case reader := <-self.ReadFromQ:
+			reader.response <- self.RenderQueue.String()
+			self.RenderQueue.Reset()
+		}
+	}
 }
 
 // Renders everything there is in screen. Uses screen.Render
 func (self *Screen) RenderFull() {
 	for _, window := range self.Windows {
-		window.Render(&self.RenderQueue)
+		self.WriteToQ <- window.Render()
 	}
 
-	self.StatusBar.Render(&self.RenderQueue)
+	self.WriteToQ <- self.StatusBar.Render()
 
 	if self.ModalIsActive {
 		self.ActivateModal()
 	} else {
-		self.Activate()
+		self.Activate(self.ActiveWindowId)
 	}
 	self.Render()
 }
 
 // Dumps everything there is in RenderQueue into stdout and resets the RenderQueue.
 func (self *Screen) Render() {
-	writer := bufio.NewWriter(os.Stdout)
-	if _, err := writer.WriteString(self.RenderQueue.String()); err != nil {
-		log.Fatalln(err)
+	screen := q_reader{}
+	screen.response = make(chan string)
+	self.ReadFromQ <- screen
+	text := <-screen.response
+	if len(text) != 0 {
+		writer := bufio.NewWriter(os.Stdout)
+		if _, err := writer.WriteString(text); err != nil {
+			log.Fatalln(err)
+		}
+		if err := writer.Flush(); err != nil {
+			log.Fatalln(err)
+		}
 	}
-	if err := writer.Flush(); err != nil {
-		log.Fatalln(err)
-	}
-	self.RenderQueue.Reset()
 }
 
 func ClearScreen() {
@@ -120,6 +145,8 @@ func cycle_index(new, len int) int {
 }
 
 func (self *Screen) change_window(id int) {
+	var builder strings.Builder
+	defer builder.Reset()
 	old_window := self.Windows[self.ActiveWindowId]
 	old_window.Border.Color = PRIMARY_THEME.SecondaryTextColor
 	old_window.Border.Style = NormalBorder
@@ -129,40 +156,45 @@ func (self *Screen) change_window(id int) {
 	new_window.Border.Color = PRIMARY_THEME.ActiveTextColor
 	new_window.Border.Style = BoldBorder
 	new_window.Active = true
-	render_border(&self.RenderQueue, old_window.Position, old_window.Active, &old_window.Styles)
-	render_border(&self.RenderQueue, new_window.Position, new_window.Active, &new_window.Styles)
+	render_border(&builder, old_window.Position, old_window.Active, &old_window.Styles)
+	render_border(&builder, new_window.Position, new_window.Active, &new_window.Styles)
 	if len(old_window.Components) > 0 {
 		old_active := old_window.Components[old_window.ActiveComponentId]
 		old_active.Active = false
-		old_active.Render(&self.RenderQueue)
+		builder.WriteString(old_active.Render())
 	}
 	if len(new_window.Components) > 0 {
 		new_active := new_window.Components[new_window.ActiveComponentId]
 		new_active.Active = true
-		new_active.Render(&self.RenderQueue)
+		builder.WriteString(new_active.Render())
 	}
+	self.WriteToQ <- builder.String()
 }
 
 func (self *Screen) change_component(id int) {
+	var builder strings.Builder
+	defer builder.Reset()
 	active_window := self.Windows[self.ActiveWindowId]
 	if len(active_window.Components) > 0 {
 		prev_component := active_window.Components[active_window.ActiveComponentId]
 		prev_component.Active = false
-		prev_component.Render(&self.RenderQueue)
+		builder.WriteString(prev_component.Render())
 
 		active_window.ActiveComponentId = id
 		if len(active_window.Components) > 0 {
 			new_component := active_window.Components[active_window.ActiveComponentId]
 			new_component.Active = true
-			new_component.Render(&self.RenderQueue)
+			builder.WriteString(new_component.Render())
 		}
 	}
+	self.WriteToQ <- builder.String()
 }
 
 // rerenders first window and its active component
-func (self *Screen) Activate() {
-	self.change_window(0)
-	self.change_component(0)
+// FIXME: should not take an argument?
+func (self *Screen) Activate(i int) {
+	self.change_window(i)
+	self.change_component(i)
 }
 
 // rerenders the last window and its active component
@@ -171,7 +203,7 @@ func (self *Screen) ActivateModal() {
 	self.change_window(len(self.Windows) - 1)
 	self.change_component(0)
 	active_window := self.get_active_window()
-	active_window.Render(&self.RenderQueue)
+	self.WriteToQ <- active_window.Render()
 }
 
 func (self *Screen) AddWindow(w *Window) {
@@ -228,25 +260,25 @@ func (*NormalMode) HandleKeypress(screen *Screen, keys []byte) {
 		active_component := screen.get_active_component()
 		if active_component.ScrollType == VERTICAL {
 			active_component.buffer_vertical_scroll_from -= 1
-			active_component.Render(&screen.RenderQueue)
+			screen.WriteToQ <- active_component.Render()
 		}
 	case '':
 		active_component := screen.get_active_component()
 		if active_component.ScrollType == VERTICAL {
 			active_component.buffer_vertical_scroll_from += 1
-			active_component.Render(&screen.RenderQueue)
+			screen.WriteToQ <- active_component.Render()
 		}
 	case 'w':
 		active_component := screen.get_active_component()
 		if active_component.ScrollType == HORIZONTAL {
 			active_component.buffer_horizontal_scroll_from += 1
-			active_component.Render(&screen.RenderQueue)
+			screen.WriteToQ <- active_component.Render()
 		}
 	case 'b':
 		active_component := screen.get_active_component()
 		if active_component.ScrollType == HORIZONTAL {
 			active_component.buffer_horizontal_scroll_from -= 1
-			active_component.Render(&screen.RenderQueue)
+			screen.WriteToQ <- active_component.Render()
 		}
 	case ':':
 		screen.change_state(&Command, CLEAR_ROW+":")
@@ -279,7 +311,7 @@ func (*InsertMode) HandleKeypress(screen *Screen, keys []byte) {
 		screen.change_state(&Normal, NORMAL)
 	case '':
 		active_component := screen.get_active_component()
-		if active_component.Action != nil {
+		if active_component.Inputable && active_component.Action != nil {
 			active_component.Action()
 		}
 	case 8, 127:
@@ -305,7 +337,7 @@ func (screen *Screen) change_state(state State, state_name string) {
 	}
 	screen.State = state
 	screen.StatusBar.Components[0].Buffer = state_name
-	screen.StatusBar.Render(&screen.RenderQueue)
+	screen.WriteToQ <- screen.StatusBar.Render()
 }
 
 type CommandMode struct{}
@@ -325,11 +357,11 @@ func (*CommandMode) HandleKeypress(screen *Screen, keys []byte) {
 	case 8, 127:
 		if len(status_line.Buffer) != 0 && status_line.Buffer[len(status_line.Buffer)-1] != ':' {
 			status_line.Buffer = status_line.Buffer[:len(status_line.Buffer)-1]
-			status_line.Render(&screen.RenderQueue)
+			screen.WriteToQ <- status_line.Render()
 		}
 	default:
 		status_line.Buffer += string(keys[0])
-		status_line.Render(&screen.RenderQueue)
+		screen.WriteToQ <- status_line.Render()
 	}
 }
 
@@ -362,6 +394,56 @@ func (*WindowMode) HandleKeypress(screen *Screen, keys []byte) {
 		if !screen.ModalIsActive {
 			id := cycle_index(screen.ActiveWindowId-1, len(screen.Windows))
 			screen.change_window(id)
+		}
+	}
+}
+
+func CreateMessages(content *Window, conversation string, message []string) {
+	// for _, m := range message {
+	// 	data := strings.Split(m, string([]byte{255}))
+	// 	if len(data) < 5 {
+	// 		continue
+	// 	}
+	// 	_ = data[0] // type
+	// 	user := data[1]
+	// 	convo := data[2]
+	// 	datetime := data[3]
+	// 	text := data[4]
+	// 	if convo == conversation {
+	// 		item := CreateComponent(text,
+	// 			Styles{
+	// 				MaxWidth:   content.Width - 4,
+	// 				TextColor:  PRIMARY_THEME.SecondaryTextColor,
+	// 				Background: PRIMARY_THEME.ActiveBg,
+	// 				Border:     Border{Style: RoundedBorder, Color: RED_COLOR},
+	// 			},
+	// 		)
+	// 		content.AddComponent(item)
+	// 		user_date := CreateComponent(fmt.Sprintf("%s | %s", user, datetime), Styles{
+	// 			MaxWidth:   content.Width - 4,
+	// 			MaxHeight:  1,
+	// 			TextColor:  PRIMARY_THEME.SecondaryTextColor,
+	// 			Background: PRIMARY_THEME.ActiveBg,
+	// 		})
+	// 		content.AddComponent(user_date)
+	// 		item.Render(&content.Oldfart.RenderQueue)
+	// 		user_date.Render(&content.Oldfart.RenderQueue)
+	// 	}
+	// }
+}
+
+func (screen *Screen) Receive() {
+	for {
+		if err, messages := tpc.Receive(screen.Client.Conn); err != nil {
+			// CreateMessages(screen.Windows[1], screen.Client.Conversation, messages)
+			// response := messages[1:]
+			switch messages[0] {
+			case 250:
+			case 251:
+			case 252:
+			case 253:
+			default:
+			}
 		}
 	}
 }

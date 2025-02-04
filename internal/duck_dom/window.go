@@ -35,12 +35,16 @@ func assert_window_dimensions(styles *Styles) {
 	}
 }
 
-func (self *Window) Render(builder *strings.Builder) {
+func (self *Window) Render() string {
+
+	var builder strings.Builder
+	defer builder.Reset()
+
 	self.rearange_window()
-	self.render_background(builder)
+	self.render_background(&builder)
 
 	if self.Styles.Border != NoBorder {
-		render_border(builder, self.Position, self.Active, &self.Styles)
+		render_border(&builder, self.Position, self.Active, &self.Styles)
 	}
 
 	if self.OnRender != nil {
@@ -48,8 +52,9 @@ func (self *Window) Render(builder *strings.Builder) {
 	}
 
 	for _, component := range self.Components {
-		component.Render(builder)
+		builder.WriteString(component.Render())
 	}
+	return builder.String()
 
 }
 

@@ -39,16 +39,19 @@ func CreateComponent(buffer string, styles Styles) *Component {
 	return &component
 }
 
-func (self *Component) Render(builder *strings.Builder) {
+func (self *Component) Render() string {
+	var builder strings.Builder
+	defer builder.Reset()
 	self.rearrange_component()
 	self.calculate_dimensions()
 	self.assert_component_dimensions()
-	self.render_content(builder)
+	self.render_content(&builder)
 
 	if self.Styles.Border != NoBorder {
-		render_border(builder, self.Position, self.Active, &self.Styles)
+		render_border(&builder, self.Position, self.Active, &self.Styles)
 	}
 	builder.WriteString(RESET_STYLES)
+	return builder.String()
 }
 
 func (self *Component) rearrange_component() {
@@ -170,6 +173,9 @@ func (self *Component) calculate_dimensions() {
 
 // Content will be updated if it does not fit into one line
 func (self *Component) render_buffer(content_builder *strings.Builder) {
+	if self.allowed_horizontal_space == 0 && self.allowed_vertical_space == 0 {
+		panic("you forgot to calculate dimensions you fucking donkey")
+	}
 	shift_cursor_by_border := 0
 
 	if self.Styles.Border != NoBorder {
