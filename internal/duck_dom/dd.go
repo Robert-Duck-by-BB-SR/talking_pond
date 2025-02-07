@@ -2,11 +2,13 @@ package duckdom
 
 import (
 	"bufio"
+	"fmt"
 	"log"
 	"os"
 	"strings"
 
 	tpc "github.com/Robert-Duck-by-BB-SR/talking_pond/internal/tps_client"
+	"github.com/Robert-Duck-by-BB-SR/talking_pond/internal/utils"
 )
 
 var DEBUG_MODE = false
@@ -104,6 +106,7 @@ func (self *Screen) Render() {
 	self.ReadFromQ <- screen
 	text := <-screen.response
 	if len(text) != 0 {
+		utils.FileDebug(text)
 		writer := bufio.NewWriter(os.Stdout)
 		if _, err := writer.WriteString(text); err != nil {
 			log.Fatalln(err)
@@ -131,7 +134,7 @@ func ClearScreen() {
 }
 
 type State interface {
-	HandleKeypress(*Screen, []byte)
+	HandleKeypress(*Screen, byte)
 }
 
 func cycle_index(new, len int) int {
@@ -236,10 +239,10 @@ type NormalMode struct{}
 
 var Normal NormalMode
 
-func (*NormalMode) HandleKeypress(screen *Screen, keys []byte) {
+func (*NormalMode) HandleKeypress(screen *Screen, key byte) {
 	// big ass switch case
 	active_window := screen.Windows[screen.ActiveWindowId]
-	switch keys[0] {
+	switch key {
 	case 'q':
 		if screen.ModalIsActive {
 			screen.CloseModal()
@@ -303,8 +306,8 @@ type InsertMode struct{}
 
 var Insert InsertMode
 
-func (*InsertMode) HandleKeypress(screen *Screen, keys []byte) {
-	switch keys[0] {
+func (*InsertMode) HandleKeypress(screen *Screen, key byte) {
+	switch key {
 	case '':
 		fallthrough
 	case '':
@@ -322,7 +325,7 @@ func (*InsertMode) HandleKeypress(screen *Screen, keys []byte) {
 		}
 	default:
 		active_component := screen.get_active_component()
-		active_component.Buffer += string(keys[0])
+		active_component.Buffer += string(key)
 		active_component.buffer_vertical_scroll_from += 1
 		active_component.render_content(&screen.RenderQueue)
 	}
@@ -344,9 +347,9 @@ type CommandMode struct{}
 
 var Command CommandMode
 
-func (*CommandMode) HandleKeypress(screen *Screen, keys []byte) {
+func (*CommandMode) HandleKeypress(screen *Screen, key byte) {
 	status_line := screen.StatusBar.Components[0]
-	switch keys[0] {
+	switch key {
 	case '':
 		fallthrough
 	case '':
@@ -360,7 +363,7 @@ func (*CommandMode) HandleKeypress(screen *Screen, keys []byte) {
 			screen.WriteToQ <- status_line.Render()
 		}
 	default:
-		status_line.Buffer += string(keys[0])
+		status_line.Buffer += string(key)
 		screen.WriteToQ <- status_line.Render()
 	}
 }
@@ -369,8 +372,8 @@ type WindowMode struct{}
 
 var WM WindowMode
 
-func (*WindowMode) HandleKeypress(screen *Screen, keys []byte) {
-	switch keys[0] {
+func (*WindowMode) HandleKeypress(screen *Screen, key byte) {
+	switch key {
 	case '':
 		fallthrough
 	case '':
@@ -432,18 +435,94 @@ func CreateMessages(content *Window, conversation string, message []string) {
 	// }
 }
 
+func (screen *Screen) handle_new_conversation(response string) {
+}
+
+func (screen *Screen) handle_incoming_messages(response string) {
+	// content := screen.Windows[1]
+	// CreateMessages(content, data[0], messages)
+}
+
+func (screen *Screen) handle_list_of_conversations(response string) {
+	sidebar := screen.Windows[0]
+	sidebar.Components = []*Component{}
+	conversations := strings.Split(response, string([]byte{254}))
+	for _, con := range conversations {
+		data := strings.Split(con, string([]byte{255}))
+		//FIXME: there is something funky happening here
+		if len(data) == 2 {
+			chat := CreateComponent(
+				fmt.Sprint(data[1], "|", data[0]),
+				Styles{
+					MaxWidth:   sidebar.Width - 4,
+					MaxHeight:  5,
+					TextColor:  PRIMARY_THEME.SecondaryTextColor,
+					Background: PRIMARY_THEME.ActiveBg,
+					Paddding:   1,
+					Border:     Border{Style: RoundedBorder, Color: RED_COLOR},
+				},
+			)
+			sidebar.AddComponent(chat)
+			chat.Action = func() {
+				screen.Client.Conversation = data[0]
+				tpc.RequestMessages(&screen.Client)
+				screen.Activate(1)
+			}
+			screen.WriteToQ <- chat.Render()
+		}
+	}
+
+	if sidebar.Index == sidebar.Oldfart.ActiveWindowId {
+		screen.Activate(0)
+	}
+}
+
+func (screen *Screen) handle_list_of_users(response string) {
+	users := strings.Split(response, string([]byte{254}))
+	if len(screen.Windows) > 3 {
+		modal := screen.Windows[len(screen.Windows)-1]
+		for _, user := range users[:len(users)-1] {
+			available_user := CreateComponent(user,
+				Styles{
+					MaxWidth:   modal.Width - 2,
+					Background: MakeRGBBackground(100, 40, 100),
+					Border:     Border{Style: RoundedBorder, Color: PRIMARY_THEME.SecondaryTextColor},
+				},
+			)
+
+			available_user.Action = func() {
+				tpc.CreateConversation(screen.Client, user)
+				screen.CloseModal()
+			}
+
+			modal.AddComponent(available_user)
+		}
+		screen.WriteToQ <- modal.Render()
+	}
+}
+
 func (screen *Screen) Receive() {
 	for {
-		if err, messages := tpc.Receive(screen.Client.Conn); err != nil {
-			// CreateMessages(screen.Windows[1], screen.Client.Conversation, messages)
-			// response := messages[1:]
-			switch messages[0] {
-			case 250:
-			case 251:
-			case 252:
-			case 253:
-			default:
-			}
+		messages := tpc.Receive(screen.Client.Conn)
+		utils.FileDebug(len(messages))
+		response := messages[1:]
+		switch messages[0] {
+		case 250:
+			// conversation id
+			// conversation id returns with an additional 255
+			screen.handle_new_conversation(response[1:])
+		case 251:
+			// messages
+			screen.handle_incoming_messages(response)
+		case 252:
+			//conversation
+			screen.handle_list_of_conversations(response)
+		case 253:
+			// users
+			screen.handle_list_of_users(response)
+		default:
+			// error
+			panic(fmt.Sprintf("me (a fucking donkey) %+v", []byte(messages)))
 		}
 	}
 }

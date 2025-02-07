@@ -2,7 +2,6 @@ package tpsclient
 
 import (
 	"bufio"
-	"fmt"
 	"log"
 	"net"
 	"os"
@@ -18,24 +17,16 @@ type Client struct {
 	Conn   net.Conn
 }
 
-func CreateConversation(key, users string, conn net.Conn) string {
+func CreateConversation(client Client, users string) {
 	var data strings.Builder
 	data.WriteByte(1)
-	data.WriteString(key)
+	data.WriteString(client.Config[1])
 	data.WriteByte(255)
 	data.WriteString("create")
 	data.WriteByte(255)
 	data.WriteString(users)
 	data.WriteByte('\n')
-	send(conn, []byte(data.String()))
-
-	message, err := bufio.NewReader(conn).ReadString('\n')
-	if err != nil {
-		// FIXME: move logging to a file
-		// log.Println("Read error:", err)
-		return ""
-	}
-	return string(message)
+	send(client.Conn, []byte(data.String()))
 }
 
 func RequestMessages(client *Client) {
@@ -64,22 +55,16 @@ func RequestConversations(client *Client) {
 	send(client.Conn, []byte(data.String()))
 }
 
-func RequestUsers(key string, conn net.Conn) {
+func RequestUsers(client Client) {
 	var data strings.Builder
 	data.WriteByte(1)
-	data.WriteString(key)
+	data.WriteString(client.Config[1])
 	data.WriteByte(255)
 	data.WriteString("get")
 	data.WriteByte(255)
 	data.WriteString("users")
 	data.WriteByte('\n')
-	send(conn, []byte(data.String()))
-
-	// err, users := Receive(conn)
-	// for _, user := range users {
-	// 	utils.FileDebug(user)
-	// }
-	// return err, users
+	send(client.Conn, []byte(data.String()))
 }
 
 func RequestToConnect(client *Client) {
@@ -117,13 +102,13 @@ func SendMessage(client *Client, message string) {
 }
 
 // returns [strings] split by 254 (item) separator
-func Receive(conn net.Conn) (error, string) {
-	message, err := bufio.NewReader(conn).ReadString('\n')
-	if err != nil {
-		return err, fmt.Sprint("Read error:", err)
+func Receive(conn net.Conn) string {
+	scanner := bufio.NewScanner(conn)
+	var message string
+	if scanner.Scan() {
+		message = scanner.Text()
 	}
-	message = strings.Trim(message, string([]byte{255, '\n'}))
-	return nil, message
+	return strings.Clone(message)
 }
 
 func (client *Client) LoadClient() bool {

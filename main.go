@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	_ "image/jpeg"
 	_ "image/png"
@@ -81,19 +82,14 @@ func create_main_window(screen *dd.Screen) {
 		conn, err := net.Dial("tcp", screen.Client.ServerAddr)
 		if err != nil {
 			if !dd.DEBUG_MODE {
-				log.Fatalf("Failed to connect: %v", err)
+				log.Fatalf("Failed to connect: %v\n", err)
 			}
 		}
 		screen.Client.Conn = conn
 	}
 
 	if !dd.DEBUG_MODE {
-		// err, _ := tpc.RequestToConnect(&screen.Client)
-		// if err != nil {
-		// 	log.Println("boiii you're not allowed here")
-		// 	screen.EventLoopIsRunning = false
-		// 	return
-		// }
+		tpc.RequestToConnect(&screen.Client)
 	}
 
 	width, height, _ := term.GetSize(int(os.Stdin.Fd()))
@@ -111,43 +107,9 @@ func create_main_window(screen *dd.Screen) {
 	if dd.DEBUG_MODE {
 		debug_sidebar(sidebar)
 	} else {
-		// sidebar.OnRender = func() {
-		// NOTE: quick fix to not add more components on rerender
-		// sidebar.Components = []*dd.Component{}
-		// err, conversations := tpc.RequestConversations(&screen.Client)
-		// if err != nil {
-		// 	log.Println("can't fetch conversations")
-		// 	screen.EventLoopIsRunning = false
-		// 	return
-		// }
-		// for _, con := range conversations {
-		// 	data := strings.Split(con, string([]byte{255}))
-		//
-		// 	//FIXME: there is something funky happening here
-		// 	if len(data) == 2 {
-		// 		chat := dd.CreateComponent(
-		// 			fmt.Sprint(data[1], "|", data[0]),
-		// 			dd.Styles{
-		// 				MaxWidth:   sidebar.Width - 4,
-		// 				MaxHeight:  5,
-		// 				TextColor:  dd.PRIMARY_THEME.SecondaryTextColor,
-		// 				Background: dd.PRIMARY_THEME.ActiveBg,
-		// 				Paddding:   1,
-		// 				Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.RED_COLOR},
-		// 			},
-		// 		)
-		// 		sidebar.AddComponent(chat)
-		// 		chat.Action = func() {
-		// 			screen.Client.Conversation = data[0]
-		// 			// TODO: should not ignore error
-		// 			_, messages := tpc.RequestMessages(&screen.Client)
-		// 			content := screen.Windows[1]
-		// 			dd.CreateMessages(content, data[0], messages)
-		// 			screen.Activate(1)
-		// 		}
-		// 	}
-		// 	}
-		// }
+		sidebar.OnRender = func() {
+			tpc.RequestConversations(&screen.Client)
+		}
 	}
 
 	screen.AddWindow(sidebar)
@@ -190,12 +152,12 @@ func create_main_window(screen *dd.Screen) {
 	input.Inputable = true
 	input.ScrollType = dd.VERTICAL
 	input.Action = func() {
-		// if len(input.Buffer) != 0 {
-		// 	tpc.SendMessage(&screen.Client, input.Buffer)
-		// }
-		// input.Buffer = ""
-		// // maybe it should be render_content
-		// input.Render(&screen.RenderQueue)
+		if len(input.Buffer) != 0 {
+			tpc.SendMessage(&screen.Client, input.Buffer)
+		}
+		input.Buffer = ""
+		// maybe it should be render_content
+		screen.WriteToQ <- input.Render()
 	}
 	screen.AddWindow(input_bar)
 
@@ -268,31 +230,8 @@ func create_new_conversation(screen *dd.Screen) {
 		},
 	))
 
-	if !dd.DEBUG_MODE {
-		// err, users := tpc.RequestUsers(screen.Client.Config[1], screen.Client.Conn)
-		// if err != nil {
-		// 	users = []string{"bollocks, cannot retreive users at this time"}
-		// }
-		//
-		// for _, user := range users {
-		// 	available_user := dd.CreateComponent(user,
-		// 		dd.Styles{
-		// 			MaxWidth:   modal.Width - 2,
-		// 			Background: dd.MakeRGBBackground(100, 40, 100),
-		// 			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
-		// 		},
-		// 	)
-		//
-		// 	available_user.Action = func() {
-		// 		tpc.CreateConversation(screen.Client.Config[1], user, screen.Client.Conn)
-		// 		screen.CloseModal()
-		// 	}
-		//
-		// 	modal.AddComponent(available_user)
-		// }
-
-	}
 	screen.AddWindow(modal)
+	tpc.RequestUsers(screen.Client)
 
 	create_status_bar(screen)
 
@@ -462,17 +401,31 @@ func main() {
 		create_main_window(&screen)
 	}
 
-	stdin_buffer := make([]byte, 1)
+	if !dd.DEBUG_MODE {
+		go screen.Receive()
+	}
+
+	stdin_buffer := make(chan byte)
+	go func() {
+		reader := bufio.NewReader(os.Stdin)
+		for {
+			text, err := reader.ReadByte()
+			if err != nil {
+				panic(fmt.Sprint("cannot read from stdin, ", err))
+			}
+			stdin_buffer <- text
+		}
+	}()
+
 	for screen.EventLoopIsRunning {
 		screen.Render()
 
-		_, err := os.Stdin.Read(stdin_buffer)
-		if err != nil {
-			fmt.Println("Error reading input:", err)
-			break
+		select {
+		case in := <-stdin_buffer:
+			screen.State.HandleKeypress(&screen, in)
+		default:
+			continue
 		}
-
-		screen.State.HandleKeypress(&screen, stdin_buffer)
 	}
 	// restart to default settings
 	fmt.Print(dd.VISIBLE_CURSOR)
