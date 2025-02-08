@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	tpc "github.com/Robert-Duck-by-BB-SR/talking_pond/internal/tps_client"
-	"github.com/Robert-Duck-by-BB-SR/talking_pond/internal/utils"
 )
 
 var DEBUG_MODE = false
@@ -106,7 +105,6 @@ func (self *Screen) Render() {
 	self.ReadFromQ <- screen
 	text := <-screen.response
 	if len(text) != 0 {
-		utils.FileDebug(text)
 		writer := bufio.NewWriter(os.Stdout)
 		if _, err := writer.WriteString(text); err != nil {
 			log.Fatalln(err)
@@ -332,11 +330,10 @@ func (*InsertMode) HandleKeypress(screen *Screen, key byte) {
 }
 
 func (screen *Screen) change_state(state State, state_name string) {
-	if screen.State == &Insert || screen.State == &Command {
-		screen.RenderQueue.WriteString(HIDDEN_CURSOR)
-	}
 	if state == &Insert || state == &Command {
-		screen.RenderQueue.WriteString(VISIBLE_CURSOR)
+		screen.WriteToQ <- VISIBLE_CURSOR
+	} else {
+		screen.WriteToQ <- HIDDEN_CURSOR
 	}
 	screen.State = state
 	screen.StatusBar.Components[0].Buffer = state_name
@@ -402,45 +399,47 @@ func (*WindowMode) HandleKeypress(screen *Screen, key byte) {
 }
 
 func CreateMessages(content *Window, conversation string, message []string) {
-	// for _, m := range message {
-	// 	data := strings.Split(m, string([]byte{255}))
-	// 	if len(data) < 5 {
-	// 		continue
-	// 	}
-	// 	_ = data[0] // type
-	// 	user := data[1]
-	// 	convo := data[2]
-	// 	datetime := data[3]
-	// 	text := data[4]
-	// 	if convo == conversation {
-	// 		item := CreateComponent(text,
-	// 			Styles{
-	// 				MaxWidth:   content.Width - 4,
-	// 				TextColor:  PRIMARY_THEME.SecondaryTextColor,
-	// 				Background: PRIMARY_THEME.ActiveBg,
-	// 				Border:     Border{Style: RoundedBorder, Color: RED_COLOR},
-	// 			},
-	// 		)
-	// 		content.AddComponent(item)
-	// 		user_date := CreateComponent(fmt.Sprintf("%s | %s", user, datetime), Styles{
-	// 			MaxWidth:   content.Width - 4,
-	// 			MaxHeight:  1,
-	// 			TextColor:  PRIMARY_THEME.SecondaryTextColor,
-	// 			Background: PRIMARY_THEME.ActiveBg,
-	// 		})
-	// 		content.AddComponent(user_date)
-	// 		item.Render(&content.Oldfart.RenderQueue)
-	// 		user_date.Render(&content.Oldfart.RenderQueue)
-	// 	}
-	// }
+	for _, m := range message {
+		data := strings.Split(m, string([]byte{255}))
+		if len(data) < 5 {
+			continue
+		}
+		_ = data[0] // type
+		user := data[1]
+		convo := data[2]
+		datetime := data[3]
+		text := data[4]
+		if convo == conversation {
+			item := CreateComponent(text,
+				Styles{
+					MaxWidth:   content.Width - 4,
+					TextColor:  PRIMARY_THEME.SecondaryTextColor,
+					Background: PRIMARY_THEME.ActiveBg,
+					Border:     Border{Style: RoundedBorder, Color: RED_COLOR},
+				},
+			)
+			content.AddComponent(item)
+			user_date := CreateComponent(fmt.Sprintf("%s | %s", user, datetime), Styles{
+				MaxWidth:   content.Width - 4,
+				MaxHeight:  1,
+				TextColor:  PRIMARY_THEME.SecondaryTextColor,
+				Background: PRIMARY_THEME.ActiveBg,
+			})
+			content.AddComponent(user_date)
+		}
+	}
 }
 
 func (screen *Screen) handle_new_conversation(response string) {
+	tpc.RequestConversations(&screen.Client)
+	screen.Client.Conversation = strings.Trim(response, string([]byte{255, '\n'}))
 }
 
 func (screen *Screen) handle_incoming_messages(response string) {
-	// content := screen.Windows[1]
-	// CreateMessages(content, data[0], messages)
+	content := screen.Windows[1]
+	messages := strings.Split(response, string([]byte{254}))
+	CreateMessages(content, screen.Client.Conversation, messages)
+	screen.WriteToQ <- content.Render()
 }
 
 func (screen *Screen) handle_list_of_conversations(response string) {
@@ -464,6 +463,8 @@ func (screen *Screen) handle_list_of_conversations(response string) {
 			)
 			sidebar.AddComponent(chat)
 			chat.Action = func() {
+				content := screen.Windows[1]
+				content.Components = []*Component{}
 				screen.Client.Conversation = data[0]
 				tpc.RequestMessages(&screen.Client)
 				screen.Activate(1)
@@ -504,25 +505,27 @@ func (screen *Screen) handle_list_of_users(response string) {
 func (screen *Screen) Receive() {
 	for {
 		messages := tpc.Receive(screen.Client.Conn)
-		utils.FileDebug(len(messages))
-		response := messages[1:]
-		switch messages[0] {
-		case 250:
-			// conversation id
-			// conversation id returns with an additional 255
-			screen.handle_new_conversation(response[1:])
-		case 251:
-			// messages
-			screen.handle_incoming_messages(response)
-		case 252:
-			//conversation
-			screen.handle_list_of_conversations(response)
-		case 253:
-			// users
-			screen.handle_list_of_users(response)
-		default:
-			// error
-			panic(fmt.Sprintf("me (a fucking donkey) %+v", []byte(messages)))
+		if len(messages) > 0 {
+			response := messages[1:]
+			switch messages[0] {
+			case 250:
+				// conversation id
+				// conversation id returns with an additional 255
+				screen.handle_new_conversation(response[1:])
+			case 251:
+				// messages
+				// ditto
+				screen.handle_incoming_messages(response[1:])
+			case 252:
+				//conversation
+				screen.handle_list_of_conversations(response)
+			case 253:
+				// users
+				screen.handle_list_of_users(response)
+			default:
+				// error
+				panic(fmt.Sprintf("me (a fucking donkey) %+v", []byte(messages)))
+			}
 		}
 	}
 }
