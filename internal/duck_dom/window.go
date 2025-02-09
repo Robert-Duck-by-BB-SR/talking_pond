@@ -15,6 +15,7 @@ type Window struct {
 	scroll_from       int
 	scroll_to         int
 	Active            bool
+	ReverseRenderable bool
 	OnRender          func()
 }
 
@@ -53,7 +54,7 @@ func (self *Window) Render() string {
 		self.OnRender()
 	}
 
-	if len(self.Components) > 0 && self.Components[0].reverse_renderable {
+	if len(self.Components) > 0 && self.ReverseRenderable {
 		for i := self.scroll_to; i >= self.scroll_from; i-- {
 			comp := self.Components[i].Render()
 			if self.Components[i].Row <= self.Row {

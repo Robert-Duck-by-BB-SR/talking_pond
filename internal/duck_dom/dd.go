@@ -445,7 +445,6 @@ func CreateMessages(content *Window, conversation string, message []string) {
 					Border:     Border{Style: RoundedBorder, Color: RED_COLOR},
 				},
 			)
-			item.reverse_renderable = true
 			content.AddComponent(item)
 			user_date := CreateComponent(fmt.Sprintf("%s | %s", user, datetime), Styles{
 				MaxWidth:   content.Width - 4,
@@ -453,7 +452,6 @@ func CreateMessages(content *Window, conversation string, message []string) {
 				TextColor:  PRIMARY_THEME.SecondaryTextColor,
 				Background: PRIMARY_THEME.ActiveBg,
 			})
-			user_date.reverse_renderable = true
 			content.AddComponent(user_date)
 		}
 	}

@@ -13,7 +13,6 @@ type Component struct {
 	Parent                        *Window
 	Active                        bool
 	Inputable                     bool
-	reverse_renderable            bool
 	ScrollType                    ScrollType
 	buffer_vertical_scroll_from   int
 	buffer_horizontal_scroll_from int
@@ -76,7 +75,7 @@ func (self *Component) reverse_rearange() string {
 func (self *Component) Render() string {
 	var builder strings.Builder
 	defer builder.Reset()
-	if !self.reverse_renderable {
+	if !self.Parent.ReverseRenderable {
 		self.rearrange_component()
 		self.calculate_dimensions()
 	} else {

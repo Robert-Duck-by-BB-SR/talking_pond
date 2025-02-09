@@ -123,6 +123,7 @@ func create_main_window(screen *dd.Screen) {
 		Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
 		Direction:  dd.INLINE,
 	})
+	content.ReverseRenderable = true
 
 	if dd.DEBUG_MODE {
 		debug_content(content)
