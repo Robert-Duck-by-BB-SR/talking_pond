@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	_ "image/jpeg"
 	_ "image/png"
@@ -17,89 +18,6 @@ import (
 
 	tpc "github.com/Robert-Duck-by-BB-SR/talking_pond/internal/tps_client"
 )
-
-// var frame_chars = []byte{' ', '`', '.', ',', '~', '+', '*', '&', '#', '@'}
-
-// type CharMeDaddy struct {
-// 	char, count, r, g, b byte
-// }
-
-// func encode_frame(img image.Image) []byte {
-// 	orig_bounds := img.Bounds().Max
-//
-// 	scale_x := orig_bounds.X / 80
-// 	scale_y := orig_bounds.Y / 40
-// 	new_img_x := orig_bounds.X / scale_x
-// 	new_img_y := orig_bounds.Y / scale_y
-//
-// 	encoded_data := []byte{}
-// 	all_rle := []CharMeDaddy{}
-//
-// 	for y := range new_img_y {
-// 		for x := range new_img_x {
-// 			r, g, b, _ := img.At(x*scale_x, y*scale_y).RGBA()
-// 			lum := (19595*r + 38470*g + 7471*b + 1<<15) >> 24
-// 			indx := lum * uint32(len(frame_chars)) / 256
-// 			// sliding window -> 5 bytes
-// 			// 0 - char
-// 			// 1 - repeat
-// 			// 2 - r
-// 			// 3 - g
-// 			// 4 - b
-// 			// 5 - new line
-// 			if x == 0 {
-// 				all_rle = append(all_rle, CharMeDaddy{frame_chars[indx], 1, uint8(r), uint8(g), uint8(b)})
-// 			} else {
-// 				curr_rle := &all_rle[len(all_rle)-1]
-// 				if frame_chars[indx] == curr_rle.char &&
-// 					uint8(r) == curr_rle.r &&
-// 					uint8(g) == curr_rle.g &&
-// 					uint8(b) == curr_rle.b {
-// 					curr_rle.count += 1
-// 				} else {
-// 					all_rle = append(all_rle, CharMeDaddy{frame_chars[indx], 1, uint8(r), uint8(g), uint8(b)})
-// 				}
-// 			}
-// 		}
-// 		for _, el := range all_rle {
-// 			encoded_data = append(encoded_data, el.char, el.count, el.r, el.g, el.b)
-// 		}
-// 		all_rle = []CharMeDaddy{}
-// 		encoded_data = append(encoded_data, '\n')
-// 	}
-// 	return encoded_data
-// }
-
-// func decode_frame(enc_data []byte) {
-// 	// sliding window -> 5 bytes
-// 	// 0 - char
-// 	// 1 - repeat
-// 	// 2 - r
-// 	// 3 - g
-// 	// 4 - b
-// 	// 5 - new line
-// 	fmt.Print("\033[2J\033[H")
-// 	for i := 0; i < len(enc_data); i += 5 {
-// 		if enc_data[i] == '\n' {
-// 			// or i -= 4
-// 			i += 1
-// 			fmt.Println()
-// 			if i >= len(enc_data) {
-// 				break
-// 			}
-// 		}
-//
-// 		for reps := 0; reps < int(enc_data[i+1]); reps += 1 {
-// 			r := enc_data[i+2]
-// 			g := enc_data[i+3]
-// 			b := enc_data[i+4]
-//
-// 			var cell string = fmt.Sprintf("\033[38;2;%d;%d;%dm%c\033[0m", r, g, b, enc_data[i])
-// 			fmt.Print(cell)
-// 		}
-//
-// 	}
-// }
 
 func debug_sidebar(sidebar *dd.Window) {
 	sidebar.AddComponent(
@@ -161,22 +79,18 @@ func debug_content(content *dd.Window) {
 
 func create_main_window(screen *dd.Screen) {
 	if screen.Client.Conn == nil {
+		screen.Client.LoadClient()
 		conn, err := net.Dial("tcp", screen.Client.ServerAddr)
 		if err != nil {
 			if !dd.DEBUG_MODE {
-				log.Fatalf("Failed to connect: %v", err)
+				log.Fatalf("Failed to connect: %v\n", err)
 			}
 		}
 		screen.Client.Conn = conn
 	}
 
 	if !dd.DEBUG_MODE {
-		err, _ := tpc.RequestToConnect(screen.Client)
-		if err != nil {
-			log.Println("boiii you're not allowed here")
-			screen.EventLoopIsRunning = false
-			return
-		}
+		tpc.RequestToConnect(&screen.Client)
 	}
 
 	width, height, _ := term.GetSize(int(os.Stdin.Fd()))
@@ -195,32 +109,7 @@ func create_main_window(screen *dd.Screen) {
 		debug_sidebar(sidebar)
 	} else {
 		sidebar.OnRender = func() {
-			// NOTE: quick fix to not add more components on rerender
-			sidebar.Components = []*dd.Component{}
-			err, conversations := tpc.RequestConversations(screen.Client)
-			if err != nil {
-				log.Println("can't fetch conversations")
-				screen.EventLoopIsRunning = false
-				return
-			}
-			for _, con := range conversations {
-				data := strings.Split(con, string([]byte{255}))
-
-				//FIXME: there is something funky happening here
-				if len(data) == 2 {
-					sidebar.AddComponent(dd.CreateComponent(
-						fmt.Sprint(data[1], "|", data[0]),
-						dd.Styles{
-							MaxWidth:   sidebar.Width - 4,
-							MaxHeight:  5,
-							TextColor:  dd.PRIMARY_THEME.SecondaryTextColor,
-							Background: dd.PRIMARY_THEME.ActiveBg,
-							Paddding:   1,
-							Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.RED_COLOR},
-						},
-					))
-				}
-			}
+			tpc.RequestConversations(&screen.Client)
 		}
 	}
 
@@ -234,6 +123,7 @@ func create_main_window(screen *dd.Screen) {
 		Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
 		Direction:  dd.INLINE,
 	})
+	content.ReverseRenderable = true
 
 	if dd.DEBUG_MODE {
 		debug_content(content)
@@ -263,6 +153,14 @@ func create_main_window(screen *dd.Screen) {
 	input_bar.AddComponent(input)
 	input.Inputable = true
 	input.ScrollType = dd.VERTICAL
+	input.Action = func() {
+		if len(input.Buffer) != 0 {
+			tpc.SendMessage(&screen.Client, input.Buffer)
+		}
+		input.Buffer = ""
+		// maybe it should be render_content
+		screen.WriteToQ <- input.Render()
+	}
 	screen.AddWindow(input_bar)
 
 	create_status_bar(screen)
@@ -282,13 +180,13 @@ func create_status_bar(screen *dd.Screen) {
 	screen.StatusBar.Oldfart = screen
 	screen.StatusBar.Components = []*dd.Component{
 		{
-			Parent: &screen.StatusBar,
-			Buffer: dd.NORMAL,
+			Parent:    &screen.StatusBar,
+			Buffer:    dd.NORMAL,
 			Inputable: true,
 			Styles: dd.Styles{
 				TextColor: dd.PRIMARY_THEME.ActiveTextColor,
-				Width:  screen.Width,
-				Height: 1,
+				Width:     screen.Width,
+				Height:    1,
 			},
 		},
 	}
@@ -334,31 +232,8 @@ func create_new_conversation(screen *dd.Screen) {
 		},
 	))
 
-	if !dd.DEBUG_MODE {
-		err, users := tpc.RequestUsers(screen.Client.Config[1], screen.Client.Conn)
-		if err != nil {
-			users = []string{"bollocks, cannot retreive users at this time"}
-		}
-
-		for _, user := range users {
-			available_user := dd.CreateComponent(user,
-				dd.Styles{
-					MaxWidth:   modal.Width - 2,
-					Background: dd.MakeRGBBackground(100, 40, 100),
-					Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
-				},
-			)
-
-			available_user.Action = func() {
-				tpc.CreateConversation(screen.Client.Config[1], user, screen.Client.Conn)
-				screen.CloseModal()
-			}
-
-			modal.AddComponent(available_user)
-		}
-
-	}
 	screen.AddWindow(modal)
+	tpc.RequestUsers(screen.Client)
 
 	create_status_bar(screen)
 
@@ -367,6 +242,7 @@ func create_new_conversation(screen *dd.Screen) {
 }
 
 func create_login_screen(screen *dd.Screen) {
+	screen.ModalIsActive = true
 	width, height, _ := term.GetSize(int(os.Stdin.Fd()))
 	screen.Width = width
 	screen.Height = height
@@ -386,9 +262,8 @@ func create_login_screen(screen *dd.Screen) {
 		dd.CreateComponent(
 			"",
 			dd.Styles{
-				MinWidth:   10,
-				MaxWidth:   login.Width - 3,
-				MaxHeight:  1,
+				Width:      login.Width - 4,
+				Height:     1,
 				Background: dd.MakeRGBBackground(80, 40, 100),
 			},
 		))
@@ -396,11 +271,9 @@ func create_login_screen(screen *dd.Screen) {
 		dd.CreateComponent(
 			"",
 			dd.Styles{
-				MinWidth:   10,
-				MaxWidth:   login.Width - 3,
-				MaxHeight:  3,
+				Width:      login.Width - 4,
+				Height:     1,
 				Background: dd.MakeRGBBackground(80, 40, 100),
-				Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 			},
 		))
 	login.AddComponent(
@@ -436,6 +309,7 @@ func create_login_screen(screen *dd.Screen) {
 			panic(err)
 		}
 		screen.Windows = []*dd.Window{}
+		screen.ModalIsActive = false
 		create_main_window(screen)
 	}
 
@@ -517,9 +391,12 @@ func main() {
 	defer term.Restore(int(os.Stdin.Fd()), old_state)
 
 	dd.ClearScreen()
-	screen := dd.Screen{ State: &dd.Normal, EventLoopIsRunning: true }
+	screen := dd.Screen{State: &dd.Normal, EventLoopIsRunning: true}
+	screen.WriteToQ = make(chan string)
+	screen.ReadFromQ = make(chan dd.QReader)
 
 	screen.Client = tpc.Client{}
+	go screen.RenderQueueStart()
 
 	if !screen.Client.LoadClient() {
 		create_login_screen(&screen)
@@ -527,19 +404,31 @@ func main() {
 		create_main_window(&screen)
 	}
 
-	stdin_buffer := make([]byte, 1)
+	if !dd.DEBUG_MODE {
+		go screen.Receive()
+	}
+
+	stdin_buffer := make(chan byte)
+	go func() {
+		reader := bufio.NewReader(os.Stdin)
+		for {
+			text, err := reader.ReadByte()
+			if err != nil {
+				panic(fmt.Sprint("cannot read from stdin, ", err))
+			}
+			stdin_buffer <- text
+		}
+	}()
+
 	for screen.EventLoopIsRunning {
-		if screen.RenderQueue.Len() != 0 {
-			screen.Render()
-		}
+		screen.Render()
 
-		_, err := os.Stdin.Read(stdin_buffer)
-		if err != nil {
-			fmt.Println("Error reading input:", err)
-			break
+		select {
+		case in := <-stdin_buffer:
+			screen.State.HandleKeypress(&screen, in)
+		default:
+			continue
 		}
-
-		screen.State.HandleKeypress(&screen, stdin_buffer)
 	}
 	// restart to default settings
 	fmt.Print(dd.VISIBLE_CURSOR)

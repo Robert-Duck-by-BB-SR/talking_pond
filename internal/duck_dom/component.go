@@ -39,16 +39,57 @@ func CreateComponent(buffer string, styles Styles) *Component {
 	return &component
 }
 
-func (self *Component) Render(builder *strings.Builder) {
-	self.rearrange_component()
-	self.calculate_dimensions()
+func (self *Component) reverse_rearange() string {
+	var builder strings.Builder
+	defer builder.Reset()
+
+	parent := self.Parent
+
+	// NOTE: supporting display block for now only
+
+	if self.Index == len(parent.Components)-parent.scroll_from-1 {
+		self.Row = parent.Row + parent.Height - self.Height
+		self.Col = parent.Col
+
+		if parent.Border != NoBorder {
+			self.Row -= 1
+			self.Col += 1
+		}
+
+		self.Row -= parent.Paddding
+		self.Col += parent.Paddding
+
+		return builder.String()
+	}
+
+	if self.Index < len(parent.Components)-1 {
+		next := parent.Components[self.Index+1]
+		self.Row = next.Row - self.Height
+		self.Col = next.Col
+		return builder.String()
+	}
+
+	return ""
+}
+
+func (self *Component) Render() string {
+	var builder strings.Builder
+	defer builder.Reset()
+	if !self.Parent.ReverseRenderable {
+		self.rearrange_component()
+		self.calculate_dimensions()
+	} else {
+		self.calculate_dimensions()
+		self.reverse_rearange()
+	}
 	self.assert_component_dimensions()
-	self.render_content(builder)
+	builder.WriteString(self.render_content())
 
 	if self.Styles.Border != NoBorder {
-		render_border(builder, self.Position, self.Active, &self.Styles)
+		render_border(&builder, self.Position, self.Active, &self.Styles)
 	}
 	builder.WriteString(RESET_STYLES)
+	return builder.String()
 }
 
 func (self *Component) rearrange_component() {
@@ -170,6 +211,9 @@ func (self *Component) calculate_dimensions() {
 
 // Content will be updated if it does not fit into one line
 func (self *Component) render_buffer(content_builder *strings.Builder) {
+	if self.allowed_horizontal_space == 0 && self.allowed_vertical_space == 0 {
+		panic("you forgot to calculate dimensions you fucking donkey")
+	}
 	shift_cursor_by_border := 0
 
 	if self.Styles.Border != NoBorder {
@@ -220,15 +264,18 @@ func (self *Component) render_buffer(content_builder *strings.Builder) {
 	}
 }
 
-func (self *Component) render_content(content_builder *strings.Builder) {
+func (self *Component) render_content() string {
+	var content_builder strings.Builder
+	defer content_builder.Reset()
 	if self.Active {
 		content_builder.WriteString(INVERT_STYLES)
 	} else {
 		content_builder.WriteString(RESET_STYLES)
 	}
-	self.Styles.Compile(content_builder)
-	self.render_background(content_builder)
-	self.render_buffer(content_builder)
+	self.Styles.Compile(&content_builder)
+	self.render_background(&content_builder)
+	self.render_buffer(&content_builder)
+	return content_builder.String()
 }
 
 func (self *Component) assert_component_dimensions() {
