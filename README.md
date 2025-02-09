@@ -1,15 +1,41 @@
-# Style guide
-Usually we would do `snake_case` everywhere as Lord intended. Unfortunately Go wants us to use capital letters to mark  
-public variables/functions. Silly.  
-```go
-PascalCase // for public functions and variables
-WHATEVER_THIS_IS // for public consts
-snake_case // for anything else
+# What is talking pond?
+It's a simple messenger. That's it. You can send messages and receive them. 
+With vim motions. In terminal.
+
+> FOR NOW YOUR MESSAGES ARE NOT ENCRYPTED
+
+# How do I use it?
+First you need a server [TPS](https://github.com/Robert-Duck-by-BB-SR/tps).  
+To access that server you need to get an IP of the server and a key that is generated on the server for your user.
+Ask your server administrator to generate one for you by providing your desired username.
+Next run the client
+```bash
+./talking_pond
 ```
-# Two idiots one terminal
-Row and Col start from 1 -> so that was a small shot in the knee
+In the login screen first insert ip of your server and key in the next field.
+
+# Movements
+
+## Normal Mode
+`ctrl-w` Enter Window Mode  
+`:` Enter Command Mode  
+`h/j/k/l` move to the previous/next item in selected window  
+`Enter` Open chat/press a button  
+`I` (shift i) jump to Insert Mode  
+`i` (in the inputtable item) enter Insert Mode  
+`ctrl-u/ctrl-d` if content of the component is vertically scrollable  
+`q` to exit modal window  
+## Command Mode  
+`:q` quit application (shocker)  
+`:new` open a modal window to create a new conversation  
+`ESC/ctrl-c` enter normal mode  
+## Window Mode  
+`h/j/k/l` move to the previous/next window  
+`ESC/ctrl-c/ENTER` enter normal mode  
+## Insert Mode  
+just type the text wtf do you expect to see here?  
+`ESC/ctrl-c` enter normal mode  
+
 
 # License
-
-This project is licensed under the DWTFYW License.  
-Note: Usage for training large language models (LLMs) is explicitly prohibited. See the [No LLM Training Addendum](NO_LLM_LICENSE) for details.
+Any company or individual shall be publicly shamed for breaking current license.

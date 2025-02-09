@@ -12,7 +12,9 @@ type Window struct {
 	Oldfart           *Screen
 	Index             int
 	ActiveComponentId int
+	scroll_to         int
 	Active            bool
+	ReverseRenderable bool
 	OnRender          func()
 }
 
@@ -35,21 +37,37 @@ func assert_window_dimensions(styles *Styles) {
 	}
 }
 
-func (self *Window) Render(builder *strings.Builder) {
+func (self *Window) Render() string {
+
+	var builder strings.Builder
+	defer builder.Reset()
+
 	self.rearange_window()
-	self.render_background(builder)
+	self.render_background(&builder)
 
 	if self.Styles.Border != NoBorder {
-		render_border(builder, self.Position, self.Active, &self.Styles)
+		render_border(&builder, self.Position, BorderRenderStyles{self.Width, self.Height, self.BorderBackground, self.Border})
 	}
 
 	if self.OnRender != nil {
 		self.OnRender()
 	}
 
-	for _, component := range self.Components {
-		component.Render(builder)
+	if len(self.Components) > 0 && self.ReverseRenderable {
+		for i := self.scroll_to; i >= 0; i-- {
+			comp := self.Components[i].Render()
+			if self.Components[i].Row <= self.Row {
+				break
+			}
+			builder.WriteString(comp)
+		}
+	} else {
+		for _, component := range self.Components {
+			builder.WriteString(component.Render())
+		}
 	}
+
+	return builder.String()
 
 }
 
