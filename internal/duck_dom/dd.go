@@ -433,7 +433,7 @@ func CreateMessages(content *Window, conversation string, message []string) {
 		if convo == conversation {
 			item := CreateComponent(text,
 				Styles{
-					MaxWidth:   content.Width - 4,
+					MaxWidth:   content.Width / 3,
 					TextColor:  PRIMARY_THEME.SecondaryTextColor,
 					Background: PRIMARY_THEME.ActiveBg,
 					Border:     Border{Style: RoundedBorder, Color: RED_COLOR},
