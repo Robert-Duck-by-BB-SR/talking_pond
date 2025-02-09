@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	tpc "github.com/Robert-Duck-by-BB-SR/talking_pond/internal/tps_client"
+	"github.com/Robert-Duck-by-BB-SR/talking_pond/internal/utils"
 )
 
 var DEBUG_MODE = false
@@ -62,16 +63,14 @@ type Screen struct {
 	ModalIsActive      bool
 	ReadyToRead        bool
 	WriteToQ           chan string
-	ReadFromQ          chan q_reader
+	ReadFromQ          chan QReader
 }
 
-type q_reader struct {
+type QReader struct {
 	response chan string
 }
 
 func (self *Screen) RenderQueueStart() {
-	self.WriteToQ = make(chan string)
-	self.ReadFromQ = make(chan q_reader)
 	for {
 		select {
 		case text := <-self.WriteToQ:
@@ -104,7 +103,7 @@ func (self *Screen) RenderFull() {
 // Dumps everything there is in RenderQueue into stdout and resets the RenderQueue.
 func (self *Screen) Render() {
 	if self.ReadyToRead {
-		screen := q_reader{}
+		screen := QReader{}
 		screen.response = make(chan string)
 		self.ReadFromQ <- screen
 		text := <-screen.response
@@ -255,13 +254,35 @@ func (*NormalMode) HandleKeypress(screen *Screen, key byte) {
 	case 'l':
 		fallthrough
 	case 'j':
-		index := cycle_index(active_window.ActiveComponentId+1, len(active_window.Components))
-		screen.change_component(index)
+		index := active_window.ActiveComponentId + 1
+		if index > len(active_window.Components)-1 {
+			index = active_window.ActiveComponentId
+		}
+
+		if index > active_window.scroll_to {
+			active_window.scroll_to++
+			screen.WriteToQ <- active_window.Render()
+			screen.change_component(index)
+		} else {
+			screen.change_component(index)
+		}
 	case 'k':
 		fallthrough
 	case 'h':
-		index := cycle_index(active_window.ActiveComponentId-1, len(active_window.Components))
-		screen.change_component(index)
+		index := active_window.ActiveComponentId - 1
+		if index < 0 {
+			index = active_window.ActiveComponentId
+		}
+
+		utils.FileDebug(active_window.scroll_from)
+		if index < active_window.scroll_from {
+			active_window.scroll_from--
+			active_window.scroll_to--
+			screen.WriteToQ <- active_window.Render()
+			screen.change_component(index)
+		} else {
+			screen.change_component(index)
+		}
 	case '':
 		active_component := screen.get_active_component()
 		if active_component.ScrollType == VERTICAL {
@@ -320,17 +341,18 @@ func (*InsertMode) HandleKeypress(screen *Screen, key byte) {
 		if active_component.Inputable && active_component.Action != nil {
 			active_component.Action()
 		}
+		screen.change_state(&Normal, NORMAL)
 	case 8, 127:
 		active_component := screen.get_active_component()
 		if len(active_component.Buffer) != 0 {
 			active_component.Buffer = active_component.Buffer[:len(active_component.Buffer)-1]
-			active_component.render_content(&screen.RenderQueue)
+			screen.WriteToQ <- active_component.render_content()
 		}
 	default:
 		active_component := screen.get_active_component()
 		active_component.Buffer += string(key)
 		active_component.buffer_vertical_scroll_from += 1
-		active_component.render_content(&screen.RenderQueue)
+		screen.WriteToQ <- active_component.render_content()
 	}
 }
 
@@ -436,6 +458,7 @@ func CreateMessages(content *Window, conversation string, message []string) {
 		}
 	}
 	content.scroll_to = len(content.Components) - 1
+	content.ActiveComponentId = len(content.Components) - 1
 }
 
 func (screen *Screen) handle_new_conversation(response string) {
@@ -480,10 +503,12 @@ func (screen *Screen) handle_list_of_conversations(response string) {
 			screen.WriteToQ <- chat.Render()
 		}
 	}
+	sidebar.scroll_to = len(sidebar.Components) - 1
 
 	if sidebar.Index == sidebar.Oldfart.ActiveWindowId {
 		screen.Activate(0)
 	}
+
 }
 
 func (screen *Screen) handle_list_of_users(response string) {
@@ -512,6 +537,9 @@ func (screen *Screen) handle_list_of_users(response string) {
 
 func (screen *Screen) Receive() {
 	for {
+		if screen.Client.Conn == nil {
+			continue
+		}
 		messages := tpc.Receive(screen.Client.Conn)
 		if len(messages) > 0 {
 			response := messages[1:]

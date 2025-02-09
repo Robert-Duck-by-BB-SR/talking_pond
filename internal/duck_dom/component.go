@@ -84,7 +84,7 @@ func (self *Component) Render() string {
 		self.reverse_rearange()
 	}
 	self.assert_component_dimensions()
-	self.render_content(&builder)
+	builder.WriteString(self.render_content())
 
 	if self.Styles.Border != NoBorder {
 		render_border(&builder, self.Position, self.Active, &self.Styles)
@@ -265,15 +265,18 @@ func (self *Component) render_buffer(content_builder *strings.Builder) {
 	}
 }
 
-func (self *Component) render_content(content_builder *strings.Builder) {
+func (self *Component) render_content() string {
+	var content_builder strings.Builder
+	defer content_builder.Reset()
 	if self.Active {
 		content_builder.WriteString(INVERT_STYLES)
 	} else {
 		content_builder.WriteString(RESET_STYLES)
 	}
-	self.Styles.Compile(content_builder)
-	self.render_background(content_builder)
-	self.render_buffer(content_builder)
+	self.Styles.Compile(&content_builder)
+	self.render_background(&content_builder)
+	self.render_buffer(&content_builder)
+	return content_builder.String()
 }
 
 func (self *Component) assert_component_dimensions() {

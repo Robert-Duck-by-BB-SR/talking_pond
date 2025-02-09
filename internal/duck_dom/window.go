@@ -54,10 +54,10 @@ func (self *Window) Render() string {
 	}
 
 	if len(self.Components) > 0 && self.Components[0].reverse_renderable {
-		for i := self.scroll_to; i > self.scroll_from; i-- {
+		for i := self.scroll_to; i >= self.scroll_from; i-- {
 			comp := self.Components[i].Render()
 			if self.Components[i].Row <= self.Row {
-				self.scroll_to = i
+				self.scroll_from = i
 				break
 			}
 			builder.WriteString(comp)

@@ -79,6 +79,7 @@ func debug_content(content *dd.Window) {
 
 func create_main_window(screen *dd.Screen) {
 	if screen.Client.Conn == nil {
+		screen.Client.LoadClient()
 		conn, err := net.Dial("tcp", screen.Client.ServerAddr)
 		if err != nil {
 			if !dd.DEBUG_MODE {
@@ -240,6 +241,7 @@ func create_new_conversation(screen *dd.Screen) {
 }
 
 func create_login_screen(screen *dd.Screen) {
+	screen.ModalIsActive = true
 	width, height, _ := term.GetSize(int(os.Stdin.Fd()))
 	screen.Width = width
 	screen.Height = height
@@ -259,9 +261,8 @@ func create_login_screen(screen *dd.Screen) {
 		dd.CreateComponent(
 			"",
 			dd.Styles{
-				MinWidth:   10,
-				MaxWidth:   login.Width - 3,
-				MaxHeight:  1,
+				Width:      login.Width - 4,
+				Height:     1,
 				Background: dd.MakeRGBBackground(80, 40, 100),
 			},
 		))
@@ -269,11 +270,9 @@ func create_login_screen(screen *dd.Screen) {
 		dd.CreateComponent(
 			"",
 			dd.Styles{
-				MinWidth:   10,
-				MaxWidth:   login.Width - 3,
-				MaxHeight:  3,
+				Width:      login.Width - 4,
+				Height:     1,
 				Background: dd.MakeRGBBackground(80, 40, 100),
-				Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
 			},
 		))
 	login.AddComponent(
@@ -309,6 +308,7 @@ func create_login_screen(screen *dd.Screen) {
 			panic(err)
 		}
 		screen.Windows = []*dd.Window{}
+		screen.ModalIsActive = false
 		create_main_window(screen)
 	}
 
@@ -391,6 +391,8 @@ func main() {
 
 	dd.ClearScreen()
 	screen := dd.Screen{State: &dd.Normal, EventLoopIsRunning: true}
+	screen.WriteToQ = make(chan string)
+	screen.ReadFromQ = make(chan dd.QReader)
 
 	screen.Client = tpc.Client{}
 	go screen.RenderQueueStart()
