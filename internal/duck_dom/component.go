@@ -66,6 +66,12 @@ func (self *Component) reverse_rearange() string {
 		next := parent.Components[self.Index+1]
 		self.Row = next.Row - self.Height
 		self.Col = next.Col
+
+		if next.Border != NoBorder {
+			self.Row -= 1
+		}
+
+		self.Row -= next.Paddding
 		return builder.String()
 	}
 

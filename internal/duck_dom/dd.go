@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	tpc "github.com/Robert-Duck-by-BB-SR/talking_pond/internal/tps_client"
-	"github.com/Robert-Duck-by-BB-SR/talking_pond/internal/utils"
 )
 
 var DEBUG_MODE = false
@@ -177,22 +176,17 @@ func (self *Screen) change_window(id int) {
 }
 
 func (self *Screen) change_component(id int) {
-	var builder strings.Builder
-	defer builder.Reset()
 	active_window := self.Windows[self.ActiveWindowId]
 	if len(active_window.Components) > 0 {
 		prev_component := active_window.Components[active_window.ActiveComponentId]
 		prev_component.Active = false
-		builder.WriteString(prev_component.Render())
 
 		active_window.ActiveComponentId = id
 		if len(active_window.Components) > 0 {
 			new_component := active_window.Components[active_window.ActiveComponentId]
 			new_component.Active = true
-			builder.WriteString(new_component.Render())
 		}
 	}
-	self.WriteToQ <- builder.String()
 }
 
 // rerenders first window and its active component
@@ -265,9 +259,8 @@ func (*NormalMode) HandleKeypress(screen *Screen, key byte) {
 		}
 		active_window.scroll_to = new_scroll
 
-		screen.WriteToQ <- active_window.Render()
 		screen.change_component(index)
-		utils.FileDebug(fmt.Sprint(active_window.Components, index, active_window.ActiveComponentId))
+		screen.WriteToQ <- active_window.Render()
 	case 'k':
 		fallthrough
 	case 'h':
@@ -282,8 +275,8 @@ func (*NormalMode) HandleKeypress(screen *Screen, key byte) {
 		}
 		active_window.scroll_to = new_scroll
 
-		screen.WriteToQ <- active_window.Render()
 		screen.change_component(index)
+		screen.WriteToQ <- active_window.Render()
 	case '':
 		active_component := screen.get_active_component()
 		if active_component.ScrollType == VERTICAL {
@@ -472,11 +465,7 @@ func (screen *Screen) handle_incoming_messages(response string) {
 	screen.WriteToQ <- content.Render()
 }
 
-var counter int
-
 func (screen *Screen) handle_list_of_conversations(response string) {
-	counter += 1
-	utils.FileDebug(fmt.Sprintln("fucking what? ", counter))
 	sidebar := screen.Windows[0]
 	sidebar.Components = []*Component{}
 	conversations := strings.Split(response, string([]byte{254}))
