@@ -55,7 +55,7 @@ func (self *Window) Render() string {
 	}
 
 	if len(self.Components) > 0 && self.ReverseRenderable {
-		for i := self.scroll_to; i >= self.scroll_from; i-- {
+		for i := self.scroll_to; i >= 0; i-- {
 			comp := self.Components[i].Render()
 			if self.Components[i].Row <= self.Row {
 				self.scroll_from = i

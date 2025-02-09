@@ -408,27 +408,22 @@ func main() {
 		go screen.Receive()
 	}
 
-	stdin_buffer := make(chan byte)
+	reader := bufio.NewReader(os.Stdin)
+
 	go func() {
-		reader := bufio.NewReader(os.Stdin)
 		for {
-			text, err := reader.ReadByte()
-			if err != nil {
-				panic(fmt.Sprint("cannot read from stdin, ", err))
-			}
-			stdin_buffer <- text
+			screen.Render()
 		}
 	}()
 
 	for screen.EventLoopIsRunning {
-		screen.Render()
 
-		select {
-		case in := <-stdin_buffer:
-			screen.State.HandleKeypress(&screen, in)
-		default:
-			continue
+		byte, err := reader.ReadByte()
+		if err != nil {
+			panic(fmt.Sprint("cannot read from stdin, ", err))
 		}
+
+		screen.State.HandleKeypress(&screen, byte)
 	}
 	// restart to default settings
 	fmt.Print(dd.VISIBLE_CURSOR)
