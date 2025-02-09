@@ -60,6 +60,7 @@ type Screen struct {
 	ActiveWindowId     int
 	EventLoopIsRunning bool
 	ModalIsActive      bool
+	ReadyToRead        bool
 	WriteToQ           chan string
 	ReadFromQ          chan q_reader
 }
@@ -75,7 +76,9 @@ func (self *Screen) RenderQueueStart() {
 		select {
 		case text := <-self.WriteToQ:
 			self.RenderQueue.WriteString(text)
+			self.ReadyToRead = true
 		case reader := <-self.ReadFromQ:
+			self.ReadyToRead = false
 			reader.response <- self.RenderQueue.String()
 			self.RenderQueue.Reset()
 		}
@@ -100,17 +103,19 @@ func (self *Screen) RenderFull() {
 
 // Dumps everything there is in RenderQueue into stdout and resets the RenderQueue.
 func (self *Screen) Render() {
-	screen := q_reader{}
-	screen.response = make(chan string)
-	self.ReadFromQ <- screen
-	text := <-screen.response
-	if len(text) != 0 {
-		writer := bufio.NewWriter(os.Stdout)
-		if _, err := writer.WriteString(text); err != nil {
-			log.Fatalln(err)
-		}
-		if err := writer.Flush(); err != nil {
-			log.Fatalln(err)
+	if self.ReadyToRead {
+		screen := q_reader{}
+		screen.response = make(chan string)
+		self.ReadFromQ <- screen
+		text := <-screen.response
+		if len(text) != 0 {
+			writer := bufio.NewWriter(os.Stdout)
+			if _, err := writer.WriteString(text); err != nil {
+				log.Fatalln(err)
+			}
+			if err := writer.Flush(); err != nil {
+				log.Fatalln(err)
+			}
 		}
 	}
 }
@@ -418,6 +423,7 @@ func CreateMessages(content *Window, conversation string, message []string) {
 					Border:     Border{Style: RoundedBorder, Color: RED_COLOR},
 				},
 			)
+			item.reverse_renderable = true
 			content.AddComponent(item)
 			user_date := CreateComponent(fmt.Sprintf("%s | %s", user, datetime), Styles{
 				MaxWidth:   content.Width - 4,
@@ -425,9 +431,11 @@ func CreateMessages(content *Window, conversation string, message []string) {
 				TextColor:  PRIMARY_THEME.SecondaryTextColor,
 				Background: PRIMARY_THEME.ActiveBg,
 			})
+			user_date.reverse_renderable = true
 			content.AddComponent(user_date)
 		}
 	}
+	content.scroll_to = len(content.Components) - 1
 }
 
 func (screen *Screen) handle_new_conversation(response string) {

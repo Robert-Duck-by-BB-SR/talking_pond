@@ -12,6 +12,8 @@ type Window struct {
 	Oldfart           *Screen
 	Index             int
 	ActiveComponentId int
+	scroll_from       int
+	scroll_to         int
 	Active            bool
 	OnRender          func()
 }
@@ -51,9 +53,21 @@ func (self *Window) Render() string {
 		self.OnRender()
 	}
 
-	for _, component := range self.Components {
-		builder.WriteString(component.Render())
+	if len(self.Components) > 0 && self.Components[0].reverse_renderable {
+		for i := self.scroll_to; i > self.scroll_from; i-- {
+			comp := self.Components[i].Render()
+			if self.Components[i].Row <= self.Row {
+				self.scroll_to = i
+				break
+			}
+			builder.WriteString(comp)
+		}
+	} else {
+		for _, component := range self.Components {
+			builder.WriteString(component.Render())
+		}
 	}
+
 	return builder.String()
 
 }

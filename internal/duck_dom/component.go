@@ -13,6 +13,7 @@ type Component struct {
 	Parent                        *Window
 	Active                        bool
 	Inputable                     bool
+	reverse_renderable            bool
 	ScrollType                    ScrollType
 	buffer_vertical_scroll_from   int
 	buffer_horizontal_scroll_from int
@@ -39,11 +40,49 @@ func CreateComponent(buffer string, styles Styles) *Component {
 	return &component
 }
 
+func (self *Component) reverse_rearange() string {
+	var builder strings.Builder
+	defer builder.Reset()
+
+	parent := self.Parent
+
+	// NOTE: supporting display block for now only
+
+	if self.Index == len(parent.Components)-parent.scroll_from-1 {
+		self.Row = parent.Row + parent.Height - self.Height
+		self.Col = parent.Col
+
+		if parent.Border != NoBorder {
+			self.Row -= 1
+			self.Col += 1
+		}
+
+		self.Row -= parent.Paddding
+		self.Col += parent.Paddding
+
+		return builder.String()
+	}
+
+	if self.Index < len(parent.Components)-1 {
+		next := parent.Components[self.Index+1]
+		self.Row = next.Row - self.Height
+		self.Col = next.Col
+		return builder.String()
+	}
+
+	return ""
+}
+
 func (self *Component) Render() string {
 	var builder strings.Builder
 	defer builder.Reset()
-	self.rearrange_component()
-	self.calculate_dimensions()
+	if !self.reverse_renderable {
+		self.rearrange_component()
+		self.calculate_dimensions()
+	} else {
+		self.calculate_dimensions()
+		self.reverse_rearange()
+	}
 	self.assert_component_dimensions()
 	self.render_content(&builder)
 
