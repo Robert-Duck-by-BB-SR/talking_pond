@@ -108,9 +108,7 @@ func create_main_window(screen *dd.Screen) {
 	if dd.DEBUG_MODE {
 		debug_sidebar(sidebar)
 	} else {
-		sidebar.OnRender = func() {
-			tpc.RequestConversations(&screen.Client)
-		}
+		tpc.RequestConversations(&screen.Client)
 	}
 
 	screen.AddWindow(sidebar)

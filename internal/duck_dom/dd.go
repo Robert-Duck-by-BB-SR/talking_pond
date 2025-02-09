@@ -259,13 +259,15 @@ func (*NormalMode) HandleKeypress(screen *Screen, key byte) {
 			index = active_window.ActiveComponentId
 		}
 
-		if index > active_window.scroll_to {
-			active_window.scroll_to++
-			screen.WriteToQ <- active_window.Render()
-			screen.change_component(index)
-		} else {
-			screen.change_component(index)
+		new_scroll := active_window.scroll_to + 1
+		if new_scroll > len(active_window.Components)-1 {
+			new_scroll = active_window.scroll_to
 		}
+		active_window.scroll_to = new_scroll
+
+		screen.WriteToQ <- active_window.Render()
+		screen.change_component(index)
+		utils.FileDebug(fmt.Sprint(active_window.Components, index, active_window.ActiveComponentId))
 	case 'k':
 		fallthrough
 	case 'h':
@@ -274,15 +276,14 @@ func (*NormalMode) HandleKeypress(screen *Screen, key byte) {
 			index = active_window.ActiveComponentId
 		}
 
-		utils.FileDebug(active_window.scroll_from)
-		if index < active_window.scroll_from {
-			active_window.scroll_from--
-			active_window.scroll_to--
-			screen.WriteToQ <- active_window.Render()
-			screen.change_component(index)
-		} else {
-			screen.change_component(index)
+		new_scroll := active_window.scroll_to - 1
+		if new_scroll < 0 {
+			new_scroll = 0
 		}
+		active_window.scroll_to = new_scroll
+
+		screen.WriteToQ <- active_window.Render()
+		screen.change_component(index)
 	case '':
 		active_component := screen.get_active_component()
 		if active_component.ScrollType == VERTICAL {
@@ -471,7 +472,11 @@ func (screen *Screen) handle_incoming_messages(response string) {
 	screen.WriteToQ <- content.Render()
 }
 
+var counter int
+
 func (screen *Screen) handle_list_of_conversations(response string) {
+	counter += 1
+	utils.FileDebug(fmt.Sprintln("fucking what? ", counter))
 	sidebar := screen.Windows[0]
 	sidebar.Components = []*Component{}
 	conversations := strings.Split(response, string([]byte{254}))
@@ -501,7 +506,6 @@ func (screen *Screen) handle_list_of_conversations(response string) {
 			screen.WriteToQ <- chat.Render()
 		}
 	}
-	sidebar.scroll_to = len(sidebar.Components) - 1
 
 	if sidebar.Index == sidebar.Oldfart.ActiveWindowId {
 		screen.Activate(0)

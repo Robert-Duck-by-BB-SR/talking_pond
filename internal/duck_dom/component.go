@@ -47,7 +47,7 @@ func (self *Component) reverse_rearange() string {
 
 	// NOTE: supporting display block for now only
 
-	if self.Index == len(parent.Components)-parent.scroll_from-1 {
+	if self.Index == parent.scroll_to {
 		self.Row = parent.Row + parent.Height - self.Height
 		self.Col = parent.Col
 
