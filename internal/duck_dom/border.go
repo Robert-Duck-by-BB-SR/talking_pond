@@ -10,6 +10,13 @@ type Border struct {
 	Color string
 }
 
+type BorderRenderStyles struct {
+	Width int
+	Height int
+	BorderBackground string
+	Border
+}
+
 type BorderStyle struct {
 	Top          string
 	Bottom       string
@@ -79,12 +86,12 @@ var (
 )
 
 // box-sizing: border-box;
-func render_border(border_builder *strings.Builder, position Position, active bool, styles *Styles) {
-	border_style := styles.Border.Style
-
-	if styles.Border != NoBorder && active {
-		border_style = BoldBorder
+// We hate borders
+func render_border(border_builder *strings.Builder, position Position, styles BorderRenderStyles) {
+	if styles.Border == NoBorder {
+		return
 	}
+	border_style := styles.Border.Style
 
 	middle := strings.Repeat(border_style.Bottom, styles.Width-2)
 	top := border_style.TopLeft + middle + border_style.TopRight

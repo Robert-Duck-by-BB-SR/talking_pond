@@ -92,7 +92,11 @@ func (self *Component) Render() string {
 	builder.WriteString(self.render_content())
 
 	if self.Styles.Border != NoBorder {
-		render_border(&builder, self.Position, self.Active, &self.Styles)
+		border := self.Styles.Border
+		if self.Active {
+			border = ACTIVE_COMPONENT_STYLES.Border
+		}
+		render_border(&builder, self.Position, BorderRenderStyles{self.Width, self.Height, self.BorderBackground, border})
 	}
 	builder.WriteString(RESET_STYLES)
 	return builder.String()
@@ -273,12 +277,12 @@ func (self *Component) render_buffer(content_builder *strings.Builder) {
 func (self *Component) render_content() string {
 	var content_builder strings.Builder
 	defer content_builder.Reset()
+	content_builder.WriteString(RESET_STYLES)
 	if self.Active {
-		content_builder.WriteString(INVERT_STYLES)
+		ACTIVE_COMPONENT_STYLES.Compile(&content_builder)
 	} else {
-		content_builder.WriteString(RESET_STYLES)
+		self.Styles.Compile(&content_builder)
 	}
-	self.Styles.Compile(&content_builder)
 	self.render_background(&content_builder)
 	self.render_buffer(&content_builder)
 	return content_builder.String()

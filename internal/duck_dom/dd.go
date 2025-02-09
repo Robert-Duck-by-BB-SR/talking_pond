@@ -36,8 +36,15 @@ const (
 	VISIBLE_CURSOR               = "\033[?25h"
 
 	// NOTE: DEBUG ONLY. IF YOU USE IT IN PROD I WILL FIND YOU AND MAKE YOU SMELL MY SOCKS
+	// DADDY CHILL
 	DEBUG_STYLES = "\033[30;43m"
 )
+
+var ACTIVE_COMPONENT_STYLES = Styles{
+	TextColor:  PRIMARY_THEME.TextColor,
+	Background: PRIMARY_THEME.SecondaryBg,
+	Border:     Border{Color: PRIMARY_THEME.ActiveBorderColor, Style: BoldBorder},
+}
 
 type Position struct {
 	Row, Col int
@@ -152,16 +159,16 @@ func (self *Screen) change_window(id int) {
 	var builder strings.Builder
 	defer builder.Reset()
 	old_window := self.Windows[self.ActiveWindowId]
-	old_window.Border.Color = PRIMARY_THEME.SecondaryTextColor
+	old_window.Border.Color = PRIMARY_THEME.UnactiveBorderColor
 	old_window.Border.Style = NormalBorder
 	old_window.Active = false
 	self.ActiveWindowId = id
 	new_window := self.Windows[self.ActiveWindowId]
-	new_window.Border.Color = PRIMARY_THEME.ActiveTextColor
+	new_window.Border.Color = PRIMARY_THEME.ActiveBorderColor
 	new_window.Border.Style = BoldBorder
 	new_window.Active = true
-	render_border(&builder, old_window.Position, old_window.Active, &old_window.Styles)
-	render_border(&builder, new_window.Position, new_window.Active, &new_window.Styles)
+	render_border(&builder, old_window.Position, BorderRenderStyles{old_window.Width, old_window.Height, old_window.BorderBackground, old_window.Border})
+	render_border(&builder, new_window.Position, BorderRenderStyles{new_window.Width, new_window.Height, new_window.BorderBackground, new_window.Border})
 	if len(old_window.Components) > 0 {
 		old_active := old_window.Components[old_window.ActiveComponentId]
 		old_active.Active = false
@@ -434,17 +441,17 @@ func CreateMessages(content *Window, conversation string, message []string) {
 			item := CreateComponent(text,
 				Styles{
 					MaxWidth:   content.Width / 3,
-					TextColor:  PRIMARY_THEME.SecondaryTextColor,
-					Background: PRIMARY_THEME.ActiveBg,
-					Border:     Border{Style: RoundedBorder, Color: RED_COLOR},
+					TextColor:  PRIMARY_THEME.TextColor,
+					Background: PRIMARY_THEME.SecondaryBg,
+					Border:     Border{Style: RoundedBorder, Color: PRIMARY_THEME.UnactiveBorderColor},
 				},
 			)
 			content.AddComponent(item)
 			user_date := CreateComponent(fmt.Sprintf("%s | %s", user, datetime), Styles{
 				MaxWidth:   content.Width - 4,
 				MaxHeight:  1,
-				TextColor:  PRIMARY_THEME.SecondaryTextColor,
-				Background: PRIMARY_THEME.ActiveBg,
+				TextColor:  PRIMARY_THEME.TextColor,
+				Background: PRIMARY_THEME.SecondaryBg,
 			})
 			content.AddComponent(user_date)
 		}
@@ -478,10 +485,10 @@ func (screen *Screen) handle_list_of_conversations(response string) {
 				Styles{
 					MaxWidth:   sidebar.Width - 4,
 					MaxHeight:  5,
-					TextColor:  PRIMARY_THEME.SecondaryTextColor,
-					Background: PRIMARY_THEME.ActiveBg,
+					TextColor:  PRIMARY_THEME.TextColor,
+					Background: PRIMARY_THEME.SecondaryBg,
 					Paddding:   1,
-					Border:     Border{Style: RoundedBorder, Color: RED_COLOR},
+					Border:     Border{Style: RoundedBorder, Color: PRIMARY_THEME.UnactiveBorderColor},
 				},
 			)
 			sidebar.AddComponent(chat)
@@ -510,8 +517,8 @@ func (screen *Screen) handle_list_of_users(response string) {
 			available_user := CreateComponent(user,
 				Styles{
 					MaxWidth:   modal.Width - 2,
-					Background: MakeRGBBackground(100, 40, 100),
-					Border:     Border{Style: RoundedBorder, Color: PRIMARY_THEME.SecondaryTextColor},
+					Background: PRIMARY_THEME.SecondaryBg,
+					Border:     Border{Style: RoundedBorder, Color: PRIMARY_THEME.TextColor},
 				},
 			)
 

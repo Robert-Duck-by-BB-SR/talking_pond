@@ -1,27 +1,25 @@
 package duckdom
 
 type Theme struct {
-	PrimaryBg          string
-	SecondaryBg        string
-	SecondaryTextColor string
-
+	PrimaryBg       string
+	SecondaryBg     string
 	ActiveBg        string
 	ActiveTextColor string
+	StatusPanelBg   string
+	TextColor       string
 
-	ActiveDarkBg        string
-	ActiveDarkTextColor string
-
-	TextColor string
+	ActiveBorderColor   string
+	UnactiveBorderColor string
 }
 
-// Sigma ligma super duper male theme
+// Sigma ligma balls (got em) super duper male theme
 var PRIMARY_THEME = Theme{
-	PrimaryBg:           MakeRGBBackground(6, 6, 6),
-	SecondaryBg:         MakeRGBBackground(0, 244, 0),
-	SecondaryTextColor:  MakeRGBTextColor(11, 11, 11),
-	ActiveBg:            MakeRGBBackground(255, 0, 0),
-	ActiveTextColor:     MakeRGBTextColor(8, 56, 100),
-	ActiveDarkBg:        MakeRGBBackground(2, 14, 25),
-	ActiveDarkTextColor: MakeRGBTextColor(2, 14, 25),
-	TextColor:           MakeRGBTextColor(255, 255, 255),
+	PrimaryBg:           MakeRGBBackground(25, 25, 25),
+	SecondaryBg:         MakeRGBBackground(34, 32, 32),
+	StatusPanelBg:       MakeRGBBackground(48, 48, 48),
+	ActiveBg:            MakeRGBBackground(251, 206, 44),
+	TextColor:           MakeRGBTextColor(192, 192, 192),
+	ActiveTextColor:     MakeRGBTextColor(251, 206, 44),
+	ActiveBorderColor:   MakeRGBTextColor(251, 206, 44),
+	UnactiveBorderColor: MakeRGBTextColor(54, 52, 52),
 }

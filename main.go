@@ -24,8 +24,8 @@ func debug_sidebar(sidebar *dd.Window) {
 		dd.CreateComponent("Deez nuts 123 456 789 100 110", dd.Styles{
 			MaxWidth:   10,
 			MaxHeight:  5,
-			TextColor:  dd.PRIMARY_THEME.SecondaryTextColor,
-			Background: dd.PRIMARY_THEME.ActiveBg,
+			TextColor:  dd.PRIMARY_THEME.TextColor,
+			Background: dd.PRIMARY_THEME.SecondaryBg,
 			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.RED_COLOR},
 		}),
 	)
@@ -36,8 +36,8 @@ func debug_sidebar(sidebar *dd.Window) {
 		dd.CreateComponent("Deez nuts123123 hello there", dd.Styles{
 			MaxWidth:   20,
 			MaxHeight:  3,
-			TextColor:  dd.PRIMARY_THEME.SecondaryTextColor,
-			Background: dd.PRIMARY_THEME.ActiveBg,
+			TextColor:  dd.PRIMARY_THEME.TextColor,
+			Background: dd.PRIMARY_THEME.SecondaryBg,
 			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.RED_COLOR},
 		}),
 	)
@@ -47,8 +47,8 @@ func debug_sidebar(sidebar *dd.Window) {
 	sidebar.AddComponent(
 		dd.CreateComponent("Deez nuts", dd.Styles{
 			MaxWidth:   10,
-			TextColor:  dd.PRIMARY_THEME.SecondaryTextColor,
-			Background: dd.PRIMARY_THEME.ActiveBg,
+			TextColor:  dd.PRIMARY_THEME.TextColor,
+			Background: dd.PRIMARY_THEME.SecondaryBg,
 			Paddding:   1,
 			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.RED_COLOR},
 		},
@@ -102,7 +102,7 @@ func create_main_window(screen *dd.Screen) {
 		Height:     screen.Height - 1,
 		Background: dd.PRIMARY_THEME.PrimaryBg,
 		Paddding:   1,
-		Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
+		Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.UnactiveBorderColor},
 	})
 
 	if dd.DEBUG_MODE {
@@ -115,10 +115,10 @@ func create_main_window(screen *dd.Screen) {
 
 	content := dd.CreateWindow(dd.Styles{
 		Width:      screen.Width - sidebar.Styles.Width - 1,
-		Height:     int(float32(screen.Height) * 0.8),
+		Height:     int(float32(screen.Height) * 0.8 + 1),
 		Background: dd.PRIMARY_THEME.PrimaryBg,
 		Paddding:   1,
-		Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
+		Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.UnactiveBorderColor},
 		Direction:  dd.INLINE,
 	})
 	content.ReverseRenderable = true
@@ -133,7 +133,7 @@ func create_main_window(screen *dd.Screen) {
 		dd.Styles{
 			Width:      screen.Width - sidebar.Styles.Width - 1,
 			Height:     int(float32(screen.Height)*0.2) - 1,
-			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
+			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.UnactiveBorderColor},
 			Background: dd.PRIMARY_THEME.PrimaryBg,
 		},
 	)
@@ -143,7 +143,7 @@ func create_main_window(screen *dd.Screen) {
 		dd.Styles{
 			MinWidth:   1,
 			Width:      input_bar.Width - 2,
-			Background: dd.MakeRGBBackground(200, 40, 100),
+			Background: dd.PRIMARY_THEME.SecondaryBg,
 			Height:     input_bar.Height - 2,
 		},
 	)
@@ -172,7 +172,6 @@ func create_status_bar(screen *dd.Screen) {
 		Styles: dd.Styles{
 			Width:      screen.Width,
 			Height:     1,
-			Background: dd.MakeRGBBackground(80, 40, 100),
 		},
 	}
 	screen.StatusBar.Oldfart = screen
@@ -183,6 +182,7 @@ func create_status_bar(screen *dd.Screen) {
 			Inputable: true,
 			Styles: dd.Styles{
 				TextColor: dd.PRIMARY_THEME.ActiveTextColor,
+				Background: dd.PRIMARY_THEME.StatusPanelBg,
 				Width:     screen.Width,
 				Height:    1,
 			},
@@ -193,7 +193,7 @@ func create_status_bar(screen *dd.Screen) {
 	status_line.Action = func() {
 		buffer := strings.Split(status_line.Buffer, ":")
 		if len(buffer) < 2 {
-			dd.DebugMeDaddy(screen, "Brother this is not a command you dumb fuck")
+			dd.FileDebugMeDaddy("Brother this is not a command you dumb fuck")
 		}
 		switch buffer[1] {
 		case "q":
@@ -215,20 +215,21 @@ func create_new_conversation(screen *dd.Screen) {
 			Width:      40,
 			Height:     40,
 			Paddding:   1,
-			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
+			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.TextColor},
 			Background: dd.PRIMARY_THEME.PrimaryBg,
 		},
 	)
 	modal.Position = dd.Position{Row: screen.Height/2 - 20, Col: screen.Width/2 - 20}
 
-	modal.AddComponent(dd.CreateComponent("",
-		dd.Styles{
-			MinWidth:   10,
-			MaxWidth:   modal.Width - 2,
-			Background: dd.MakeRGBBackground(100, 40, 100),
-			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
-		},
-	))
+	// here could be search
+	// modal.AddComponent(dd.CreateComponent("",
+	// 	dd.Styles{
+	// 		MinWidth:   10,
+	// 		MaxWidth:   modal.Width - 2,
+	// 		Background: dd.PRIMARY_THEME.SecondaryBg,
+	// 		Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.TextColor},
+	// 	},
+	// ))
 
 	screen.AddWindow(modal)
 	tpc.RequestUsers(screen.Client)
@@ -250,7 +251,7 @@ func create_login_screen(screen *dd.Screen) {
 			Width:      40,
 			Height:     10,
 			Paddding:   1,
-			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.SecondaryTextColor},
+			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.TextColor},
 			Background: dd.PRIMARY_THEME.PrimaryBg,
 		},
 	)
@@ -262,7 +263,8 @@ func create_login_screen(screen *dd.Screen) {
 			dd.Styles{
 				Width:      login.Width - 4,
 				Height:     1,
-				Background: dd.MakeRGBBackground(80, 40, 100),
+				Background: dd.PRIMARY_THEME.SecondaryBg,
+				TextColor: dd.PRIMARY_THEME.TextColor,
 			},
 		))
 	login.AddComponent(
@@ -271,7 +273,8 @@ func create_login_screen(screen *dd.Screen) {
 			dd.Styles{
 				Width:      login.Width - 4,
 				Height:     1,
-				Background: dd.MakeRGBBackground(80, 40, 100),
+				Background: dd.PRIMARY_THEME.SecondaryBg,
+				TextColor: dd.PRIMARY_THEME.TextColor,
 			},
 		))
 	login.AddComponent(
@@ -279,8 +282,9 @@ func create_login_screen(screen *dd.Screen) {
 			"connect",
 			dd.Styles{
 				MaxWidth:   10,
-				Background: dd.MakeRGBBackground(80, 40, 100),
-				Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.MakeRGBTextColor(100, 100, 100)},
+				Background: dd.PRIMARY_THEME.SecondaryBg,
+				TextColor: dd.PRIMARY_THEME.TextColor,
+				Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.UnactiveBorderColor},
 			},
 		))
 

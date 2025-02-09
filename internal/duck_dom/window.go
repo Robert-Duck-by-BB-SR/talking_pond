@@ -46,7 +46,7 @@ func (self *Window) Render() string {
 	self.render_background(&builder)
 
 	if self.Styles.Border != NoBorder {
-		render_border(&builder, self.Position, self.Active, &self.Styles)
+		render_border(&builder, self.Position, BorderRenderStyles{self.Width, self.Height, self.BorderBackground, self.Border})
 	}
 
 	if self.OnRender != nil {
