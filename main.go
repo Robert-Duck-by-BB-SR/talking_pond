@@ -115,7 +115,7 @@ func create_main_window(screen *dd.Screen) {
 
 	content := dd.CreateWindow(dd.Styles{
 		Width:      screen.Width - sidebar.Styles.Width - 1,
-		Height:     int(float32(screen.Height) * 0.8 + 1),
+		Height:     int(float32(screen.Height)*0.8 + 1),
 		Background: dd.PRIMARY_THEME.PrimaryBg,
 		Paddding:   1,
 		Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.UnactiveBorderColor},
@@ -170,8 +170,8 @@ func create_status_bar(screen *dd.Screen) {
 	screen.StatusBar = dd.Window{
 		Position: dd.Position{Row: screen.Height, Col: 1},
 		Styles: dd.Styles{
-			Width:      screen.Width,
-			Height:     1,
+			Width:  screen.Width,
+			Height: 1,
 		},
 	}
 	screen.StatusBar.Oldfart = screen
@@ -181,10 +181,10 @@ func create_status_bar(screen *dd.Screen) {
 			Buffer:    dd.NORMAL,
 			Inputable: true,
 			Styles: dd.Styles{
-				TextColor: dd.PRIMARY_THEME.ActiveTextColor,
+				TextColor:  dd.PRIMARY_THEME.ActiveTextColor,
 				Background: dd.PRIMARY_THEME.StatusPanelBg,
-				Width:     screen.Width,
-				Height:    1,
+				Width:      screen.Width,
+				Height:     1,
 			},
 		},
 	}
@@ -249,7 +249,7 @@ func create_login_screen(screen *dd.Screen) {
 	login := dd.CreateWindow(
 		dd.Styles{
 			Width:      40,
-			Height:     10,
+			Height:     12,
 			Paddding:   1,
 			Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.TextColor},
 			Background: dd.PRIMARY_THEME.PrimaryBg,
@@ -262,9 +262,10 @@ func create_login_screen(screen *dd.Screen) {
 			"",
 			dd.Styles{
 				Width:      login.Width - 4,
-				Height:     1,
+				Height:     3,
 				Background: dd.PRIMARY_THEME.SecondaryBg,
-				TextColor: dd.PRIMARY_THEME.TextColor,
+				TextColor:  dd.PRIMARY_THEME.TextColor,
+				Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.UnactiveBorderColor},
 			},
 		))
 	login.AddComponent(
@@ -272,9 +273,10 @@ func create_login_screen(screen *dd.Screen) {
 			"",
 			dd.Styles{
 				Width:      login.Width - 4,
-				Height:     1,
+				Height:     3,
 				Background: dd.PRIMARY_THEME.SecondaryBg,
-				TextColor: dd.PRIMARY_THEME.TextColor,
+				TextColor:  dd.PRIMARY_THEME.TextColor,
+				Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.UnactiveBorderColor},
 			},
 		))
 	login.AddComponent(
@@ -283,7 +285,7 @@ func create_login_screen(screen *dd.Screen) {
 			dd.Styles{
 				MaxWidth:   10,
 				Background: dd.PRIMARY_THEME.SecondaryBg,
-				TextColor: dd.PRIMARY_THEME.TextColor,
+				TextColor:  dd.PRIMARY_THEME.TextColor,
 				Border:     dd.Border{Style: dd.RoundedBorder, Color: dd.PRIMARY_THEME.UnactiveBorderColor},
 			},
 		))
