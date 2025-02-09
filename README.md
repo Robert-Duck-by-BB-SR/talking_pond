@@ -1,5 +1,6 @@
 # What is talking pond?
 It's a simple messenger. That's it. You can send messages and receive them. 
+UI was made from scratch, all based on ANSI commands.
 With vim motions. In terminal.
 
 > FOR NOW YOUR MESSAGES ARE NOT ENCRYPTED
