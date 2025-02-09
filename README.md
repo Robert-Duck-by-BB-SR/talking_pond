@@ -23,16 +23,16 @@ In the login screen first insert ip of your server and key in the next field.
 `i` (in the inputtable item) enter Insert Mode  
 `ctrl-u/ctrl-d` if content of the component is vertically scrollable  
 `q` to exit modal window  
-## Command Mode
-`:q` quit application (shocker)
-`:new` open a modal window to create a new conversation
-`ESC/ctrl-c` enter normal mode
-## Window Mode
-`h/j/k/l` move to the previous/next window
-`ESC/ctrl-c/ENTER` enter normal mode
-## Insert Mode
-just type the text wtf do you expect to see here?
-`ESC/ctrl-c` enter normal mode
+## Command Mode  
+`:q` quit application (shocker)  
+`:new` open a modal window to create a new conversation  
+`ESC/ctrl-c` enter normal mode  
+## Window Mode  
+`h/j/k/l` move to the previous/next window  
+`ESC/ctrl-c/ENTER` enter normal mode  
+## Insert Mode  
+just type the text wtf do you expect to see here?  
+`ESC/ctrl-c` enter normal mode  
 
 
 # License
