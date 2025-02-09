@@ -2,6 +2,8 @@
 It's a simple messenger. That's it. You can send messages and receive them. 
 With vim motions. In terminal.
 
+> FOR NOW YOUR MESSAGES ARE NOT ENCRYPTED
+
 # How do I use it?
 First you need a server [TPS](https://github.com/Robert-Duck-by-BB-SR/tps).  
 To access that server you need to get an IP of the server and a key that is generated on the server for your user.
