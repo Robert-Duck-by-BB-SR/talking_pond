@@ -15,14 +15,14 @@ In the login screen first insert ip of your server and key in the next field.
 # Movements
 
 ## Normal Mode
-`ctrl-w` Enter Window Mode
-`:` Enter Command Mode
-`h/j/k/l` move to the previous/next item in selected window
-`Enter` Open chat/press a button
-`I` (shift i) jump to Insert Mode
-`i` (in the inputtable item) enter Insert Mode
-`ctrl-u/ctrl-d` if content of the component is vertically scrollable
-`q` to exit modal window
+`ctrl-w` Enter Window Mode  
+`:` Enter Command Mode  
+`h/j/k/l` move to the previous/next item in selected window  
+`Enter` Open chat/press a button  
+`I` (shift i) jump to Insert Mode  
+`i` (in the inputtable item) enter Insert Mode  
+`ctrl-u/ctrl-d` if content of the component is vertically scrollable  
+`q` to exit modal window  
 ## Command Mode
 `:q` quit application (shocker)
 `:new` open a modal window to create a new conversation
