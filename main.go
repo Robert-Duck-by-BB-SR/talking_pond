@@ -48,13 +48,13 @@ func GetTerminalSize() (int, int) {
 		height_split := strings.Split(l, ":")
 		width_split := strings.Split(c, ":")
 
-		height, err := strconv.ParseInt(strings.Trim(height_split[1], " "), 10, 32)
+		height, err := strconv.ParseInt(strings.TrimPrefix(height_split[1], " "), 10, 32)
 		if err != nil {
-			panic(fmt.Sprintf("height is incorrect: %+v\n", l))
+			panic(fmt.Sprintf("height is incorrect: %+v, %+v, not printing shit?\n", l, height))
 		}
-		width, err := strconv.ParseInt(strings.Trim(width_split[1], " "), 10, 32)
+		width, err := strconv.ParseInt(strings.TrimPrefix(width_split[1], " "), 10, 32)
 		if err != nil {
-			panic(fmt.Sprintf("width is incorrect: %+v\n", c))
+			panic(fmt.Sprintf("width is incorrect: %+v, %+v, why not tho?\n", c, width))
 		}
 
 		return int(width), int(height)
