@@ -41,8 +41,8 @@ func GetTerminalSize() (int, int) {
 
 		lines := strings.Split(string(out), "\n")
 		// let it fail if the output is wrong
-		l := lines[1]
-		c := lines[2]
+		l := lines[3]
+		c := lines[4]
 
 		height_split := strings.Split(l, ":")
 		width_split := strings.Split(c, ":")
