@@ -8,9 +8,11 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/exec"
 	"runtime"
 	"runtime/pprof"
 	"runtime/trace"
+	"strconv"
 	"strings"
 
 	dd "github.com/Robert-Duck-by-BB-SR/talking_pond/internal/duck_dom"
@@ -18,6 +20,49 @@ import (
 
 	tpc "github.com/Robert-Duck-by-BB-SR/talking_pond/internal/tps_client"
 )
+
+// C:\> MODE
+// Status for device CON:
+// ----------------------
+//     Lines:        240
+//     Columns:       80
+//     Keyboard Rate: 31
+//     Keyboard delay: 1
+//     Code Page:    850
+
+func GetTerminalSize() (int, int) {
+	switch runtime.GOOS {
+	case "windows":
+		cmd := exec.Command("mode", "con")
+		out, err := cmd.Output()
+		if err != nil {
+			panic("windows sucks, couldn't get CONSOLE sizes")
+		}
+
+		lines := strings.Split(string(out), "\n")
+		// let it fail if the output is wrong
+		l := lines[1]
+		c := lines[2]
+
+		height_split := strings.Split(l, ":")
+		width_split := strings.Split(c, ":")
+
+		height, err := strconv.ParseInt(height_split[1], 10, 32)
+		if err != nil {
+			panic(fmt.Sprintf("height is incorrect: %+v\n", l))
+		}
+		width, err := strconv.ParseInt(width_split[1], 10, 32)
+		if err != nil {
+			panic(fmt.Sprintf("width is incorrect: %+v\n", c))
+		}
+
+		return int(width), int(height)
+
+	default:
+		width, height, _ := term.GetSize(int(os.Stdin.Fd()))
+		return width, height
+	}
+}
 
 func debug_sidebar(sidebar *dd.Window) {
 	sidebar.AddComponent(
@@ -92,10 +137,6 @@ func create_main_window(screen *dd.Screen) {
 	if !dd.DEBUG_MODE {
 		tpc.RequestToConnect(&screen.Client)
 	}
-
-	width, height, _ := term.GetSize(int(os.Stdin.Fd()))
-	screen.Width = width
-	screen.Height = height
 
 	sidebar := dd.CreateWindow(dd.Styles{
 		Width:      50,
@@ -206,10 +247,6 @@ func create_status_bar(screen *dd.Screen) {
 }
 
 func create_new_conversation(screen *dd.Screen) {
-	width, height, _ := term.GetSize(int(os.Stdin.Fd()))
-	screen.Width = width
-	screen.Height = height
-
 	modal := dd.CreateWindow(
 		dd.Styles{
 			Width:      40,
@@ -242,10 +279,6 @@ func create_new_conversation(screen *dd.Screen) {
 
 func create_login_screen(screen *dd.Screen) {
 	screen.ModalIsActive = true
-	width, height, _ := term.GetSize(int(os.Stdin.Fd()))
-	screen.Width = width
-	screen.Height = height
-
 	login := dd.CreateWindow(
 		dd.Styles{
 			Width:      40,
@@ -396,6 +429,11 @@ func main() {
 
 	dd.ClearScreen()
 	screen := dd.Screen{State: &dd.Normal, EventLoopIsRunning: true}
+
+	width, height := GetTerminalSize()
+	screen.Width = width
+	screen.Height = height
+
 	screen.WriteToQ = make(chan string)
 	screen.ReadFromQ = make(chan dd.QReader)
 
