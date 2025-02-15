@@ -21,7 +21,8 @@ import (
 	tpc "github.com/Robert-Duck-by-BB-SR/talking_pond/internal/tps_client"
 )
 
-// C:\> MODE
+// > mode con
+//
 // Status for device CON:
 // ----------------------
 //     Lines:        240
@@ -47,11 +48,11 @@ func GetTerminalSize() (int, int) {
 		height_split := strings.Split(l, ":")
 		width_split := strings.Split(c, ":")
 
-		height, err := strconv.ParseInt(height_split[1], 10, 32)
+		height, err := strconv.ParseInt(strings.Trim(height_split[1], " "), 10, 32)
 		if err != nil {
 			panic(fmt.Sprintf("height is incorrect: %+v\n", l))
 		}
-		width, err := strconv.ParseInt(width_split[1], 10, 32)
+		width, err := strconv.ParseInt(strings.Trim(width_split[1], " "), 10, 32)
 		if err != nil {
 			panic(fmt.Sprintf("width is incorrect: %+v\n", c))
 		}
