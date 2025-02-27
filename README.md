@@ -1,3 +1,8 @@
+![image](https://github.com/user-attachments/assets/544672e0-aac7-468c-b490-679a3d0d46ff)
+Author:
+- [Nor on X](https://x.com/NorDotShell)
+- [Nor on GitHub](https://github.com/NorShell)
+
 # What is talking pond?
 It's a simple messenger. That's it. You can send messages and receive them. 
 UI was made from scratch, all based on ANSI commands.
