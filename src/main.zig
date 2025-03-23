@@ -10,11 +10,10 @@ const ENABLE_WINDOW_INPUT: u32 = 0x8;
 
 const OldState = union {
     win: struct {
-        std_out: *shit_os.DWORD,
-        std_in: *shit_os.DWORD,
+        std_out: shit_os.DWORD,
+        std_in: shit_os.DWORD,
     },
     posix: struct {
-        std_out: *posix.termios,
         std_in: posix.termios,
     },
 };
@@ -32,9 +31,8 @@ fn start_raw_mode(std_in: std.fs.File, std_out: std.fs.File, termos: *OldState) 
 
             _ = shit_os.kernel32.SetConsoleMode(std_in.handle, raw_mode);
 
-            var old_stdout: shit_os.DWORD = undefined;
-            _ = shit_os.kernel32.GetConsoleMode(std_out.handle, &old_stdout);
-            _ = shit_os.kernel32.SetConsoleMode(std_out.handle, termos.win.std_out.* | shit_os.ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+            _ = shit_os.kernel32.GetConsoleMode(std_out.handle, &termos.win.std_out);
+            _ = shit_os.kernel32.SetConsoleMode(std_out.handle, termos.win.std_out | shit_os.ENABLE_VIRTUAL_TERMINAL_PROCESSING);
         },
         .linux => {
             termos.posix.std_in = try posix.tcgetattr(std_in.handle);
@@ -56,10 +54,11 @@ fn start_raw_mode(std_in: std.fs.File, std_out: std.fs.File, termos: *OldState) 
     }
 }
 
-fn restore_terminal(std_in: std.fs.File, termos: OldState) void {
+fn restore_terminal(std_in: std.fs.File, std_out: std.fs.File, termos: OldState) void {
     switch (os_tag) {
         .windows => {
-            _ = shit_os.kernel32.SetConsoleMode(std_in.handle, termos.win.std_in.*);
+            _ = shit_os.kernel32.SetConsoleMode(std_in.handle, termos.win.std_in);
+            _ = shit_os.kernel32.SetConsoleMode(std_out.handle, termos.win.std_out);
         },
         .linux => {
             posix.tcsetattr(
@@ -78,7 +77,7 @@ fn read_terminal(std_in: std.fs.File, stdout: std.fs.File.Writer) !bool {
     switch (buf[0]) {
         3 => return true,
         '\n' => try stdout.print("\n", .{}),
-        else => try stdout.print("\x1b[48;2;25;60;80m{c}\x1b[0m\n", .{buf[0]}),
+        else => try stdout.print("\x1b[2J\x1b[48;2;25;60;80m{c}\x1b[0m", .{buf[0]}),
     }
     return false;
 }
@@ -120,7 +119,7 @@ pub fn main() !void {
         std_out,
         &terminal_dimensions,
     );
-    try stdout.print("{}", .{terminal_dimensions});
+    try stdout.print("{}\n", .{terminal_dimensions});
     var termos = switch (os_tag) {
         .windows => OldState{ .win = .{ .std_in = undefined, .std_out = undefined } },
         .linux, .macos => OldState{ .posix = .{ .std_in = undefined, .std_out = undefined } },
@@ -129,7 +128,7 @@ pub fn main() !void {
         },
     };
     try start_raw_mode(std_in, std_out, &termos);
-    defer restore_terminal(std_in, termos);
+    defer restore_terminal(std_in, std_out, termos);
 
     var exit = false;
 
