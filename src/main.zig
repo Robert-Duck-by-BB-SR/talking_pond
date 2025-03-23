@@ -71,17 +71,6 @@ fn restore_terminal(std_in: std.fs.File, std_out: std.fs.File, termos: OldState)
     }
 }
 
-fn read_terminal(std_in: std.fs.File, stdout: std.fs.File.Writer) !bool {
-    var buf = [1]u8{0};
-    _ = try std_in.read(&buf);
-    switch (buf[0]) {
-        3 => return true,
-        '\n' => try stdout.print("\n", .{}),
-        else => try stdout.print("\x1b[2J\x1b[48;2;25;60;80m{c}\x1b[0m", .{buf[0]}),
-    }
-    return false;
-}
-
 pub const TerminalDimensions = struct { width: u16, height: u16 };
 
 fn get_terminal_dimensions(std_out: std.fs.File, terminal_dimensions: *TerminalDimensions) !void {
@@ -104,6 +93,50 @@ fn get_terminal_dimensions(std_out: std.fs.File, terminal_dimensions: *TerminalD
         },
         else => return error.UNSUPPORTED_OS,
     }
+}
+const Screen = struct {
+    mutex: std.Thread.Mutex = .{},
+    condition: std.Thread.Condition = .{},
+    exit: bool = false,
+    render_q: std.ArrayList(u8),
+
+    const Self = @This();
+
+    fn new(alloc: std.mem.Allocator) !Self {
+        return Self{ .render_q = std.ArrayList(u8).init(alloc) };
+    }
+
+    fn add_to_render_q(self: *Self, line: []u8) !void {
+        self.mutex.lock();
+        defer self.mutex.unlock();
+        try self.render_q.appendSlice(line);
+        self.condition.signal();
+    }
+};
+
+pub fn read_terminal(self: *Screen, std_in: std.fs.File) !void {
+    loop: while (true) {
+        var buf = [1]u8{0};
+        _ = try std_in.read(&buf);
+        switch (buf[0]) {
+            3 => {
+                self.mutex.lock();
+                defer self.mutex.unlock();
+                self.exit = true;
+                self.condition.signal();
+                break :loop;
+            },
+            else => try self.add_to_render_q(&buf),
+        }
+    }
+}
+
+pub fn receive(screen: *Screen) !void {
+    var fuck_text = "\x1b[38;2;255;0;0mFUCK".*;
+    std.Thread.sleep(1_000_000_000);
+    try screen.add_to_render_q(&fuck_text);
+    std.Thread.sleep(1_000_000_000);
+    try screen.add_to_render_q(&fuck_text);
 }
 
 pub fn main() !void {
@@ -129,9 +162,23 @@ pub fn main() !void {
     try start_raw_mode(std_in, std_out, &termos);
     defer restore_terminal(std_in, std_out, termos);
 
-    var exit = false;
+    var gpa = std.heap.DebugAllocator(.{}).init;
 
-    while (!exit) {
-        exit = try read_terminal(std_in, stdout);
+    var screen = try Screen.new(gpa.allocator());
+    defer screen.render_q.deinit();
+
+    const render_thread = try std.Thread.spawn(.{}, read_terminal, .{ &screen, std_in });
+    defer render_thread.join();
+
+    const receive_thread = try std.Thread.spawn(.{}, receive, .{&screen});
+    defer receive_thread.join();
+
+    screen.mutex.lock();
+    defer screen.mutex.unlock();
+    while (screen.render_q.items.len == 0) {
+        screen.condition.wait(&screen.mutex);
+        if (screen.exit) break;
+        try stdout.print("\x1b[48;2;25;60;80m{s}\x1b[0m\n", .{screen.render_q.items});
+        screen.render_q.clearAndFree();
     }
 }
