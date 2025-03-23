@@ -1,4 +1,5 @@
 const std = @import("std");
+const dd = @import("internal/dd.zig");
 const shit_os = std.os.windows;
 const posix = std.posix;
 const os_tag = @import("builtin").os.tag;
