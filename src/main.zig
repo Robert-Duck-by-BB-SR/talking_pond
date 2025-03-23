@@ -71,7 +71,7 @@ fn restore_terminal(std_in: std.fs.File, std_out: std.fs.File, termos: OldState)
     }
 }
 
-pub const TerminalDimensions = struct { width: u16, height: u16 };
+pub const TerminalDimensions = struct { width: i16, height: i16 };
 
 fn get_terminal_dimensions(std_out: std.fs.File, terminal_dimensions: *TerminalDimensions) !void {
     switch (os_tag) {
@@ -88,8 +88,8 @@ fn get_terminal_dimensions(std_out: std.fs.File, terminal_dimensions: *TerminalD
             if (res != 0) {
                 return error.ioctl_return_error_during_getting_linux_dimentions;
             }
-            terminal_dimensions.width = win_size.col;
-            terminal_dimensions.height = win_size.row;
+            terminal_dimensions.width = @intCast(win_size.col);
+            terminal_dimensions.height = @intCast(win_size.row);
         },
         else => return error.UNSUPPORTED_OS,
     }
