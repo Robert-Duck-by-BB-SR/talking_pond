@@ -18,22 +18,23 @@ const OldState = union {
         std_in: posix.termios,
     },
 };
+
 fn start_raw_mode(std_in: std.fs.File, std_out: std.fs.File, termos: *OldState) !void {
     switch (os_tag) {
         .windows => {
             var old_stdin: shit_os.DWORD = undefined;
-            _ = shit_os.kernel32.GetConsoleMode(std_in, &old_stdin);
+            _ = shit_os.kernel32.GetConsoleMode(std_in.handle, &old_stdin);
             var raw_mode = old_stdin & ~(ENABLE_LINE_INPUT |
                 ENABLE_ECHO_INPUT |
                 ENABLE_PROCESSED_INPUT);
 
             raw_mode |= ENABLE_WINDOW_INPUT;
 
-            _ = shit_os.kernel32.SetConsoleMode(std_in, raw_mode);
+            _ = shit_os.kernel32.SetConsoleMode(std_in.handle, raw_mode);
 
             var old_stdout: shit_os.DWORD = undefined;
-            _ = shit_os.kernel32.GetConsoleMode(std_out, &old_stdout);
-            _ = shit_os.kernel32.SetConsoleMode(std_out, termos.win.std_out | shit_os.ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+            _ = shit_os.kernel32.GetConsoleMode(std_out.handle, &old_stdout);
+            _ = shit_os.kernel32.SetConsoleMode(std_out.handle, termos.win.std_out.* | shit_os.ENABLE_VIRTUAL_TERMINAL_PROCESSING);
         },
         .linux => {
             termos.posix.std_in = try posix.tcgetattr(std_in.handle);
@@ -58,7 +59,7 @@ fn start_raw_mode(std_in: std.fs.File, std_out: std.fs.File, termos: *OldState) 
 fn restore_terminal(std_in: std.fs.File, termos: OldState) void {
     switch (os_tag) {
         .windows => {
-            _ = shit_os.kernel32.SetConsoleMode(std_in, termos.win.std_in.*);
+            _ = shit_os.kernel32.SetConsoleMode(std_in.handle, termos.win.std_in.*);
         },
         .linux => {
             posix.tcsetattr(
@@ -82,18 +83,21 @@ fn read_terminal(std_in: std.fs.File, stdout: std.fs.File.Writer) !bool {
     return false;
 }
 
-pub const TerminalDimensions = struct { width: u16, height: u16 };
+pub const TerminalDimensions = struct { width: i16, height: i16 };
 pub const UnixWinSize = struct { row: u16 = 0, col: u16 = 0, xpixel: u16 = 0, ypixel: u16 = 0 };
 
 fn get_terminal_dimensions(std_out: std.fs.File, terminal_dimensions: *TerminalDimensions) !void {
     switch (os_tag) {
         .windows => {
-            terminal_dimensions.width = shit_os.CONSOLE_SCREEN_BUFFER_INFO.dwSize.X;
-            terminal_dimensions.height = shit_os.CONSOLE_SCREEN_BUFFER_INFO.dwSize.Y;
+            var console_info: shit_os.CONSOLE_SCREEN_BUFFER_INFO = undefined;
+            _ = shit_os.kernel32.GetConsoleScreenBufferInfo(std_out.handle, &console_info);
+            terminal_dimensions.width = console_info.dwSize.X;
+            terminal_dimensions.height = console_info.dwSize.Y;
         },
         .linux, .macos => {
-            var win_size: UnixWinSize = .{};
-            const res = std.os.linux.ioctl(std_out.handle, std.os.linux.T.IOCGWINSZ, @intFromPtr(&win_size));
+            var win_size: std.posix.winsize = undefined;
+
+            const res = posix.system.ioctl(std_out.handle, std.os.linux.T.IOCGWINSZ, @intFromPtr(&win_size));
             if (res != 0) {
                 return error.ioctl_return_error_during_getting_linux_dimentions;
             }
@@ -118,7 +122,7 @@ pub fn main() !void {
     );
     try stdout.print("{}", .{terminal_dimensions});
     var termos = switch (os_tag) {
-        .windows => OldState{ .win = .{ .std_in = 0, .std_out = 0 } },
+        .windows => OldState{ .win = .{ .std_in = undefined, .std_out = undefined } },
         .linux, .macos => OldState{ .posix = .{ .std_in = undefined, .std_out = undefined } },
         else => {
             return error.UNSUPPORTED_OS;
