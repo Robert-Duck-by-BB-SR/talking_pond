@@ -82,8 +82,7 @@ fn read_terminal(std_in: std.fs.File, stdout: std.fs.File.Writer) !bool {
     return false;
 }
 
-pub const TerminalDimensions = struct { width: i16, height: i16 };
-pub const UnixWinSize = struct { row: u16 = 0, col: u16 = 0, xpixel: u16 = 0, ypixel: u16 = 0 };
+pub const TerminalDimensions = struct { width: u16, height: u16 };
 
 fn get_terminal_dimensions(std_out: std.fs.File, terminal_dimensions: *TerminalDimensions) !void {
     switch (os_tag) {
@@ -122,7 +121,7 @@ pub fn main() !void {
     try stdout.print("{}\n", .{terminal_dimensions});
     var termos = switch (os_tag) {
         .windows => OldState{ .win = .{ .std_in = undefined, .std_out = undefined } },
-        .linux, .macos => OldState{ .posix = .{ .std_in = undefined, .std_out = undefined } },
+        .linux, .macos => OldState{ .posix = .{ .std_in = undefined } },
         else => {
             return error.UNSUPPORTED_OS;
         },
