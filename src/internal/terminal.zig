@@ -1,6 +1,7 @@
 const std = @import("std");
-const shit_os = std.os.windows;
-const posix = std.posix;
+const fs = std.fs;
+pub const shit_os = std.os.windows;
+pub const posix = std.posix;
 const os_tag = @import("builtin").os.tag;
 
 const ENABLE_LINE_INPUT: u32 = 0x2;
@@ -9,6 +10,7 @@ const ENABLE_PROCESSED_INPUT: u32 = 0x1;
 const ENABLE_WINDOW_INPUT: u32 = 0x8;
 
 pub const OldState = union {
+    pub const TerminalDimensions = struct { width: i16, height: i16 };
     win: struct {
         std_out: shit_os.DWORD,
         std_in: shit_os.DWORD,
@@ -19,7 +21,7 @@ pub const OldState = union {
 };
 
 // Get terminal old state before running the application
-pub fn get_termos_with_tea() OldState {
+pub fn get_termos_with_tea() !OldState {
     return switch (os_tag) {
         .windows => OldState{ .win = .{ .std_in = undefined, .std_out = undefined } },
         .linux, .macos => OldState{ .posix = .{ .std_in = undefined } },
@@ -29,7 +31,7 @@ pub fn get_termos_with_tea() OldState {
     };
 }
 
-pub fn start_raw_mode(std_in: std.fs.File, std_out: std.fs.File, termos: *OldState) !void {
+pub fn start_raw_mode(std_in: fs.File, std_out: fs.File, termos: *OldState) !void {
     switch (os_tag) {
         .windows => {
             var old_stdin: shit_os.DWORD = undefined;
@@ -65,7 +67,7 @@ pub fn start_raw_mode(std_in: std.fs.File, std_out: std.fs.File, termos: *OldSta
     }
 }
 
-pub fn restore_terminal(std_in: std.fs.File, std_out: std.fs.File, termos: OldState) void {
+pub fn restore_terminal(std_in: fs.File, std_out: fs.File, termos: OldState) void {
     switch (os_tag) {
         .windows => {
             _ = shit_os.kernel32.SetConsoleMode(std_in.handle, termos.win.std_in);
@@ -79,29 +81,5 @@ pub fn restore_terminal(std_in: std.fs.File, std_out: std.fs.File, termos: OldSt
             ) catch unreachable;
         },
         else => {},
-    }
-}
-
-pub const TerminalDimensions = struct { width: i16, height: i16 };
-
-pub fn get_terminal_dimensions(std_out: std.fs.File, terminal_dimensions: *TerminalDimensions) !void {
-    switch (os_tag) {
-        .windows => {
-            var console_info: shit_os.CONSOLE_SCREEN_BUFFER_INFO = undefined;
-            _ = shit_os.kernel32.GetConsoleScreenBufferInfo(std_out.handle, &console_info);
-            terminal_dimensions.width = console_info.dwSize.X;
-            terminal_dimensions.height = console_info.dwSize.Y;
-        },
-        .linux, .macos => {
-            var win_size: std.posix.winsize = undefined;
-
-            const res = posix.system.ioctl(std_out.handle, std.os.linux.T.IOCGWINSZ, @intFromPtr(&win_size));
-            if (res != 0) {
-                return error.ioctl_return_error_during_getting_linux_dimentions;
-            }
-            terminal_dimensions.width = @intCast(win_size.col);
-            terminal_dimensions.height = @intCast(win_size.row);
-        },
-        else => return error.UNSUPPORTED_OS,
     }
 }
