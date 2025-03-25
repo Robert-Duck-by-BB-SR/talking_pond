@@ -3,6 +3,22 @@ const dd = @import("internal/dd.zig");
 const shit_os = std.os.windows;
 const posix = std.posix;
 const os_tag = @import("builtin").os.tag;
+const assert = std.debug.assert;
+
+const ENABLE_LINE_INPUT: u32 = 0x2;
+const ENABLE_ECHO_INPUT: u32 = 0x4;
+const ENABLE_PROCESSED_INPUT: u32 = 0x1;
+const ENABLE_WINDOW_INPUT: u32 = 0x8;
+
+const OldState = union {
+    win: struct {
+        std_out: shit_os.DWORD,
+        std_in: shit_os.DWORD,
+    },
+    posix: struct {
+        std_in: posix.termios,
+    },
+};
 
 const Screen = struct {
     mutex: std.Thread.Mutex = .{},
@@ -63,6 +79,7 @@ pub fn main() !void {
     );
     try stdout.print("{}\n", .{terminal_dimensions});
 
+    // TODO: why does this not try?
     var termos = dd.get_termos_with_tea();
     try dd.start_raw_mode(std_in, std_out, &termos);
     defer dd.restore_terminal(std_in, std_out, termos);
