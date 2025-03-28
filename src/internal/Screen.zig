@@ -57,11 +57,10 @@ pub fn destroy(self: *Self) void {
     self.status_line.state.deinit();
 }
 
-pub fn add_to_render_q(self: *Self, line: *std.ArrayList(u8)) !void {
+pub fn add_to_render_q(self: *Self, line: []u8) !void {
     self.mutex.lock();
     defer self.mutex.unlock();
-    const slice = try line.toOwnedSlice();
-    try self.render_q.appendSlice(slice);
+    try self.render_q.appendSlice(line);
     self.condition.signal();
 }
 
@@ -92,9 +91,10 @@ pub fn get_terminal_dimensions(self: *Self, std_out: fs.File) !void {
 }
 
 pub fn read_terminal(self: *Self, std_in: std.fs.File) !void {
-    while (true) {
+    while (true and !self.exit) {
         var buf = [1]u8{0};
-        _ = try std_in.read(&buf);
+        const bytes_read = try std_in.read(&buf);
+        assert(bytes_read != 0);
 
         if (buf[0] == 3) {
             self.exit = true;
@@ -107,15 +107,17 @@ pub fn read_terminal(self: *Self, std_in: std.fs.File) !void {
                 switch (buf[0]) {
                     '\r' => {
                         self.handle_command();
+                        std.debug.print("{}\n", .{self.exit});
                         self.active_mode = .NORMAL;
                         self.status_line.state.clearAndFree();
                         try self.status_line.state.appendSlice("NORMAL");
                     },
                     else => {
                         try self.status_line.state.append(buf[0]);
+                        std.debug.print("{s}\n", .{self.status_line.state.items});
                     },
                 }
-                try self.add_to_render_q(self.status_line.display());
+                try self.add_to_render_q(self.status_line.state.items);
             },
             else => {},
         }
@@ -126,16 +128,13 @@ pub fn read_terminal(self: *Self, std_in: std.fs.File) !void {
 }
 
 fn handle_command(self: *Self) void {
-    const command = self.status_line.state.toOwnedSlice() catch unreachable;
-    if (known_commands.get(command)) |real_command| switch (real_command) {
-        .QUIT => self.exit = true,
+    const items = self.status_line.state.items;
+    const command = known_commands.get(items);
+    std.debug.print("COMMAND: {any} vs ITEMS: {s} vs AVAILABLE: {any}\n", .{command, items, known_commands});
+    if (command) |real_command| switch (real_command) {
+        .QUIT => {
+            self.exit = true;
+        },
         .NEW_CONVERSATION => {},
     };
-}
-
-
-const testing = std.testing;
-test "test quitting" {
-    const cwd = fs.cwd();
-    const file = cwd.createFile("test_quitting_std_in", .{});
 }

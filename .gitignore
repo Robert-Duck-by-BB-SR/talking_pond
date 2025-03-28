@@ -11,3 +11,4 @@ talking_pond
 .zig-cache/
 zig-out/
 .projectile*
+*test*

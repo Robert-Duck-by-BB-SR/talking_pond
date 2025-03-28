@@ -15,6 +15,8 @@ pub fn main() !void {
 
     var gpa = std.heap.DebugAllocator(.{}).init;
     var screen = try Screen.new(gpa.allocator());
+    // TODO: REMOVE AFTER CONFIRMING IT WORKS
+    screen.active_mode = .COMMAND;
     defer screen.destroy();
 
     try screen.get_terminal_dimensions(std_out);
