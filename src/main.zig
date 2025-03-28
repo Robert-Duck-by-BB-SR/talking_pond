@@ -2,6 +2,7 @@ const std = @import("std");
 const shit_os = std.os.windows;
 const posix = std.posix;
 const os_tag = @import("builtin").os.tag;
+
 const Screen = @import("internal/Screen.zig");
 const terminal = @import("internal/terminal.zig");
 const server = @import("internal/tp_server.zig");
@@ -14,7 +15,7 @@ pub fn main() !void {
 
     var gpa = std.heap.DebugAllocator(.{}).init;
     var screen = try Screen.new(gpa.allocator());
-    defer screen.render_q.deinit();
+    defer screen.destroy();
 
     try screen.get_terminal_dimensions(std_out);
     try stdout.print("{}\n", .{screen.terminal_dimensions});
