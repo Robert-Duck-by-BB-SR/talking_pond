@@ -13,8 +13,8 @@ pub fn main() !void {
     const std_in = std.io.getStdIn();
     const stdout = std_out.writer();
 
-    var gpa = std.heap.DebugAllocator(.{}).init;
-    var screen = try Screen.new(gpa.allocator());
+    var debug_allocator = std.heap.DebugAllocator(.{}).init;
+    var screen = try Screen.new(debug_allocator.allocator());
     // TODO: REMOVE AFTER CONFIRMING IT WORKS
     // TODO: HOW THE HELL WE NEED TO COMFIRM THAT?
     screen.active_mode = .COMMAND;
@@ -34,7 +34,7 @@ pub fn main() !void {
     defer screen.mutex.unlock();
     while (screen.render_q.items.len == 0) {
         screen.condition.wait(&screen.mutex);
-        if (screen.exit) break;
+        if (screen.staying_alive) break;
         try stdout.print("\x1b[48;2;25;60;80m{s}\x1b[0m\n", .{screen.render_q.items});
         screen.render_q.clearAndFree();
     }

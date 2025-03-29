@@ -14,6 +14,11 @@ pub const MODE = enum {
     COMMAND,
 };
 
+pub const COMMANDS = enum {
+    QUIT,
+    NEW_CONVERSATION,
+};
+
 pub const BG_KEY = "\x33[48;2;";
 pub const INVERT_STYLES = "\x33[7m";
 pub const RED_COLOR = "\x33[31m;";
@@ -25,3 +30,5 @@ pub const MOVE_CURSOR_TO_POSITION = "\x33[%d;%dH";
 pub const CLEAR_ROW = "\x33[2K";
 pub const HIDDEN_CURSOR = "\x33[?25l";
 pub const VISIBLE_CURSOR = "\x33[?25h";
+
+const Position = struct { row: i16, col: i16 };

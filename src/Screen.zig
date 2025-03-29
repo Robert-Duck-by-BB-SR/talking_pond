@@ -5,17 +5,17 @@ const shit_os = std.os.windows;
 const posix = std.posix;
 const assert = std.debug.assert;
 const os_tag = @import("builtin").os.tag;
-const ui_common = @import("./layers/common.zig");
+const common = @import("./layers/common.zig");
 
 const TerminalDimensions = struct { width: i16, height: i16 };
 mutex: std.Thread.Mutex = .{},
 condition: std.Thread.Condition = .{},
-exit: bool = false,
+staying_alive: bool = true,
 render_q: std.ArrayList(u8),
 terminal_dimensions: TerminalDimensions = undefined,
 
-active_mode: ui_common.MODE = .NORMAL,
-active_layer: ui_common.LAYERS = .LOGIN,
+active_mode: common.MODE = .NORMAL,
+active_layer: common.LAYERS = .LOGIN,
 status_line: StatusLine = .{},
 
 const Self = @This();
@@ -30,16 +30,11 @@ const StatusLine = struct {
     }
 };
 
-const COMMANDS = enum {
-    QUIT,
-    NEW_CONVERSATION,
-};
-
-var known_commands: std.StringHashMap(COMMANDS) = undefined;
+var known_commands: std.StringHashMap(common.COMMANDS) = undefined;
 
 pub fn new(alloc: std.mem.Allocator) !Self {
     // initialize known commands
-    known_commands = std.StringHashMap(COMMANDS).init(alloc);
+    known_commands = std.StringHashMap(common.COMMANDS).init(alloc);
 
     try known_commands.put(":q", .QUIT);
     try known_commands.put(":new", .NEW_CONVERSATION);
@@ -91,13 +86,13 @@ pub fn get_terminal_dimensions(self: *Self, std_out: fs.File) !void {
 }
 
 pub fn read_terminal(self: *Self, std_in: std.fs.File) !void {
-    while (true and !self.exit) {
+    while (self.staying_alive) {
         var buf = [1]u8{0};
         const bytes_read = try std_in.read(&buf);
         assert(bytes_read != 0);
 
         if (buf[0] == 3) {
-            self.exit = true;
+            self.staying_alive = false;
             return;
         }
 
@@ -107,7 +102,7 @@ pub fn read_terminal(self: *Self, std_in: std.fs.File) !void {
                 switch (buf[0]) {
                     '\r' => {
                         self.handle_command();
-                        std.debug.print("{}\n", .{self.exit});
+                        std.debug.print("{}\n", .{self.staying_alive});
                         self.active_mode = .NORMAL;
                         self.status_line.state.clearAndFree();
                         try self.status_line.state.appendSlice("NORMAL");
@@ -118,6 +113,16 @@ pub fn read_terminal(self: *Self, std_in: std.fs.File) !void {
                     },
                 }
                 try self.add_to_render_q(self.status_line.state.items);
+            },
+            .NORMAL => {
+                switch (buf[0]) {
+                    ':' => {
+                        self.active_mode = .COMMAND;
+                        self.status_line.state.clearAndFree();
+                        try self.status_line.state.append(':');
+                    },
+                    else => {},
+                }
             },
             else => {},
         }
@@ -133,7 +138,7 @@ fn handle_command(self: *Self) void {
     std.debug.print("COMMAND: {any} vs ITEMS: {s} vs AVAILABLE: {any}\n", .{ command, items, known_commands });
     if (command) |real_command| switch (real_command) {
         .QUIT => {
-            self.exit = true;
+            self.staying_alive = true;
         },
         .NEW_CONVERSATION => {},
     };
