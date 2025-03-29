@@ -3,9 +3,9 @@ const shit_os = std.os.windows;
 const posix = std.posix;
 const os_tag = @import("builtin").os.tag;
 
-const Screen = @import("internal/Screen.zig");
-const terminal = @import("internal/terminal.zig");
-const server = @import("internal/tp_server.zig");
+const Screen = @import("Screen.zig");
+const terminal = @import("terminal.zig");
+const server = @import("tp_server.zig");
 
 pub fn main() !void {
     const std_out = std.io.getStdOut();
@@ -16,6 +16,7 @@ pub fn main() !void {
     var gpa = std.heap.DebugAllocator(.{}).init;
     var screen = try Screen.new(gpa.allocator());
     // TODO: REMOVE AFTER CONFIRMING IT WORKS
+    // TODO: HOW THE HELL WE NEED TO COMFIRM THAT?
     screen.active_mode = .COMMAND;
     defer screen.destroy();
 

@@ -5,7 +5,7 @@ const shit_os = std.os.windows;
 const posix = std.posix;
 const assert = std.debug.assert;
 const os_tag = @import("builtin").os.tag;
-const ui_common = @import("../internal/layers/common.zig");
+const ui_common = @import("./layers/common.zig");
 
 const TerminalDimensions = struct { width: i16, height: i16 };
 mutex: std.Thread.Mutex = .{},
@@ -130,7 +130,7 @@ pub fn read_terminal(self: *Self, std_in: std.fs.File) !void {
 fn handle_command(self: *Self) void {
     const items = self.status_line.state.items;
     const command = known_commands.get(items);
-    std.debug.print("COMMAND: {any} vs ITEMS: {s} vs AVAILABLE: {any}\n", .{command, items, known_commands});
+    std.debug.print("COMMAND: {any} vs ITEMS: {s} vs AVAILABLE: {any}\n", .{ command, items, known_commands });
     if (command) |real_command| switch (real_command) {
         .QUIT => {
             self.exit = true;
