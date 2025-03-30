@@ -17,13 +17,13 @@ const STATUS_LINE = "\x1b[{};{}H\x1b[2K\x1b[48;2;251;206;44m\x1b[38;2;192;192;19
 
 mutex: std.Thread.Mutex = .{},
 condition: std.Thread.Condition = .{},
-staying_alive: bool = true,
+exit: bool = false,
 render_q: std.ArrayList(u8),
 terminal_dimensions: TerminalDimensions = undefined,
 
 active_mode: common.MODE = .NORMAL,
 active_layer: common.LAYERS = .LOGIN,
-status_line: StatusLine = .{},
+status_line: std.ArrayList(u8),
 alloc: std.mem.Allocator,
 
 const Self = @This();
@@ -137,16 +137,6 @@ pub fn read_terminal(self: *Self, std_in: fs.File) !void {
                     else => {},
                 }
             },
-            .NORMAL => {
-                switch (buf[0]) {
-                    ':' => {
-                        self.active_mode = .COMMAND;
-                        self.status_line.state.clearAndFree();
-                        try self.status_line.state.append(':');
-                    },
-                    else => {},
-                }
-            },
             else => {},
         }
         if (prev_mode != self.active_mode) {
@@ -161,7 +151,7 @@ fn handle_command(self: *Self) void {
     std.debug.print("COMMAND: {any} vs ITEMS: {s} vs AVAILABLE: {any}\n", .{ command, items, known_commands });
     if (command) |real_command| switch (real_command) {
         .QUIT => {
-            self.staying_alive = true;
+            self.exit = true;
         },
         .NEW_CONVERSATION => {},
     };
