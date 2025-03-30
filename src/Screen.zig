@@ -12,31 +12,22 @@ const Login = @import("../internal/layers/Login.zig");
 
 const TerminalDimensions = struct { width: i16, height: i16 };
 
-/// row;col;text
-const STATUS_LINE = "\x1b[{};{}H\x1b[2K\x1b[48;2;251;206;44m\x1b[38;2;192;192;192m{s}\x1b[0m";
+// row;col;text
+const STATUS_LINE_PATTERN = "\x1b[{};{}H\x1b[2K\x1b[48;2;251;206;44m\x1b[38;2;0;0;0m{s}\x1b[0m";
 
 mutex: std.Thread.Mutex = .{},
 condition: std.Thread.Condition = .{},
 exit: bool = false,
 render_q: std.ArrayList(u8),
 terminal_dimensions: TerminalDimensions = undefined,
+status_line_content_len: usize = 0,
 
 active_mode: common.MODE = .NORMAL,
 active_layer: common.LAYERS = .LOGIN,
-status_line: std.ArrayList(u8) = undefined,
+status_line: []u8 = undefined,
 alloc: std.mem.Allocator,
 
 const Self = @This();
-
-const COMMANDS = enum {
-    QUIT,
-    NEW_CONVERSATION,
-};
-
-var known_commands = std.StaticStringMap(COMMANDS).initComptime(.{
-    .{ ":q", .QUIT },
-    .{ ":new", .NEW_CONVERSATION },
-});
 
 const RenderFlags = struct {
     status_line: bool = true,
@@ -50,19 +41,38 @@ pub fn new(alloc: std.mem.Allocator) !Self {
     return Self{
         .alloc = alloc,
         .render_q = std.ArrayList(u8).init(alloc),
-        .status_line = std.ArrayList(u8).init(alloc),
     };
 }
 
 pub fn destroy(self: *Self) void {
     self.render_q.deinit();
-    self.status_line.deinit();
+    self.alloc.free(self.status_line);
+}
+
+pub fn init_first_frame(self: *Self, stdout: fs.File.Writer) !void {
+    // initialize screen before we start reading from terminal
+    // here we check the connection, pick layer to render (login/main)
+    // clear screen and finally render first frame
+    self.status_line = try self.alloc.alloc(u8, @intCast(self.terminal_dimensions.width));
+    @memset(self.status_line, ' ');
+    try self.render_q.appendSlice("\x1b[2J");
+    try self.change_mode(.NORMAL);
+    try stdout.print("{s}", .{self.render_q.items});
+    self.render_q.clearAndFree();
+}
+
+fn render_status_line(self: Self) ![]u8 {
+    return std.fmt.allocPrint(self.alloc, STATUS_LINE_PATTERN, .{ self.terminal_dimensions.height, 1, self.status_line });
 }
 
 pub fn change_mode(self: *Self, new_mode: common.MODE) !void {
     self.active_mode = new_mode;
-    self.status_line.clearRetainingCapacity();
-    try self.status_line.appendSlice(common.MODE_MAP[@intFromEnum(self.active_mode)]);
+
+    const mode_name = common.MODE_MAP[@intFromEnum(self.active_mode)];
+    @memset(self.status_line[0..self.status_line_content_len], ' ');
+    @memcpy(self.status_line[0..mode_name.len], mode_name);
+    self.status_line_content_len = mode_name.len;
+
     const status_line_content = try self.render_status_line();
     defer self.alloc.free(status_line_content);
     try self.add_to_render_q(status_line_content);
@@ -76,7 +86,8 @@ pub fn add_to_render_q(self: *Self, line: []u8) !void {
 }
 
 fn append_to_command(self: *Self, char: u8) !void {
-    try self.status_line.append(char);
+    self.status_line[self.status_line_content_len] = char;
+    self.status_line_content_len += 1;
     const status_line_content = try self.render_status_line();
     defer self.alloc.free(status_line_content);
     try self.add_to_render_q(status_line_content);
@@ -154,8 +165,8 @@ pub fn read_terminal(self: *Self, std_in: fs.File) !void {
 }
 
 fn handle_command(self: *Self) void {
-    const command = known_commands.get(self.status_line.items);
-    std.debug.print("COMMAND: {any} vs ITEMS: {s} vs AVAILABLE: {any}\n", .{ command, self.status_line.items, known_commands });
+    const command = common.KNOWN_COMMANDS.get(self.status_line[0..self.status_line_content_len]);
+    std.debug.print("COMMAND: {any} vs ITEMS: {s} vs AVAILABLE: {any}\n", .{ command, self.status_line, common.KNOWN_COMMANDS });
     if (command) |real_command| switch (real_command) {
         .QUIT => {
             self.exit = true;
@@ -164,8 +175,4 @@ fn handle_command(self: *Self) void {
             std.debug.print("wtf\n", .{});
         },
     };
-}
-
-fn render_status_line(self: Self) ![]u8 {
-    return std.fmt.allocPrint(self.alloc, STATUS_LINE, .{ self.terminal_dimensions.height, 1, self.status_line.items });
 }

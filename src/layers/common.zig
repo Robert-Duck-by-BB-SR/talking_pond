@@ -1,3 +1,5 @@
+const std = @import("std");
+
 pub const LAYER_TYPE = enum {
     MODAL,
     WINDOW,
@@ -23,10 +25,15 @@ pub const MODE_MAP = [@intFromEnum(MODE.MODES_COUNT)][]const u8{
     ":",
 };
 
-pub const COMMANDS = enum {
+const COMMANDS = enum {
     QUIT,
     NEW_CONVERSATION,
 };
+
+pub const KNOWN_COMMANDS = std.StaticStringMap(COMMANDS).initComptime(.{
+    .{ ":q", .QUIT },
+    .{ ":new", .NEW_CONVERSATION },
+});
 
 pub const BG_KEY = "\x33[48;2;";
 pub const INVERT_STYLES = "\x33[7m";

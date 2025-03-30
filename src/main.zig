@@ -26,21 +26,13 @@ pub fn main() !void {
     defer screen.destroy();
 
     try screen.get_terminal_dimensions(std_out);
-    try stdout.print("", .{});
-    // we don't want that to happend while debbuging
-    // defer stdout.print("\x1b[2J", .{}) catch unreachable;
 
+    // NOTE: we don't want that to happend while debbuging
+    // defer stdout.print("\x1b[2J", .{}) catch unreachable;
+    try screen.init_first_frame(stdout);
     var termos = try terminal.get_termos_with_tea();
     try terminal.start_raw_mode(std_in, std_out, &termos);
     defer terminal.restore_terminal(std_in, std_out, termos);
-
-    // initialize screen before we start reading from terminal
-    // here we check the connection, pick layer to render (login/main)
-    // clear screen and finally render first frame
-    try screen.render_q.appendSlice("\x1b[2J");
-    try screen.change_mode(.NORMAL);
-    try stdout.print("{s}", .{screen.render_q.items});
-    screen.render_q.clearAndFree();
 
     const render_thread = try std.Thread.spawn(.{}, Screen.read_terminal, .{ &screen, std_in });
     defer render_thread.join();
