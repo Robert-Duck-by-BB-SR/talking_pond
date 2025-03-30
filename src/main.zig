@@ -14,6 +14,14 @@ pub fn main() !void {
     const stdout = std_out.writer();
 
     var debug_allocator = std.heap.DebugAllocator(.{}).init;
+    defer {
+        switch (debug_allocator.deinit())  {
+            .ok => {},
+            .leak => {
+                _ = debug_allocator.detectLeaks();
+            },
+        }
+    }
     var screen = try Screen.new(debug_allocator.allocator());
     // TODO: REMOVE AFTER CONFIRMING IT WORKS
     screen.active_mode = .NORMAL;

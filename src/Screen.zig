@@ -61,6 +61,7 @@ pub fn new(alloc: std.mem.Allocator) !Self {
 pub fn destroy(self: *Self) void {
     self.render_q.deinit();
     self.status_line.deinit();
+    known_commands.deinit();
 }
 
 pub fn add_to_render_q(self: *Self, line: []u8) !void {
@@ -168,6 +169,7 @@ pub fn render(self: *Self, stdout: fs.File.Writer) !void {
     if (ready_to_render.status_line) {
         defer ready_to_render.status_line = false;
         const status_line = try self.render_status_line();
+        defer self.alloc.free(status_line);
         try stdout.print("{s}", .{status_line});
     }
     self.render_q.clearAndFree();
