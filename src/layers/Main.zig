@@ -1,20 +1,14 @@
 const std = @import("std");
-
 const common = @import("common.zig");
+const Ponds = @import("main/Ponds.zig");
+const Quacks = @import("main/Quacks.zig");
+const Insert = @import("main/Insert.zig");
 
-const HostField = struct {
-    input: std.ArrayList(u8),
-    const placeholder = "Host";
-};
+ponds: Ponds,
+quacks: Quacks,
+insert: Insert,
+alloc: std.mem.Allocator,
 
-const KeyField = struct {
-    input: std.ArrayList(u8),
-    const placeholder = "Key";
-};
-
-const ErrorLine = struct {
-    error_field: std.ArrayList(u8),
-};
 
 pub fn handle_current_state(mode: *common.MODE, key: u8) void {
     switch (mode) {

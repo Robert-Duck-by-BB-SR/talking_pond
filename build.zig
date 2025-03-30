@@ -20,7 +20,7 @@ pub fn build(b: *std.Build) void {
         .optimize = .Debug,
     });
     const exe = b.addExecutable(.{
-        .name = "tp_zig",
+        .name = "talking_pond",
         .root_module = exe_mod,
     });
 

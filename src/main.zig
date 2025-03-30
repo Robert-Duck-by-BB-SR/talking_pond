@@ -16,26 +16,26 @@ pub fn main() !void {
     var debug_allocator = std.heap.DebugAllocator(.{}).init;
     var screen = try Screen.new(debug_allocator.allocator());
     // TODO: REMOVE AFTER CONFIRMING IT WORKS
-    // TODO: HOW THE HELL WE NEED TO COMFIRM THAT?
-    screen.active_mode = .COMMAND;
+    screen.active_mode = .NORMAL;
     defer screen.destroy();
 
     try screen.get_terminal_dimensions(std_out);
-    try stdout.print("{}\n", .{screen.terminal_dimensions});
+    try stdout.print("\x1b[2J{}\n", .{screen.terminal_dimensions});
+    defer stdout.print("\x1b[2J", .{}) catch unreachable;
 
     var termos = try terminal.get_termos_with_tea();
     try terminal.start_raw_mode(std_in, std_out, &termos);
     defer terminal.restore_terminal(std_in, std_out, termos);
+
+    try screen.status_line.appendSlice("NORMAL");
 
     const render_thread = try std.Thread.spawn(.{}, Screen.read_terminal, .{ &screen, std_in });
     defer render_thread.join();
 
     screen.mutex.lock();
     defer screen.mutex.unlock();
-    while (screen.render_q.items.len == 0) {
+    while (Screen.render_available() and !screen.exit) {
         screen.condition.wait(&screen.mutex);
-        if (screen.staying_alive) break;
-        try stdout.print("\x1b[48;2;25;60;80m{s}\x1b[0m\n", .{screen.render_q.items});
-        screen.render_q.clearAndFree();
+        try screen.render(stdout);
     }
 }
