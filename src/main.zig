@@ -15,7 +15,7 @@ pub fn main() !void {
 
     var debug_allocator = std.heap.DebugAllocator(.{}).init;
     defer {
-        switch (debug_allocator.deinit())  {
+        switch (debug_allocator.deinit()) {
             .ok => {},
             .leak => {
                 _ = debug_allocator.detectLeaks();
@@ -23,27 +23,33 @@ pub fn main() !void {
         }
     }
     var screen = try Screen.new(debug_allocator.allocator());
-    // TODO: REMOVE AFTER CONFIRMING IT WORKS
-    screen.active_mode = .NORMAL;
     defer screen.destroy();
 
     try screen.get_terminal_dimensions(std_out);
-    try stdout.print("\x1b[2J{}\n", .{screen.terminal_dimensions});
-    defer stdout.print("\x1b[2J", .{}) catch unreachable;
+    try stdout.print("", .{});
+    // we don't want that to happend while debbuging
+    // defer stdout.print("\x1b[2J", .{}) catch unreachable;
 
     var termos = try terminal.get_termos_with_tea();
     try terminal.start_raw_mode(std_in, std_out, &termos);
     defer terminal.restore_terminal(std_in, std_out, termos);
 
-    try screen.status_line.appendSlice("NORMAL");
+    // initialize screen before we start reading from terminal
+    // here we check the connection, pick layer to render (login/main)
+    // clear screen and finally render first frame
+    try screen.render_q.appendSlice("\x1b[2J");
+    try screen.change_mode(.NORMAL);
+    try stdout.print("{s}", .{screen.render_q.items});
+    screen.render_q.clearAndFree();
 
     const render_thread = try std.Thread.spawn(.{}, Screen.read_terminal, .{ &screen, std_in });
     defer render_thread.join();
 
     screen.mutex.lock();
     defer screen.mutex.unlock();
-    while (Screen.render_available() and !screen.exit) {
+    while (!screen.exit) {
         screen.condition.wait(&screen.mutex);
-        try screen.render(stdout);
+        try stdout.print("{s}", .{screen.render_q.items});
+        screen.render_q.clearAndFree();
     }
 }

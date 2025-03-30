@@ -12,6 +12,15 @@ pub const MODE = enum {
     NORMAL,
     INSERT,
     COMMAND,
+
+    // DON'T TOUCH IT IS USED IN MODE MAP AS THE LENGTH AND THEREFORE SHOULD BE THE LAST ITEM
+    MODES_COUNT,
+};
+
+pub const MODE_MAP = [@intFromEnum(MODE.MODES_COUNT)][]const u8{
+    "NORMAL",
+    "INSERT",
+    ":",
 };
 
 pub const COMMANDS = enum {

@@ -23,7 +23,7 @@ terminal_dimensions: TerminalDimensions = undefined,
 
 active_mode: common.MODE = .NORMAL,
 active_layer: common.LAYERS = .LOGIN,
-status_line: std.ArrayList(u8),
+status_line: std.ArrayList(u8) = undefined,
 alloc: std.mem.Allocator,
 
 const Self = @This();
@@ -33,8 +33,10 @@ const COMMANDS = enum {
     NEW_CONVERSATION,
 };
 
-// TODO: make it static string map
-var known_commands: std.StringHashMap(common.COMMANDS) = undefined;
+var known_commands = std.StaticStringMap(COMMANDS).initComptime(.{
+    .{ ":q", .QUIT },
+    .{ ":new", .NEW_CONVERSATION },
+});
 
 const RenderFlags = struct {
     status_line: bool = true,
@@ -45,12 +47,6 @@ const RenderFlags = struct {
 
 pub var ready_to_render: RenderFlags = .{};
 pub fn new(alloc: std.mem.Allocator) !Self {
-    // initialize known commands
-    known_commands = std.StringHashMap(common.COMMANDS).init(alloc);
-
-    try known_commands.put(":q", .QUIT);
-    try known_commands.put(":new", .NEW_CONVERSATION);
-
     return Self{
         .alloc = alloc,
         .render_q = std.ArrayList(u8).init(alloc),
@@ -61,7 +57,15 @@ pub fn new(alloc: std.mem.Allocator) !Self {
 pub fn destroy(self: *Self) void {
     self.render_q.deinit();
     self.status_line.deinit();
-    known_commands.deinit();
+}
+
+pub fn change_mode(self: *Self, new_mode: common.MODE) !void {
+    self.active_mode = new_mode;
+    self.status_line.clearRetainingCapacity();
+    try self.status_line.appendSlice(common.MODE_MAP[@intFromEnum(self.active_mode)]);
+    const status_line_content = try self.render_status_line();
+    defer self.alloc.free(status_line_content);
+    try self.add_to_render_q(status_line_content);
 }
 
 pub fn add_to_render_q(self: *Self, line: []u8) !void {
@@ -69,6 +73,13 @@ pub fn add_to_render_q(self: *Self, line: []u8) !void {
     defer self.mutex.unlock();
     try self.render_q.appendSlice(line);
     self.condition.signal();
+}
+
+fn append_to_command(self: *Self, char: u8) !void {
+    try self.status_line.append(char);
+    const status_line_content = try self.render_status_line();
+    defer self.alloc.free(status_line_content);
+    try self.add_to_render_q(status_line_content);
 }
 
 pub fn get_terminal_dimensions(self: *Self, std_out: fs.File) !void {
@@ -118,22 +129,18 @@ pub fn read_terminal(self: *Self, std_in: fs.File) !void {
                 switch (curr_char) {
                     '\r' => {
                         self.handle_command();
-                        self.active_mode = .NORMAL;
-                        self.status_line.clearAndFree();
-                        try self.status_line.appendSlice("NORMAL");
+                        try self.change_mode(.NORMAL);
                     },
                     else => {
-                        try self.status_line.append(curr_char);
+                        try self.append_to_command(curr_char);
                     },
                 }
-                try self.add_to_render_q(self.status_line.items);
             },
+            // FIXME: MOVE THAT TO LAYER HANDLERS
             .NORMAL => {
                 switch (curr_char) {
                     ':' => {
-                        self.active_mode = .COMMAND;
-                        self.status_line.clearAndFree();
-                        try self.status_line.append(':');
+                        try self.change_mode(.COMMAND);
                     },
                     else => {},
                 }
@@ -147,38 +154,18 @@ pub fn read_terminal(self: *Self, std_in: fs.File) !void {
 }
 
 fn handle_command(self: *Self) void {
-    const items = self.status_line.items;
-    const command = known_commands.get(items);
-    std.debug.print("COMMAND: {any} vs ITEMS: {s} vs AVAILABLE: {any}\n", .{ command, items, known_commands });
+    const command = known_commands.get(self.status_line.items);
+    std.debug.print("COMMAND: {any} vs ITEMS: {s} vs AVAILABLE: {any}\n", .{ command, self.status_line.items, known_commands });
     if (command) |real_command| switch (real_command) {
         .QUIT => {
             self.exit = true;
         },
-        .NEW_CONVERSATION => {},
+        .NEW_CONVERSATION => {
+            std.debug.print("wtf\n", .{});
+        },
     };
 }
 
-pub fn render(self: *Self, stdout: fs.File.Writer) !void {
-    if (!ready_to_render.partial) {
-        ready_to_render.partial = true;
-        try stdout.print("\x1b[2J", .{});
-    }
-
-    try stdout.print("{s}", .{self.render_q.items});
-
-    if (ready_to_render.status_line) {
-        defer ready_to_render.status_line = false;
-        const status_line = try self.render_status_line();
-        defer self.alloc.free(status_line);
-        try stdout.print("{s}", .{status_line});
-    }
-    self.render_q.clearAndFree();
-}
-
 fn render_status_line(self: Self) ![]u8 {
-    return std.fmt.allocPrint(self.alloc, STATUS_LINE, .{ self.terminal_dimensions.height, 0, self.status_line.items });
-}
-
-pub fn render_available() bool {
-    return ready_to_render.login or ready_to_render.main or ready_to_render.status_line;
+    return std.fmt.allocPrint(self.alloc, STATUS_LINE, .{ self.terminal_dimensions.height, 1, self.status_line.items });
 }
