@@ -47,4 +47,4 @@ pub const CLEAR_ROW = "\x33[2K";
 pub const HIDDEN_CURSOR = "\x33[?25l";
 pub const VISIBLE_CURSOR = "\x33[?25h";
 
-const Position = struct { row: i16, col: i16 };
+pub const Dimensions = struct { width: i16, height: i16 };

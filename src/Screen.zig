@@ -10,8 +10,6 @@ const common = @import("layers/common.zig");
 const ui_common = @import("../internal/layers/common.zig");
 const Login = @import("../internal/layers/Login.zig");
 
-const TerminalDimensions = struct { width: i16, height: i16 };
-
 // row;col;text
 const STATUS_LINE_PATTERN = "\x1b[{};{}H\x1b[2K\x1b[48;2;251;206;44m\x1b[38;2;0;0;0m{s}\x1b[0m";
 
@@ -19,12 +17,12 @@ mutex: std.Thread.Mutex = .{},
 condition: std.Thread.Condition = .{},
 exit: bool = false,
 render_q: std.ArrayList(u8),
-terminal_dimensions: TerminalDimensions = undefined,
-status_line_content_len: usize = 0,
+terminal_dimensions: common.Dimensions = undefined,
 
 active_mode: common.MODE = .NORMAL,
 active_layer: common.LAYERS = .LOGIN,
 status_line: []u8 = undefined,
+status_line_content_len: usize = 0,
 alloc: std.mem.Allocator,
 
 const Self = @This();
