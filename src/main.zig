@@ -44,5 +44,4 @@ pub fn main() !void {
         try stdout.print("{s}", .{screen.render_q.items});
         screen.render_q.clearAndFree();
     }
-
 }
