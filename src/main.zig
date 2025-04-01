@@ -19,7 +19,6 @@ pub fn main() !void {
     defer arena.deinit();
 
     var screen = try Screen.create(arena.allocator());
-
     try screen.get_terminal_dimensions(std_out);
 
     // NOTE: we don't want that to happend while debbuging
@@ -28,9 +27,6 @@ pub fn main() !void {
 
     var termos = try terminal.get_termos_with_tea();
     try terminal.start_raw_mode(std_in, std_out, &termos);
-
-    // var ponds = try Ponds.new(debug_allocator.allocator(), &screen);
-    // try ponds.render_test();
 
     defer terminal.restore_terminal(std_in, std_out, termos);
 

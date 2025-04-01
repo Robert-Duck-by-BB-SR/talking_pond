@@ -17,7 +17,7 @@ pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions) 
     return Self{
         .alloc = alloc,
         .position = .{
-            .row = 0,
+            .row = 1,
             .col = @divFloor(terminal_dimensions.width * 35, 100),
         },
         .dimensions = .{
@@ -29,11 +29,12 @@ pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions) 
 
 pub fn init_first_frame(self: *Self) !void {
     self.rows = try self.alloc.alloc(Row, @intCast(self.dimensions.height));
+    const content: []u8 = try self.alloc.alloc(u8, @intCast(self.dimensions.width));
+    @memset(content, ' ');
+
     for (self.rows, 0..) |*row, i| {
         // \x1b[<i>;<self.position.>H
         row.cursor = try std.fmt.allocPrint(self.alloc, "\x1b[{};{}H", .{ i + 1, self.position.col });
-        const content: []u8 = try self.alloc.alloc(u8, @intCast(self.dimensions.width));
-        @memset(content, ' ');
         row.content = std.ArrayList(u8).fromOwnedSlice(self.alloc, content);
     }
 }
