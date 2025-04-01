@@ -4,7 +4,7 @@ const posix = std.posix;
 const os_tag = @import("builtin").os.tag;
 
 const Screen = @import("Screen.zig");
-const Ponds = @import("./layers/main/Ponds.zig");
+const Ponds = @import("layers/main/Ponds.zig");
 const terminal = @import("terminal.zig");
 const server = @import("tp_server.zig");
 
@@ -14,17 +14,11 @@ pub fn main() !void {
     const std_in = std.io.getStdIn();
     const stdout = std_out.writer();
 
-    var debug_allocator = std.heap.DebugAllocator(.{}).init;
-    defer {
-        switch (debug_allocator.deinit()) {
-            .ok => {},
-            .leak => {
-                _ = debug_allocator.detectLeaks();
-            },
-        }
-    }
-    var screen = try Screen.new(debug_allocator.allocator());
-    defer screen.destroy();
+    var gpa = std.heap.GeneralPurposeAllocator(.{}).init;
+    var arena = std.heap.ArenaAllocator.init(gpa.allocator());
+    defer arena.deinit();
+
+    var screen = try Screen.create(arena.allocator());
 
     try screen.get_terminal_dimensions(std_out);
 
@@ -35,9 +29,8 @@ pub fn main() !void {
     var termos = try terminal.get_termos_with_tea();
     try terminal.start_raw_mode(std_in, std_out, &termos);
 
-    var ponds = try Ponds.new(debug_allocator.allocator(), &screen);
-    try ponds.render_test();
-    defer screen.destroy();
+    // var ponds = try Ponds.new(debug_allocator.allocator(), &screen);
+    // try ponds.render_test();
 
     defer terminal.restore_terminal(std_in, std_out, termos);
 
@@ -51,4 +44,5 @@ pub fn main() !void {
         try stdout.print("{s}", .{screen.render_q.items});
         screen.render_q.clearAndFree();
     }
+
 }

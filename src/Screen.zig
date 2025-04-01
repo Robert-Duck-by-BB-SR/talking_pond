@@ -7,8 +7,9 @@ const assert = std.debug.assert;
 const os_tag = @import("builtin").os.tag;
 const common = @import("layers/common.zig");
 
-const ui_common = @import("../internal/layers/common.zig");
-const Login = @import("../internal/layers/Login.zig");
+const ui_common = @import("layers/common.zig");
+const Login = @import("layers/Login.zig");
+const Quacks = @import("layers/main/Quacks.zig");
 
 // row;col;text
 const STATUS_LINE_PATTERN = "\x1b[{};{}H\x1b[2K\x1b[48;2;251;206;44m\x1b[38;2;0;0;0m{s}\x1b[0m";
@@ -32,28 +33,31 @@ const RenderFlags = struct {
     partial: bool = false,
     login: bool = false,
     main: bool = false,
-};
+}
+;
 
 pub var ready_to_render: RenderFlags = .{};
-pub fn new(alloc: std.mem.Allocator) !Self {
+pub fn create(alloc: std.mem.Allocator) !Self {
     return Self{
         .alloc = alloc,
         .render_q = std.ArrayList(u8).init(alloc),
     };
 }
 
-pub fn destroy(self: *Self) void {
-    self.render_q.deinit();
-    self.alloc.free(self.status_line);
-}
 
+/// initialize screen before we start reading from terminal
+/// here we check the connection, pick layer to render (login/main)
+/// clear screen and finally render first frame
 pub fn init_first_frame(self: *Self, stdout: fs.File.Writer) !void {
-    // initialize screen before we start reading from terminal
-    // here we check the connection, pick layer to render (login/main)
-    // clear screen and finally render first frame
+    var quacks = Quacks.create(self.alloc, self.terminal_dimensions);
+    try quacks.init_first_frame();
+    const qslice = try quacks.render();
+
     self.status_line = try self.alloc.alloc(u8, @intCast(self.terminal_dimensions.width));
     @memset(self.status_line, ' ');
     try self.render_q.appendSlice("\x1b[2J");
+    try self.render_q.appendSlice("\x1b[48;2;155;100;0m");
+    try self.render_q.appendSlice(qslice);
     try self.change_mode(.NORMAL);
     try stdout.print("{s}", .{self.render_q.items});
     self.render_q.clearAndFree();
