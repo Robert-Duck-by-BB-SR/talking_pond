@@ -1,12 +1,12 @@
 const std = @import("std");
-const Screen = @import("../../Screen.zig");
+const RenderQ = @import("../../RenderQueue.zig");
 const common = @import("../common.zig");
 
 dimensions: common.Dimensions = undefined,
 position: common.Position = undefined,
 rows: []Row = undefined,
-terminal_dimensions: *common.Dimensions = undefined,
 alloc: std.mem.Allocator,
+render_q: *RenderQ,
 
 const Self = @This();
 
@@ -15,8 +15,16 @@ const Row = struct {
     content: std.ArrayList(u8) = undefined,
 };
 
-pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions) Self {
-    return Self{ .alloc = alloc, .position = .{ .col = 1, .row = 1 }, .dimensions = .{ .width = @divFloor(terminal_dimensions.width * 30, 100), .height = terminal_dimensions.height - 1 } };
+pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, render_q: *RenderQ) Self {
+    return Self{
+        .render_q = render_q,
+        .alloc = alloc,
+        .position = .{ .col = 1, .row = 1 },
+        .dimensions = .{
+            .width = @divFloor(terminal_dimensions.width * 30, 100),
+            .height = terminal_dimensions.height - 1,
+        },
+    };
 }
 
 pub fn init_first_frame(self: *Self) !void {
@@ -35,10 +43,11 @@ pub fn init_first_frame(self: *Self) !void {
     }
 }
 
-pub fn render(self: Self) ![]u8 {
+pub fn render(self: Self) !void {
     var ponds: std.ArrayList(u8) = .init(self.alloc);
     for (self.rows) |row| {
         try ponds.writer().print("{s}{s}", .{ row.cursor, row.content.items });
     }
-    return ponds.toOwnedSlice();
+    const slice = try ponds.toOwnedSlice();
+    try self.render_q.add_to_render_q(slice);
 }

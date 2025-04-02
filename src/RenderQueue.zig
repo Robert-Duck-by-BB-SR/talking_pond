@@ -16,6 +16,12 @@ pub fn create(alloc: std.mem.Allocator) !Self {
 pub fn add_to_render_q(self: *Self, line: []u8) !void {
     self.mutex.lock();
     defer self.mutex.unlock();
-    try self.render_q.appendSlice(line);
+    try self.queue.appendSlice(line);
     self.condition.signal();
+}
+
+pub fn render(self: *Self, stdout: std.fs.File.Writer) !void {
+    self.condition.wait(&self.mutex);
+    try stdout.print("{s}", .{self.queue.items});
+    self.queue.clearAndFree();
 }

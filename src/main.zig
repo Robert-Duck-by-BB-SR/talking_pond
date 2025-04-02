@@ -33,11 +33,9 @@ pub fn main() !void {
     const render_thread = try std.Thread.spawn(.{}, Screen.read_terminal, .{ &screen, std_in });
     defer render_thread.join();
 
-    screen.mutex.lock();
-    defer screen.mutex.unlock();
+    screen.render_q.mutex.lock();
+    defer screen.render_q.mutex.unlock();
     while (!screen.exit) {
-        screen.condition.wait(&screen.mutex);
-        try stdout.print("{s}", .{screen.render_q.items});
-        screen.render_q.clearAndFree();
+        try screen.render_q.render(stdout);
     }
 }

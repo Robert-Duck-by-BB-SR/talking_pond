@@ -11,15 +11,14 @@ const ui_common = @import("layers/common.zig");
 const Login = @import("layers/Login.zig");
 const Quacks = @import("layers/main/Quacks.zig");
 const Ponds = @import("layers/main/Ponds.zig");
+const RenderQ = @import("RenderQueue.zig");
 
 // row;col;text
 const STATUS_LINE_PATTERN = "\x1b[{};{}H\x1b[2K\x1b[48;2;251;206;44m\x1b[38;2;0;0;0m{s}\x1b[0m";
 
-mutex: std.Thread.Mutex = .{},
-condition: std.Thread.Condition = .{},
-exit: bool = false,
-render_q: std.ArrayList(u8),
 terminal_dimensions: common.Dimensions = undefined,
+exit: bool = false,
+render_q: RenderQ,
 
 active_mode: common.MODE = .NORMAL,
 active_layer: common.LAYERS = .LOGIN,
@@ -40,7 +39,9 @@ pub var ready_to_render: RenderFlags = .{};
 pub fn create(alloc: std.mem.Allocator) !Self {
     return Self{
         .alloc = alloc,
-        .render_q = std.ArrayList(u8).init(alloc),
+        .render_q = .{
+            .queue = std.ArrayList(u8).init(alloc),
+        },
     };
 }
 
@@ -48,23 +49,29 @@ pub fn create(alloc: std.mem.Allocator) !Self {
 /// here we check the connection, pick layer to render (login/main)
 /// clear screen and finally render first frame
 pub fn init_first_frame(self: *Self, stdout: fs.File.Writer) !void {
-    var ponds = Ponds.create(self.alloc, self.terminal_dimensions);
+    var ponds = Ponds.create(
+        self.alloc,
+        self.terminal_dimensions,
+        &self.render_q,
+    );
     try ponds.init_first_frame();
-    const ponds_slice = try ponds.render();
 
-    var quacks = Quacks.create(self.alloc, self.terminal_dimensions);
+    var quacks = Quacks.create(
+        self.alloc,
+        self.terminal_dimensions,
+        &self.render_q,
+    );
     try quacks.init_first_frame();
-    const quacks_slice = try quacks.render();
 
     self.status_line = try self.alloc.alloc(u8, @intCast(self.terminal_dimensions.width));
     @memset(self.status_line, ' ');
-    try self.render_q.appendSlice("\x1b[2J");
-    try self.render_q.appendSlice("\x1b[48;2;155;100;0m");
-    try self.render_q.appendSlice(ponds_slice);
-    try self.render_q.appendSlice(quacks_slice);
+    try self.render_q.queue.appendSlice("\x1b[2J");
+    try self.render_q.queue.appendSlice("\x1b[48;2;155;100;0m");
+    try ponds.render();
+    try quacks.render();
     try self.change_mode(.NORMAL);
-    try stdout.print("{s}", .{self.render_q.items});
-    self.render_q.clearAndFree();
+    try stdout.print("{s}", .{self.render_q.queue.items});
+    self.render_q.queue.clearAndFree();
 }
 
 fn render_status_line(self: Self) ![]u8 {
@@ -81,14 +88,7 @@ pub fn change_mode(self: *Self, new_mode: common.MODE) !void {
 
     const status_line_content = try self.render_status_line();
     defer self.alloc.free(status_line_content);
-    try self.add_to_render_q(status_line_content);
-}
-
-pub fn add_to_render_q(self: *Self, line: []u8) !void {
-    self.mutex.lock();
-    defer self.mutex.unlock();
-    try self.render_q.appendSlice(line);
-    self.condition.signal();
+    try self.render_q.add_to_render_q(status_line_content);
 }
 
 fn append_to_command(self: *Self, char: u8) !void {
@@ -96,7 +96,7 @@ fn append_to_command(self: *Self, char: u8) !void {
     self.status_line_content_len += 1;
     const status_line_content = try self.render_status_line();
     defer self.alloc.free(status_line_content);
-    try self.add_to_render_q(status_line_content);
+    try self.render_q.add_to_render_q(status_line_content);
 }
 
 pub fn get_terminal_dimensions(self: *Self, std_out: fs.File) !void {
@@ -136,7 +136,7 @@ pub fn read_terminal(self: *Self, std_in: fs.File) !void {
         // FIXME: remove later
         if (curr_char == 3) {
             self.exit = true;
-            self.condition.signal();
+            self.render_q.condition.signal();
             return;
         }
 
