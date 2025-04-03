@@ -50,6 +50,8 @@ pub const VISIBLE_CURSOR = "\x1b[?25h";
 pub const Dimensions = struct { width: i16, height: i16 };
 pub const Position = struct { row: i16, col: i16 };
 
+pub const PONDS_SIDEBAR_SIZE: i16 = 70;
+
 pub const NormalBorder = struct {
     pub const HORIZONTAL = "─";
     pub const VERTICAL = "│";

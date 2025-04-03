@@ -21,7 +21,7 @@ pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, 
         .alloc = alloc,
         .position = .{ .col = 1, .row = 1 },
         .dimensions = .{
-            .width = @divFloor(terminal_dimensions.width * 30, 100),
+            .width = common.PONDS_SIDEBAR_SIZE,
             .height = terminal_dimensions.height - 1,
         },
     };

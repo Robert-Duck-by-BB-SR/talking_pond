@@ -26,10 +26,10 @@ pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, 
         .alloc = alloc,
         .position = .{
             .row = 1,
-            .col = @divFloor(terminal_dimensions.width * 30, 100),
+            .col = common.PONDS_SIDEBAR_SIZE + 1,
         },
         .dimensions = .{
-            .width = @divFloor(terminal_dimensions.width * 70, 100),
+            .width = terminal_dimensions.width - common.PONDS_SIDEBAR_SIZE - 1,
             // 6 = 1 (status line) + 2 (top and bottom border of input field) + 3 (lines for actual input)
             .height = terminal_dimensions.height - 6,
         },
@@ -39,7 +39,6 @@ pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, 
 pub fn init_first_frame(self: *Self) !void {
     self.rows = try self.alloc.alloc(Row, @intCast(self.dimensions.height));
     const width: usize = @intCast(self.dimensions.width - 2);
-
 
     // NOTE: TODO: now, after initiallization we will only have to replace the border with another kind (Normal|Bold|Rounded?)
     // and retain the capacity, which means no additional allocations needed
