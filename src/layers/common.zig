@@ -35,17 +35,27 @@ pub const KNOWN_COMMANDS = std.StaticStringMap(COMMANDS).initComptime(.{
     .{ ":new", .NEW_CONVERSATION },
 });
 
-pub const BG_KEY = "\x33[48;2;";
-pub const INVERT_STYLES = "\x33[7m";
-pub const RED_COLOR = "\x33[31m;";
-pub const RESET_STYLES = "\x33[0m";
+pub const BG_KEY = "\x1b[48;2;";
+pub const INVERT_STYLES = "\x1b[7m";
+pub const RED_COLOR = "\x1b[31m;";
+pub const RESET_STYLES = "\x1b[0m";
 
-pub const CLEAR_SCREEN = "\x33[2J";
-pub const MOVE_CURSOR_TO_THE_BENINGING = "\x33[H";
-pub const MOVE_CURSOR_TO_POSITION = "\x33[%d;%dH";
-pub const CLEAR_ROW = "\x33[2K";
-pub const HIDDEN_CURSOR = "\x33[?25l";
-pub const VISIBLE_CURSOR = "\x33[?25h";
+pub const CLEAR_SCREEN = "\x1b[2J";
+pub const MOVE_CURSOR_TO_THE_BENINGING = "\x1b[H";
+pub const MOVE_CURSOR_TO_POSITION = "\x1b[%d;%dH";
+pub const CLEAR_ROW = "\x1b[2K";
+pub const HIDDEN_CURSOR = "\x1b[?25l";
+pub const VISIBLE_CURSOR = "\x1b[?25h";
 
 pub const Dimensions = struct { width: i16, height: i16 };
 pub const Position = struct { row: i16, col: i16 };
+
+pub const NormalBorder = struct {
+    pub const HORIZONTAL = "─";
+    pub const VERTICAL = "│";
+
+    pub const TOP_LEFT = "┌";
+    pub const TOP_RIGHT = "┐";
+    pub const BOTTOM_LEFT = "└";
+    pub const BOTTOM_RIGHT = "┘";
+};
