@@ -39,31 +39,9 @@ pub fn init_first_frame(self: *Self) !void {
 
     // NOTE: TODO: now, after initiallization we will only have to replace the border with another kind (Normal|Bold|Rounded?)
     // and retain the capacity, which means no additional allocations needed
-    var horizontal_border: std.ArrayList(u8) = try .initCapacity(self.alloc, width * common.theme.border.HORIZONTAL.len);
-    render_utils.generate_top_border_with_title(self.dimensions.width, "QUACKS", &horizontal_border);
-    const top_border = try std.fmt.allocPrint(
-        self.alloc,
-        "{s}{s}{s}{s}",
-        .{
-            common.theme.border.TOP_LEFT,
-            horizontal_border.items,
-            common.theme.border.TOP_RIGHT,
-            common.RESET_STYLES,
-        },
-    );
-
-    render_utils.generate_bottom_border(self.dimensions.width, &horizontal_border);
-    const bottom_border = try std.fmt.allocPrint(
-        self.alloc,
-        "{s}{s}{s}{s}",
-        .{
-            common.theme.border.BOTTOM_LEFT,
-            horizontal_border.items,
-            common.theme.border.BOTTOM_RIGHT,
-            common.RESET_STYLES,
-        },
-    );
-
+    var horizontal_border_list: std.ArrayList(u8) = try .initCapacity(self.alloc, width * common.theme.border.HORIZONTAL.len);
+    const top_border = try render_utils.generate_border_top_with_title(self.alloc, self.dimensions.width, "QUACKS", &horizontal_border_list);
+    const bottom_border = try render_utils.generate_border_bottom(self.alloc, self.dimensions.width, &horizontal_border_list);
     const bg_mid = try self.alloc.alloc(u8, width);
     @memset(bg_mid, ' ');
     const bg = try std.fmt.allocPrint(
