@@ -15,10 +15,6 @@ const Row = struct {
     content: std.ArrayList(u8) = undefined,
 };
 
-// NOTE: temporary
-const font_color = "\x1b[38;2;192;192;192m";
-const background_color = "\x1b[48;2;25;25;25m";
-
 // FIXME: dimensions kinda goofy
 pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, render_q: *RenderQ) Self {
     return Self{
@@ -99,7 +95,7 @@ pub fn init_first_frame(self: *Self) !void {
 pub fn render(self: Self) !void {
     var quacks: std.ArrayList(u8) = .init(self.alloc);
     for (self.rows) |row| {
-        try quacks.writer().print("{s}{s}{s}{s}", .{ row.cursor, font_color, background_color, row.content.items });
+        try quacks.writer().print("{s}{s}{s}{s}", .{ row.cursor, common.PRIMARY_THEME.font_color, common.PRIMARY_THEME.background_color, row.content.items });
     }
     const slice = try quacks.toOwnedSlice();
     try self.render_q.add_to_render_q(slice);

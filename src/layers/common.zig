@@ -50,7 +50,7 @@ pub const VISIBLE_CURSOR = "\x1b[?25h";
 pub const Dimensions = struct { width: i16, height: i16 };
 pub const Position = struct { row: i16, col: i16 };
 
-pub const PONDS_SIDEBAR_SIZE: i16 = 70;
+pub const PONDS_SIDEBAR_SIZE: i16 = 45;
 
 pub const NormalBorder = struct {
     pub const HORIZONTAL = "─";
@@ -60,4 +60,9 @@ pub const NormalBorder = struct {
     pub const TOP_RIGHT = "┐";
     pub const BOTTOM_LEFT = "└";
     pub const BOTTOM_RIGHT = "┘";
+};
+
+pub const PRIMARY_THEME = struct {
+    pub const font_color = "\x1b[38;2;192;192;192m";
+    pub const background_color = "\x1b[48;2;25;25;25m";
 };
