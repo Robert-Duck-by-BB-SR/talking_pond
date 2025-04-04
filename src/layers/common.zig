@@ -62,7 +62,8 @@ pub const NormalBorder = struct {
     pub const BOTTOM_RIGHT = "┘";
 };
 
-pub const PRIMARY_THEME = struct {
+pub const theme = struct {
     pub const font_color = "\x1b[38;2;192;192;192m";
     pub const background_color = "\x1b[48;2;25;25;25m";
+    pub const border_style = NormalBorder;
 };

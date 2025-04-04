@@ -33,20 +33,20 @@ pub fn init_first_frame(self: *Self) !void {
 
     // NOTE: TODO: now, after initiallization we will only have to replace the border with another kind (Normal|Bold|Rounded?)
     // and retain the capacity, which means no additional allocations needed
-    var horizontal_border: std.ArrayList(u8) = try .initCapacity(self.alloc, width * common.NormalBorder.HORIZONTAL.len);
+    var horizontal_border: std.ArrayList(u8) = try .initCapacity(self.alloc, width * common.theme.border_style.HORIZONTAL.len);
     var j: usize = 0;
     while (j < self.dimensions.width - 2) {
         defer j += 1;
-        horizontal_border.appendSliceAssumeCapacity(common.NormalBorder.HORIZONTAL);
+        horizontal_border.appendSliceAssumeCapacity(common.theme.border_style.HORIZONTAL);
     }
 
     const top_border = try std.fmt.allocPrint(
         self.alloc,
         "{s}{s}{s}{s}",
         .{
-            common.NormalBorder.TOP_LEFT,
+            common.theme.border_style.TOP_LEFT,
             horizontal_border.items,
-            common.NormalBorder.TOP_RIGHT,
+            common.theme.border_style.TOP_RIGHT,
             common.RESET_STYLES,
         },
     );
@@ -55,9 +55,9 @@ pub fn init_first_frame(self: *Self) !void {
         self.alloc,
         "{s}{s}{s}{s}",
         .{
-            common.NormalBorder.BOTTOM_LEFT,
+            common.theme.border_style.BOTTOM_LEFT,
             horizontal_border.items,
-            common.NormalBorder.BOTTOM_RIGHT,
+            common.theme.border_style.BOTTOM_RIGHT,
             common.RESET_STYLES,
         },
     );
@@ -68,9 +68,9 @@ pub fn init_first_frame(self: *Self) !void {
         self.alloc,
         "{s}{s}{s}{s}",
         .{
-            common.NormalBorder.VERTICAL,
+            common.theme.border_style.VERTICAL,
             bg_mid,
-            common.NormalBorder.VERTICAL,
+            common.theme.border_style.VERTICAL,
             common.RESET_STYLES,
         },
     );
@@ -90,7 +90,7 @@ pub fn init_first_frame(self: *Self) !void {
 pub fn render(self: Self) !void {
     var ponds: std.ArrayList(u8) = .init(self.alloc);
     for (self.rows) |row| {
-        try ponds.writer().print("{s}{s}{s}{s}", .{ row.cursor, common.PRIMARY_THEME.font_color, common.PRIMARY_THEME.background_color, row.content.items });
+        try ponds.writer().print("{s}{s}{s}{s}", .{ row.cursor, common.theme.font_color, common.theme.background_color, row.content.items });
     }
     const slice = try ponds.toOwnedSlice();
     try self.render_q.add_to_render_q(slice);
