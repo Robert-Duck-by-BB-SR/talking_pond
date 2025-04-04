@@ -1,6 +1,7 @@
 const std = @import("std");
 const RenderQ = @import("../../RenderQueue.zig");
 const common = @import("../common.zig");
+const render_utils = @import("../render_utils.zig");
 
 dimensions: common.Dimensions = undefined,
 position: common.Position = undefined,
@@ -33,31 +34,27 @@ pub fn init_first_frame(self: *Self) !void {
 
     // NOTE: TODO: now, after initiallization we will only have to replace the border with another kind (Normal|Bold|Rounded?)
     // and retain the capacity, which means no additional allocations needed
-    var horizontal_border: std.ArrayList(u8) = try .initCapacity(self.alloc, width * common.theme.border_style.HORIZONTAL.len);
-    var j: usize = 0;
-    while (j < self.dimensions.width - 2) {
-        defer j += 1;
-        horizontal_border.appendSliceAssumeCapacity(common.theme.border_style.HORIZONTAL);
-    }
-
+    var horizontal_border_list: std.ArrayList(u8) = try .initCapacity(self.alloc, width * common.theme.border.HORIZONTAL.len);
+    render_utils.generate_top_border_with_title(self.dimensions.width, "PONDS", &horizontal_border_list);
     const top_border = try std.fmt.allocPrint(
         self.alloc,
         "{s}{s}{s}{s}",
         .{
-            common.theme.border_style.TOP_LEFT,
-            horizontal_border.items,
-            common.theme.border_style.TOP_RIGHT,
+            common.theme.border.TOP_LEFT,
+            horizontal_border_list.items,
+            common.theme.border.TOP_RIGHT,
             common.RESET_STYLES,
         },
     );
 
+    render_utils.generate_bottom_border(self.dimensions.width, &horizontal_border_list);
     const bottom_border = try std.fmt.allocPrint(
         self.alloc,
         "{s}{s}{s}{s}",
         .{
-            common.theme.border_style.BOTTOM_LEFT,
-            horizontal_border.items,
-            common.theme.border_style.BOTTOM_RIGHT,
+            common.theme.border.BOTTOM_LEFT,
+            horizontal_border_list.items,
+            common.theme.border.BOTTOM_RIGHT,
             common.RESET_STYLES,
         },
     );
@@ -68,9 +65,9 @@ pub fn init_first_frame(self: *Self) !void {
         self.alloc,
         "{s}{s}{s}{s}",
         .{
-            common.theme.border_style.VERTICAL,
+            common.theme.border.VERTICAL,
             bg_mid,
-            common.theme.border_style.VERTICAL,
+            common.theme.border.VERTICAL,
             common.RESET_STYLES,
         },
     );
