@@ -5,7 +5,7 @@ const render_utils = @import("../render_utils.zig");
 
 dimensions: common.Dimensions,
 position: common.Position,
-rows: []Row = undefined,
+render_rows: []Row = undefined,
 render_q: *RenderQ,
 alloc: std.mem.Allocator,
 
@@ -34,7 +34,7 @@ pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, 
 }
 
 pub fn init_first_frame(self: *Self) !void {
-    self.rows = try self.alloc.alloc(Row, @intCast(self.dimensions.height));
+    self.render_rows = try self.alloc.alloc(Row, @intCast(self.dimensions.height));
     const width: usize = @intCast(self.dimensions.width - 2);
 
     // NOTE: TODO: now, after initiallization we will only have to replace the border with another kind (Normal|Bold|Rounded?)
@@ -55,11 +55,11 @@ pub fn init_first_frame(self: *Self) !void {
         },
     );
 
-    for (self.rows, 0..) |*row, i| {
+    for (self.render_rows, 0..) |*row, i| {
         row.cursor = try std.fmt.allocPrint(self.alloc, "\x1b[{};{}H", .{ i + 1, self.position.col });
         if (i == 0) {
             row.content = std.ArrayList(u8).fromOwnedSlice(self.alloc, top_border);
-        } else if (i == self.rows.len - 1) {
+        } else if (i == self.render_rows.len - 1) {
             row.content = std.ArrayList(u8).fromOwnedSlice(self.alloc, bottom_border);
         } else {
             row.content = std.ArrayList(u8).fromOwnedSlice(self.alloc, bg);
@@ -69,7 +69,7 @@ pub fn init_first_frame(self: *Self) !void {
 
 pub fn render(self: Self) !void {
     var quacks: std.ArrayList(u8) = .init(self.alloc);
-    for (self.rows) |row| {
+    for (self.render_rows) |row| {
         try quacks.writer().print("{s}{s}{s}{s}", .{ row.cursor, common.theme.font_color, common.theme.background_color, row.content.items });
     }
     const slice = try quacks.toOwnedSlice();

@@ -42,7 +42,7 @@ pub const RESET_STYLES = "\x1b[0m";
 
 pub const CLEAR_SCREEN = "\x1b[2J";
 pub const MOVE_CURSOR_TO_THE_BENINGING = "\x1b[H";
-pub const MOVE_CURSOR_TO_POSITION = "\x1b[%d;%dH";
+pub const MOVE_CURSOR_TO_POSITION = "\x1b[{};{}H";
 pub const CLEAR_ROW = "\x1b[2K";
 pub const HIDDEN_CURSOR = "\x1b[?25l";
 pub const VISIBLE_CURSOR = "\x1b[?25h";
