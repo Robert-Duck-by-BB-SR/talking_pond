@@ -18,23 +18,24 @@ const Row = struct {
 };
 
 const PondItem = struct {
-    ducks_count: u8,
+    id: u8,
     has_update: bool,
     title: []const u8 = undefined,
 };
-
-const duck_count_label = "Ducks: ";
-const notification_ico = "\u{25FC}";
 
 const Self = @This();
 
 pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, render_q: *RenderQ) !Self {
     // Note: min capacity for ArrayList is total height / 2 because pond item is 2 rows height
     var ponds_list: std.ArrayList(PondItem) = try .initCapacity(alloc, @intFromFloat(@as(f16, @floatFromInt(terminal_dimensions.height)) * 0.5));
-    const pond_item_one: PondItem = .{ .title = "YAPPING IS BACK", .ducks_count = 3, .has_update = false };
-    const pond_item_two: PondItem = .{ .title = "HELL YEAH", .ducks_count = 2, .has_update = true };
+    const pond_item_one: PondItem = .{ .id = 1, .title = "YAPPING IS BACK", .has_update = false };
+    const pond_item_two: PondItem = .{ .id = 2, .title = "HELL YEAH", .has_update = true };
+    const pond_item_three: PondItem = .{ .id = 3, .title = "Babagi with a capital G", .has_update = false };
+    const pond_item_four: PondItem = .{ .id = 4, .title = "GITGOOD / fix skill issue (same thing)", .has_update = true };
     try ponds_list.append(pond_item_one);
     try ponds_list.append(pond_item_two);
+    try ponds_list.append(pond_item_three);
+    try ponds_list.append(pond_item_four);
 
     return Self{
         .render_q = render_q,
@@ -80,32 +81,12 @@ pub fn init_first_frame(self: *Self) !void {
     var row_index: u8 = 2;
     for (self.ponds_list.items) |item| {
         var title: []u8 = undefined;
-        if (item.has_update) {
-            title = try std.fmt.allocPrint(
-                self.alloc,
-                "{s}{s}{s}{s}{s}{s}{s}{s}",
-                .{
-                    common.theme.border.VERTICAL,
-                    try render_utils.render_line_of_text_and_backround(self.alloc, item.title, width - 1),
-                    common.theme.active_font_color,
-                    notification_ico,
-                    common.theme.background_color,
-                    common.theme.font_color,
-                    common.theme.border.VERTICAL,
-                    common.RESET_STYLES,
-                },
-            );
+        if (item.id == 1) {
+            title = try render_active_pond_item(self.alloc, item.title, width);
+        } else if (item.has_update) {
+            title = try render_pond_item_with_notification(self.alloc, item.title, width);
         } else {
-            title = try std.fmt.allocPrint(
-                self.alloc,
-                "{s}{s}{s}{s}",
-                .{
-                    common.theme.border.VERTICAL,
-                    try render_utils.render_line_of_text_and_backround(self.alloc, item.title, width),
-                    common.theme.border.VERTICAL,
-                    common.RESET_STYLES,
-                },
-            );
+            title = try render_pond_item(self.alloc, item.title, width);
         }
         self.rows_to_render[arr_index].cursor = try std.fmt.allocPrint(self.alloc, common.MOVE_CURSOR_TO_POSITION, .{ row_index, self.position.col });
         self.rows_to_render[arr_index].content = std.ArrayList(u8).fromOwnedSlice(self.alloc, title);
@@ -124,6 +105,54 @@ pub fn init_first_frame(self: *Self) !void {
     // Bottom border
     self.rows_to_render[self.rows_to_render.len - 1].cursor = try std.fmt.allocPrint(self.alloc, common.MOVE_CURSOR_TO_POSITION, .{ self.rows_to_render.len, self.position.col });
     self.rows_to_render[self.rows_to_render.len - 1].content = std.ArrayList(u8).fromOwnedSlice(self.alloc, bottom_border);
+}
+
+fn render_active_pond_item(alloc: std.mem.Allocator, text: []const u8, width: usize) ![]u8 {
+    const result = try std.fmt.allocPrint(
+        alloc,
+        "{s}{s}{s}{s}{s}{s}{s}",
+        .{
+            common.theme.border.VERTICAL,
+            common.theme.active_background_color,
+            try render_utils.render_line_of_text_and_backround(alloc, text, width),
+            common.theme.background_color,
+            common.theme.font_color,
+            common.theme.border.VERTICAL,
+            common.RESET_STYLES,
+        },
+    );
+    return result;
+}
+
+fn render_pond_item_with_notification(alloc: std.mem.Allocator, text: []const u8, width: usize) ![]u8 {
+    const title = try std.fmt.allocPrint(
+        alloc,
+        "{s}{s}{s}{s}{s}{s}{s}",
+        .{
+            common.theme.border.VERTICAL,
+            try render_utils.render_line_of_text_and_backround(alloc, text, width - 1),
+            common.theme.notification_ico_pattern,
+            common.theme.background_color,
+            common.theme.font_color,
+            common.theme.border.VERTICAL,
+            common.RESET_STYLES,
+        },
+    );
+    return title;
+}
+
+fn render_pond_item(alloc: std.mem.Allocator, text: []const u8, width: usize) ![]u8 {
+    const title = try std.fmt.allocPrint(
+        alloc,
+        "{s}{s}{s}{s}",
+        .{
+            common.theme.border.VERTICAL,
+            try render_utils.render_line_of_text_and_backround(alloc, text, width),
+            common.theme.border.VERTICAL,
+            common.RESET_STYLES,
+        },
+    );
+    return title;
 }
 
 pub fn render(self: Self) !void {

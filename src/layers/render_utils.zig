@@ -65,35 +65,39 @@ pub fn render_border_bottom(alloc: std.mem.Allocator, width: i16, horizontal_bor
 }
 
 pub fn render_line_of_text_and_backround(alloc: std.mem.Allocator, text: []const u8, width: usize) ![]u8 {
-    const bg_mid = try alloc.alloc(u8, width - text.len);
-    @memset(bg_mid, ' ');
-    const result = try std.fmt.allocPrint(
-        alloc,
-        "{s}{s}",
-        .{
-            text,
-            bg_mid,
-        },
-    );
+    var result: []u8 = undefined;
+    if (text.len >= width) {
+        result = try render_truncated_line_of_text_and_backround(alloc, text, width);
+    } else {
+        const bg_mid = try alloc.alloc(u8, width - text.len);
+        @memset(bg_mid, ' ');
+        result = try std.fmt.allocPrint(
+            alloc,
+            "{s}{s}",
+            .{
+                text,
+                bg_mid,
+            },
+        );
+    }
 
     return result;
 }
 
-pub fn render_line_of_number_and_backround(alloc: std.mem.Allocator, number: u8, width: usize) ![]u8 {
-    const number_as_string = try std.fmt.allocPrint(
-        alloc,
-        "{d}",
-        .{
-            number,
-        },
-    );
-    const bg_mid = try alloc.alloc(u8, width - number_as_string.len);
+fn render_truncated_line_of_text_and_backround(alloc: std.mem.Allocator, text: []const u8, width: usize) ![]u8 {
+    const bg_len = 1;
+    var truncated_text: []const u8 = undefined;
+    const to_remove = text.len - width;
+    // 3 for ... and 1 for bg
+    truncated_text = text[0 .. text.len - to_remove - 4];
+    const bg_mid = try alloc.alloc(u8, bg_len);
     @memset(bg_mid, ' ');
     const result = try std.fmt.allocPrint(
         alloc,
-        "{s}{s}",
+        "{s}{s}{s}",
         .{
-            number_as_string,
+            truncated_text,
+            "...",
             bg_mid,
         },
     );
