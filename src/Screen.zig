@@ -49,7 +49,7 @@ pub fn create(alloc: std.mem.Allocator) !Self {
 /// here we check the connection, pick layer to render (login/main)
 /// clear screen and finally render first frame
 pub fn init_first_frame(self: *Self, stdout: fs.File.Writer) !void {
-    var ponds = Ponds.create(
+    var ponds = try Ponds.create(
         self.alloc,
         self.terminal_dimensions,
         &self.render_q,

@@ -35,7 +35,7 @@ pub const KNOWN_COMMANDS = std.StaticStringMap(COMMANDS).initComptime(.{
     .{ ":new", .NEW_CONVERSATION },
 });
 
-pub const BG_KEY = "\x1b[48;2;";
+pub const BG_KEY = "\x1b[{};{}H";
 pub const INVERT_STYLES = "\x1b[7m";
 pub const RED_COLOR = "\x1b[31m;";
 pub const RESET_STYLES = "\x1b[0m";
