@@ -65,8 +65,8 @@ pub fn init_first_frame(self: *Self, stdout: fs.File.Writer) !void {
 
     self.status_line = try self.alloc.alloc(u8, @intCast(self.terminal_dimensions.width));
     @memset(self.status_line, ' ');
-    try self.render_q.queue.appendSlice("\x1b[2J");
-    try self.render_q.queue.appendSlice("\x1b[48;2;155;100;0m");
+    try self.render_q.queue.appendSlice(common.CLEAR_SCREEN);
+    try self.render_q.queue.appendSlice(common.theme.active_background_color);
     try ponds.render();
     try quacks.render();
     try self.change_mode(.NORMAL);

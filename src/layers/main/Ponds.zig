@@ -24,10 +24,12 @@ const PondItem = struct {
 };
 
 const duck_count_label = "Ducks: ";
+const notification_ico = "\u{25FC}";
 
 const Self = @This();
 
 pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, render_q: *RenderQ) !Self {
+    // Note: min capacity for ArrayList is total height / 2 because pond item is 2 rows height
     var ponds_list: std.ArrayList(PondItem) = try .initCapacity(alloc, @intFromFloat(@as(f16, @floatFromInt(terminal_dimensions.height)) * 0.5));
     const pond_item_one: PondItem = .{ .title = "YAPPING IS BACK", .ducks_count = 3, .has_update = false };
     const pond_item_two: PondItem = .{ .title = "HELL YEAH", .ducks_count = 2, .has_update = true };
@@ -70,58 +72,57 @@ pub fn init_first_frame(self: *Self) !void {
     );
 
     // Top border
-    self.rows_to_render[0].cursor = try std.fmt.allocPrint(self.alloc, common.BG_KEY, .{ 1, self.position.col });
+    self.rows_to_render[0].cursor = try std.fmt.allocPrint(self.alloc, common.MOVE_CURSOR_TO_POSITION, .{ 1, self.position.col });
     self.rows_to_render[0].content = std.ArrayList(u8).fromOwnedSlice(self.alloc, top_border);
 
     // Sidebar items
     var arr_index: u8 = 1;
     var row_index: u8 = 2;
     for (self.ponds_list.items) |item| {
-        // |TEXT____|
-        // combine border left, text, bg, border right together
-        const title = try std.fmt.allocPrint(
-            self.alloc,
-            "{s}{s}{s}{s}",
-            .{
-                common.theme.border.VERTICAL,
-                try render_utils.render_line_of_text_and_backroud(self.alloc, item.title, width),
-                common.theme.border.VERTICAL,
-                common.RESET_STYLES,
-            },
-        );
-        self.rows_to_render[arr_index].cursor = try std.fmt.allocPrint(self.alloc, common.BG_KEY, .{ row_index, self.position.col });
+        var title: []u8 = undefined;
+        if (item.has_update) {
+            title = try std.fmt.allocPrint(
+                self.alloc,
+                "{s}{s}{s}{s}{s}{s}{s}{s}",
+                .{
+                    common.theme.border.VERTICAL,
+                    try render_utils.render_line_of_text_and_backround(self.alloc, item.title, width - 1),
+                    common.theme.active_font_color,
+                    notification_ico,
+                    common.theme.background_color,
+                    common.theme.font_color,
+                    common.theme.border.VERTICAL,
+                    common.RESET_STYLES,
+                },
+            );
+        } else {
+            title = try std.fmt.allocPrint(
+                self.alloc,
+                "{s}{s}{s}{s}",
+                .{
+                    common.theme.border.VERTICAL,
+                    try render_utils.render_line_of_text_and_backround(self.alloc, item.title, width),
+                    common.theme.border.VERTICAL,
+                    common.RESET_STYLES,
+                },
+            );
+        }
+        self.rows_to_render[arr_index].cursor = try std.fmt.allocPrint(self.alloc, common.MOVE_CURSOR_TO_POSITION, .{ row_index, self.position.col });
         self.rows_to_render[arr_index].content = std.ArrayList(u8).fromOwnedSlice(self.alloc, title);
 
-        row_index += 1;
-        arr_index += 1;
-
-        const ducks_count = try std.fmt.allocPrint(
-            self.alloc,
-            "{s}{s}{s}{s}{s}",
-            .{
-                // Ducks label should be also considered
-                common.theme.border.VERTICAL,
-                duck_count_label,
-                try render_utils.render_line_of_number_and_backroud(self.alloc, item.ducks_count, width - duck_count_label.len),
-                common.theme.border.VERTICAL,
-                common.RESET_STYLES,
-            },
-        );
-        self.rows_to_render[arr_index].cursor = try std.fmt.allocPrint(self.alloc, common.BG_KEY, .{ row_index, self.position.col });
-        self.rows_to_render[arr_index].content = std.ArrayList(u8).fromOwnedSlice(self.alloc, ducks_count);
         row_index += 1;
         arr_index += 1;
     }
 
     // Background
     for (arr_index..self.rows_to_render.len - 1) |i| {
-        self.rows_to_render[i].cursor = try std.fmt.allocPrint(self.alloc, common.BG_KEY, .{ row_index, self.position.col });
+        self.rows_to_render[i].cursor = try std.fmt.allocPrint(self.alloc, common.MOVE_CURSOR_TO_POSITION, .{ row_index, self.position.col });
         self.rows_to_render[i].content = std.ArrayList(u8).fromOwnedSlice(self.alloc, bg);
         row_index += 1;
     }
 
     // Bottom border
-    self.rows_to_render[self.rows_to_render.len - 1].cursor = try std.fmt.allocPrint(self.alloc, common.BG_KEY, .{ self.rows_to_render.len, self.position.col });
+    self.rows_to_render[self.rows_to_render.len - 1].cursor = try std.fmt.allocPrint(self.alloc, common.MOVE_CURSOR_TO_POSITION, .{ self.rows_to_render.len, self.position.col });
     self.rows_to_render[self.rows_to_render.len - 1].content = std.ArrayList(u8).fromOwnedSlice(self.alloc, bottom_border);
 }
 

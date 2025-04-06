@@ -64,7 +64,7 @@ pub fn render_border_bottom(alloc: std.mem.Allocator, width: i16, horizontal_bor
     );
 }
 
-pub fn render_line_of_text_and_backroud(alloc: std.mem.Allocator, text: []const u8, width: usize) ![]u8 {
+pub fn render_line_of_text_and_backround(alloc: std.mem.Allocator, text: []const u8, width: usize) ![]u8 {
     const bg_mid = try alloc.alloc(u8, width - text.len);
     @memset(bg_mid, ' ');
     const result = try std.fmt.allocPrint(
@@ -79,7 +79,7 @@ pub fn render_line_of_text_and_backroud(alloc: std.mem.Allocator, text: []const 
     return result;
 }
 
-pub fn render_line_of_number_and_backroud(alloc: std.mem.Allocator, number: u8, width: usize) ![]u8 {
+pub fn render_line_of_number_and_backround(alloc: std.mem.Allocator, number: u8, width: usize) ![]u8 {
     const number_as_string = try std.fmt.allocPrint(
         alloc,
         "{d}",
