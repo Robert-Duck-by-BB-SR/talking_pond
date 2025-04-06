@@ -23,6 +23,8 @@ const PondItem = struct {
     title: []const u8 = undefined,
 };
 
+const duck_count_label = "Ducks: ";
+
 const Self = @This();
 
 pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, render_q: *RenderQ) !Self {
@@ -51,8 +53,8 @@ pub fn init_first_frame(self: *Self) !void {
     // NOTE: TODO: now, after initiallization we will only have to replace the border with another kind (Normal|Bold|Rounded?)
     // and retain the capacity, which means no additional allocations needed
     var horizontal_border_list: std.ArrayList(u8) = try .initCapacity(self.alloc, width * common.theme.border.HORIZONTAL.len);
-    const top_border = try render_utils.generate_border_top_with_title(self.alloc, self.dimensions.width, "PONDS", &horizontal_border_list);
-    const bottom_border = try render_utils.generate_border_bottom(self.alloc, self.dimensions.width, &horizontal_border_list);
+    const top_border = try render_utils.render_border_top_with_title(self.alloc, self.dimensions.width, "PONDS", &horizontal_border_list);
+    const bottom_border = try render_utils.render_border_bottom(self.alloc, self.dimensions.width, &horizontal_border_list);
 
     const bg_mid = try self.alloc.alloc(u8, width);
     @memset(bg_mid, ' ');
@@ -67,11 +69,11 @@ pub fn init_first_frame(self: *Self) !void {
         },
     );
 
-    // TOP BORDER
+    // Top border
     self.rows_to_render[0].cursor = try std.fmt.allocPrint(self.alloc, common.BG_KEY, .{ 1, self.position.col });
     self.rows_to_render[0].content = std.ArrayList(u8).fromOwnedSlice(self.alloc, top_border);
 
-    // ITEMS
+    // Sidebar items
     var arr_index: u8 = 1;
     var row_index: u8 = 2;
     for (self.ponds_list.items) |item| {
@@ -79,10 +81,11 @@ pub fn init_first_frame(self: *Self) !void {
         // combine border left, text, bg, border right together
         const title = try std.fmt.allocPrint(
             self.alloc,
-            "{s}{s}{s}",
+            "{s}{s}{s}{s}",
             .{
                 common.theme.border.VERTICAL,
-                item.title,
+                try render_utils.render_line_of_text_and_backroud(self.alloc, item.title, width),
+                common.theme.border.VERTICAL,
                 common.RESET_STYLES,
             },
         );
@@ -94,10 +97,13 @@ pub fn init_first_frame(self: *Self) !void {
 
         const ducks_count = try std.fmt.allocPrint(
             self.alloc,
-            "{s}Ducks: {d}{s}",
+            "{s}{s}{s}{s}{s}",
             .{
+                // Ducks label should be also considered
                 common.theme.border.VERTICAL,
-                item.ducks_count,
+                duck_count_label,
+                try render_utils.render_line_of_number_and_backroud(self.alloc, item.ducks_count, width - duck_count_label.len),
+                common.theme.border.VERTICAL,
                 common.RESET_STYLES,
             },
         );
@@ -107,14 +113,14 @@ pub fn init_first_frame(self: *Self) !void {
         arr_index += 1;
     }
 
-    // BG
+    // Background
     for (arr_index..self.rows_to_render.len - 1) |i| {
-        self.rows_to_render[i].cursor = try std.fmt.allocPrint(self.alloc, common.BG_KEY, .{ row_index + 1, self.position.col });
+        self.rows_to_render[i].cursor = try std.fmt.allocPrint(self.alloc, common.BG_KEY, .{ row_index, self.position.col });
         self.rows_to_render[i].content = std.ArrayList(u8).fromOwnedSlice(self.alloc, bg);
         row_index += 1;
     }
 
-    // BOTTOM BORDER
+    // Bottom border
     self.rows_to_render[self.rows_to_render.len - 1].cursor = try std.fmt.allocPrint(self.alloc, common.BG_KEY, .{ self.rows_to_render.len, self.position.col });
     self.rows_to_render[self.rows_to_render.len - 1].content = std.ArrayList(u8).fromOwnedSlice(self.alloc, bottom_border);
 }
