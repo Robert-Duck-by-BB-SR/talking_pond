@@ -5,7 +5,7 @@ height: u16,
 
 content: std.ArrayList(u8),
 
-const Self = @This();
+// const Self = @This();
 
-pub fn new(alloc: std.mem.Allocator) !Self {
-}
+// pub fn new(alloc: std.mem.Allocator) !Self {
+// }

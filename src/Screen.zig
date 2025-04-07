@@ -7,11 +7,10 @@ const assert = std.debug.assert;
 const os_tag = @import("builtin").os.tag;
 const common = @import("layers/common.zig");
 
+const RenderQ = @import("RenderQueue.zig");
 const ui_common = @import("layers/common.zig");
 const Login = @import("layers/Login.zig");
-const Quacks = @import("layers/main/Quacks.zig");
-const Ponds = @import("layers/main/Ponds.zig");
-const RenderQ = @import("RenderQueue.zig");
+const Main = @import("layers/Main.zig");
 
 // row;col;text
 const STATUS_LINE_PATTERN = "\x1b[{};{}H\x1b[2K\x1b[48;2;251;206;44m\x1b[38;2;0;0;0m{s}\x1b[0m";
@@ -21,21 +20,25 @@ exit: bool = false,
 render_q: RenderQ,
 
 active_mode: common.MODE = .NORMAL,
-active_layer: common.LAYERS = .LOGIN,
+active_layer: common.LAYERS = .MAIN,
+main_layer: Main = undefined,
 status_line: []u8 = undefined,
 status_line_content_len: usize = 0,
+
 alloc: std.mem.Allocator,
 
 const Self = @This();
 
-const RenderFlags = struct {
-    status_line: bool = true,
-    partial: bool = false,
-    login: bool = false,
-    main: bool = false,
-};
+// const RenderFlags = struct {
+//     status_line: bool = true,
+//     partial: bool = false,
+//     login: bool = false,
+//     // NOTE: It's only for testing
+//     // later we should add login as first and check if user is logged in
+//     main: bool = true,
+// };
 
-pub var ready_to_render: RenderFlags = .{};
+// pub var render_flags: RenderFlags = .{};
 pub fn create(alloc: std.mem.Allocator) !Self {
     return Self{
         .alloc = alloc,
@@ -49,26 +52,15 @@ pub fn create(alloc: std.mem.Allocator) !Self {
 /// here we check the connection, pick layer to render (login/main)
 /// clear screen and finally render first frame
 pub fn init_first_frame(self: *Self, stdout: fs.File.Writer) !void {
-    var ponds = try Ponds.create(
-        self.alloc,
-        self.terminal_dimensions,
-        &self.render_q,
-    );
-    try ponds.init_first_frame();
-
-    var quacks = Quacks.create(
-        self.alloc,
-        self.terminal_dimensions,
-        &self.render_q,
-    );
-    try quacks.init_first_frame();
-
     self.status_line = try self.alloc.alloc(u8, @intCast(self.terminal_dimensions.width));
     @memset(self.status_line, ' ');
     try self.render_q.queue.appendSlice(common.CLEAR_SCREEN);
     try self.render_q.queue.appendSlice(common.theme.active_background_color);
-    try ponds.render();
-    try quacks.render();
+
+    // layer logic here
+    var main_layer = try Main.create(self.alloc, &self.render_q, self.terminal_dimensions);
+    self.main_layer = main_layer;
+    try main_layer.render_first_frame();
     try self.change_mode(.NORMAL);
     try stdout.print("{s}", .{self.render_q.queue.items});
     self.render_q.queue.clearAndFree();
@@ -159,7 +151,14 @@ pub fn read_terminal(self: *Self, std_in: fs.File) !void {
                     ':' => {
                         try self.change_mode(.COMMAND);
                     },
-                    else => {},
+                    else => {
+                        switch (self.active_layer) {
+                            .MAIN => {
+                                // self.main_layer.handle_normal(curr_char);
+                            },
+                            else => {},
+                        }
+                    },
                 }
             },
             else => {},

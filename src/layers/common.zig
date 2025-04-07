@@ -54,7 +54,6 @@ pub const PONDS_SIDEBAR_SIZE: i16 = 35;
 pub const NormalBorder = struct {
     pub const HORIZONTAL = "─";
     pub const VERTICAL = "│";
-
     pub const TOP_LEFT = "┌";
     pub const TOP_RIGHT = "┐";
     pub const BOTTOM_LEFT = "└";
