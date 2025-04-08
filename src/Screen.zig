@@ -10,7 +10,7 @@ const common = @import("layers/common.zig");
 const RenderQ = @import("RenderQueue.zig");
 const ui_common = @import("layers/common.zig");
 const Login = @import("layers/Login.zig");
-const Main = @import("layers/Main.zig");
+const MainLayer = @import("layers/MainLayer.zig");
 
 // row;col;text
 const STATUS_LINE_PATTERN = "\x1b[{};{}H\x1b[2K\x1b[48;2;251;206;44m\x1b[38;2;0;0;0m{s}\x1b[0m";
@@ -21,7 +21,10 @@ render_q: RenderQ,
 
 active_mode: common.MODE = .NORMAL,
 active_layer: common.LAYERS = .MAIN,
-main_layer: Main = undefined,
+
+// layers
+main_layer: MainLayer = undefined,
+
 status_line: []u8 = undefined,
 status_line_content_len: usize = 0,
 
@@ -39,13 +42,44 @@ const Self = @This();
 // };
 
 // pub var render_flags: RenderFlags = .{};
-pub fn create(alloc: std.mem.Allocator) !Self {
+pub fn create(std_out: std.fs.File, alloc: std.mem.Allocator) !Self {
     return Self{
         .alloc = alloc,
         .render_q = .{
             .queue = std.ArrayList(u8).init(alloc),
         },
+        .terminal_dimensions = try get_terminal_dimensions(std_out),
     };
+}
+
+pub fn create_layers(self: *Self) !void {
+    self.main_layer = try MainLayer.create(self.alloc, self.terminal_dimensions, &self.render_q);
+}
+
+fn get_terminal_dimensions(std_out: fs.File) !common.Dimensions {
+    var dimensions: common.Dimensions = undefined;
+    switch (os_tag) {
+        .windows => {
+            var console_info: shit_os.CONSOLE_SCREEN_BUFFER_INFO = undefined;
+            _ = shit_os.kernel32.GetConsoleScreenBufferInfo(std_out.handle, &console_info);
+            dimensions = .{ .width = console_info.dwSize.X, .height = console_info.dwSize.Y };
+            // self.terminal_dimensions.width = ;
+            // self.terminal_dimensions.height = console_info.dwSize.Y;
+        },
+        .linux, .macos => {
+            var win_size: posix.winsize = undefined;
+            const res = posix.system.ioctl(std_out.handle, os.linux.T.IOCGWINSZ, @intFromPtr(&win_size));
+            if (res != 0) {
+                return error.ioctl_return_error_during_getting_linux_dimentions;
+            }
+            dimensions = .{ .width = @intCast(win_size.col), .height = @intCast(win_size.row) };
+        },
+        else => return error.UNSUPPORTED_OS,
+    }
+    assert(dimensions.width != 0 and dimensions.height != 0); // how?
+    assert(dimensions.width != std.math.maxInt(i10)); // waytoodank 511 columns is a lot
+    assert(dimensions.height < dimensions.width); // we do not support vertical
+    return dimensions;
 }
 
 /// initialize screen before we start reading from terminal
@@ -58,9 +92,7 @@ pub fn init_first_frame(self: *Self, stdout: fs.File.Writer) !void {
     try self.render_q.queue.appendSlice(common.theme.active_background_color);
 
     // layer logic here
-    var main_layer = try Main.create(self.alloc, &self.render_q, self.terminal_dimensions);
-    self.main_layer = main_layer;
-    try main_layer.render_first_frame();
+    try self.main_layer.render_first_frame();
     try self.change_mode(.NORMAL);
     try stdout.print("{s}", .{self.render_q.queue.items});
     self.render_q.queue.clearAndFree();
@@ -89,32 +121,6 @@ fn append_to_command(self: *Self, char: u8) !void {
     const status_line_content = try self.render_status_line();
     defer self.alloc.free(status_line_content);
     try self.render_q.add_to_render_q(status_line_content);
-}
-
-pub fn get_terminal_dimensions(self: *Self, std_out: fs.File) !void {
-    switch (os_tag) {
-        .windows => {
-            var console_info: shit_os.CONSOLE_SCREEN_BUFFER_INFO = undefined;
-            _ = shit_os.kernel32.GetConsoleScreenBufferInfo(std_out.handle, &console_info);
-            self.terminal_dimensions.width = console_info.dwSize.X;
-            self.terminal_dimensions.height = console_info.dwSize.Y;
-        },
-        .linux, .macos => {
-            var win_size: posix.winsize = undefined;
-
-            const res = posix.system.ioctl(std_out.handle, os.linux.T.IOCGWINSZ, @intFromPtr(&win_size));
-            if (res != 0) {
-                return error.ioctl_return_error_during_getting_linux_dimentions;
-            }
-            self.terminal_dimensions.width = @intCast(win_size.col);
-            self.terminal_dimensions.height = @intCast(win_size.row);
-        },
-        else => return error.UNSUPPORTED_OS,
-    }
-    assert(self.terminal_dimensions.width != 0 and self.terminal_dimensions.height != 0); // how?
-    assert(self.terminal_dimensions.width != std.math.maxInt(i10)); // waytoodank 511 columns is a lot
-    assert(self.terminal_dimensions.height < self.terminal_dimensions.width); // we do not support vertical
-
 }
 
 pub fn read_terminal(self: *Self, std_in: fs.File) !void {
@@ -154,7 +160,7 @@ pub fn read_terminal(self: *Self, std_in: fs.File) !void {
                     else => {
                         switch (self.active_layer) {
                             .MAIN => {
-                                // self.main_layer.handle_normal(curr_char);
+                                try self.main_layer.handle_current_state(self.active_mode, curr_char);
                             },
                             else => {},
                         }

@@ -11,6 +11,7 @@ render_q: *RenderQ,
 
 rows_to_render: []Row = undefined,
 ponds_list: std.ArrayList(PondItem) = undefined,
+var active_pond: usize = 0;
 
 const Row = struct {
     cursor: []u8 = undefined,
@@ -79,9 +80,10 @@ pub fn init_first_frame(self: *Self) !void {
     // Sidebar items
     var arr_index: u8 = 1;
     var row_index: u8 = 2;
+    var pond_list_index: i16 = 0;
     for (self.ponds_list.items) |item| {
         var title: []u8 = undefined;
-        if (item.id == 1) {
+        if (pond_list_index == active_pond) {
             title = try render_active_pond_item(self.alloc, item.title, width);
         } else if (item.has_update) {
             title = try render_pond_item_with_notification(self.alloc, item.title, width);
@@ -93,6 +95,7 @@ pub fn init_first_frame(self: *Self) !void {
 
         row_index += 1;
         arr_index += 1;
+        pond_list_index += 1;
     }
 
     // Background
@@ -153,6 +156,35 @@ fn render_pond_item(alloc: std.mem.Allocator, text: []const u8, width: usize) ![
         },
     );
     return title;
+}
+
+pub fn handle_normal(self: *Self, key: u8) !void {
+    switch (key) {
+        'j' => {
+            if (active_pond + 1 < self.ponds_list.items.len) {
+                active_pond += 1;
+                // TODO: REMOVE ME AND MAKE GLOBAL
+                const width: usize = @intCast(self.dimensions.width - 2);
+                // make me a part of a function
+                const title = try render_active_pond_item(self.alloc, self.ponds_list.items[active_pond].title, width);
+                self.rows_to_render[active_pond + 1].cursor = try std.fmt.allocPrint(self.alloc, common.MOVE_CURSOR_TO_POSITION, .{ active_pond + 2, self.position.col });
+                self.rows_to_render[active_pond + 1].content = std.ArrayList(u8).fromOwnedSlice(self.alloc, title);
+                try render_row(self, active_pond + 1);
+            }
+        },
+        'k' => {
+            if (active_pond - 1 >= 0) {
+                active_pond -= 1;
+            }
+        },
+        else => {},
+    }
+}
+
+fn render_row(self: *Self, row_index: usize) !void {
+    const row = self.rows_to_render[row_index];
+    const result = try std.fmt.allocPrint(self.alloc, "{s}{s}{s}{s}", .{ row.cursor, common.theme.font_color, common.theme.background_color, row.content.items });
+    try self.render_q.add_to_render_q(result);
 }
 
 pub fn render(self: Self) !void {

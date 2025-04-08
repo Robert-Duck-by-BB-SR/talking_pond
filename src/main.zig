@@ -18,8 +18,8 @@ pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(gpa.allocator());
     defer arena.deinit();
 
-    var screen = try Screen.create(arena.allocator());
-    try screen.get_terminal_dimensions(std_out);
+    var screen = try Screen.create(std_out, arena.allocator());
+    try screen.create_layers();
 
     // NOTE: we don't want that to happend while debbuging
     // defer stdout.print("\x1b[2J", .{}) catch unreachable;
