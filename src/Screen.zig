@@ -86,6 +86,9 @@ fn get_terminal_dimensions(std_out: fs.File) !common.Dimensions {
 /// here we check the connection, pick layer to render (login/main)
 /// clear screen and finally render first frame
 pub fn init_first_frame(self: *Self, stdout: fs.File.Writer) !void {
+    // hide cursor
+    const hidden_cursor_slice = try std.fmt.allocPrint(self.alloc, "{s}", .{common.HIDDEN_CURSOR});
+    try self.render_q.add_to_render_q(hidden_cursor_slice);
     self.status_line = try self.alloc.alloc(u8, @intCast(self.terminal_dimensions.width));
     @memset(self.status_line, ' ');
     try self.render_q.queue.appendSlice(common.CLEAR_SCREEN);
@@ -133,6 +136,8 @@ pub fn read_terminal(self: *Self, std_in: fs.File) !void {
 
         // FIXME: remove later
         if (curr_char == 3) {
+            const result = try std.fmt.allocPrint(self.alloc, "{s}", .{common.VISIBLE_CURSOR});
+            try self.render_q.add_to_render_q(result);
             self.exit = true;
             self.render_q.condition.signal();
             return;
@@ -143,7 +148,7 @@ pub fn read_terminal(self: *Self, std_in: fs.File) !void {
             .COMMAND => {
                 switch (curr_char) {
                     '\r' => {
-                        self.handle_command();
+                        try self.handle_command();
                         try self.change_mode(.NORMAL);
                     },
                     else => {
@@ -175,11 +180,13 @@ pub fn read_terminal(self: *Self, std_in: fs.File) !void {
     }
 }
 
-fn handle_command(self: *Self) void {
+fn handle_command(self: *Self) !void {
     const command = common.KNOWN_COMMANDS.get(self.status_line[0..self.status_line_content_len]);
     std.debug.print("COMMAND: {any} vs ITEMS: {s} vs AVAILABLE: {any}\n", .{ command, self.status_line, common.KNOWN_COMMANDS });
     if (command) |real_command| switch (real_command) {
         .QUIT => {
+            const result = try std.fmt.allocPrint(self.alloc, "{s}", .{common.VISIBLE_CURSOR});
+            try self.render_q.add_to_render_q(result);
             self.exit = true;
         },
         .NEW_CONVERSATION => {
