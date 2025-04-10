@@ -60,11 +60,14 @@ pub const NormalBorder = struct {
     pub const BOTTOM_RIGHT = "┘";
 };
 
+pub const NOTIFICATION_ICON = "\u{25FC}";
+
 pub const theme = struct {
-    pub const font_color = "\x1b[38;2;192;192;192m";
-    pub const active_font_color = "\x1b[38;2;112;255;112m";
-    pub const background_color = "\x1b[48;2;25;25;25m";
-    pub const active_background_color = "\x1b[48;2;155;100;0m";
-    pub const border = NormalBorder;
-    pub const notification_ico_pattern = "\x1b[38;2;45;237;135m\u{25FC}\x1b[0m";
+    pub const FONT_COLOR = "\x1b[38;2;192;192;192m";
+    pub const ACTIVE_FONT_COLOR = "\x1b[38;2;112;255;112m";
+    pub const BACKGROUND_COLOR = "\x1b[48;2;25;25;25m";
+    pub const ACTIVE_BACKGROUND_COLOR = "\x1b[48;2;155;100;0m";
+    pub const BORDER = NormalBorder;
 };
+
+pub const NOTIFICATION_ICON_PATTERN = theme.ACTIVE_FONT_COLOR ++ NOTIFICATION_ICON ++ RESET_STYLES;

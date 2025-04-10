@@ -1,6 +1,6 @@
 const std = @import("std");
 const common = @import("common.zig");
-const border = common.theme.border;
+const border = common.theme.BORDER;
 
 pub fn render_border_top(alloc: std.mem.Allocator, width: i16, horizontal_border: *std.ArrayList(u8)) ![]u8 {
     var j: usize = 0;

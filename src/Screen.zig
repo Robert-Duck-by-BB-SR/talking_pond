@@ -32,27 +32,18 @@ alloc: std.mem.Allocator,
 
 const Self = @This();
 
-// const RenderFlags = struct {
-//     status_line: bool = true,
-//     partial: bool = false,
-//     login: bool = false,
-//     // NOTE: It's only for testing
-//     // later we should add login as first and check if user is logged in
-//     main: bool = true,
-// };
-
-// pub var render_flags: RenderFlags = .{};
-pub fn create(std_out: std.fs.File, alloc: std.mem.Allocator) !Self {
+pub fn create(alloc: std.mem.Allocator) Self {
     return Self{
         .alloc = alloc,
         .render_q = .{
             .queue = std.ArrayList(u8).init(alloc),
         },
-        .terminal_dimensions = try get_terminal_dimensions(std_out),
     };
 }
 
-pub fn create_layers(self: *Self) !void {
+pub fn create_layers(self: *Self, stdout: fs.File) !void {
+    // FIXME: you know what to do 
+    try self.get_terminal_dimensions(stdout);
     self.main_layer = try MainLayer.create(self.alloc, self.terminal_dimensions, &self.render_q);
 }
 
@@ -67,7 +58,7 @@ pub fn init_first_frame(self: *Self, stdout: fs.File.Writer) !void {
     self.status_line = try self.alloc.alloc(u8, @intCast(self.terminal_dimensions.width));
     @memset(self.status_line, ' ');
     try self.render_q.queue.appendSlice(common.CLEAR_SCREEN);
-    try self.render_q.queue.appendSlice(common.theme.active_background_color);
+    try self.render_q.queue.appendSlice(common.theme.ACTIVE_BACKGROUND_COLOR);
 
     // layer logic here
     try self.main_layer.render_first_frame();

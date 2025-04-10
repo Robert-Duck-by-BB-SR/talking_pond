@@ -38,7 +38,7 @@ pub fn init_first_frame(self: *Self) !void {
 
     // NOTE: TODO: now, after initiallization we will only have to replace the border with another kind (Normal|Bold|Rounded?)
     // and retain the capacity, which means no additional allocations needed
-    var horizontal_border_list: std.ArrayList(u8) = try .initCapacity(self.alloc, width * common.theme.border.HORIZONTAL.len);
+    var horizontal_border_list: std.ArrayList(u8) = try .initCapacity(self.alloc, width * common.theme.BORDER.HORIZONTAL.len);
     const top_border = try render_utils.render_border_top_with_title(self.alloc, self.dimensions.width, "QUACKS", &horizontal_border_list);
     const bottom_border = try render_utils.render_border_bottom(self.alloc, self.dimensions.width, &horizontal_border_list);
     const bg_mid = try self.alloc.alloc(u8, width);
@@ -47,9 +47,9 @@ pub fn init_first_frame(self: *Self) !void {
         self.alloc,
         "{s}{s}{s}{s}",
         .{
-            common.theme.border.VERTICAL,
+            common.theme.BORDER.VERTICAL,
             bg_mid,
-            common.theme.border.VERTICAL,
+            common.theme.BORDER.VERTICAL,
             common.RESET_STYLES,
         },
     );
@@ -69,7 +69,12 @@ pub fn init_first_frame(self: *Self) !void {
 pub fn render(self: Self) !void {
     var quacks: std.ArrayList(u8) = .init(self.alloc);
     for (self.render_rows) |row| {
-        try quacks.writer().print("{s}{s}{s}{s}", .{ row.cursor, common.theme.font_color, common.theme.background_color, row.content.items });
+        try quacks.writer().print("{s}{s}{s}{s}", .{
+            row.cursor,
+            common.theme.FONT_COLOR,
+            common.theme.BACKGROUND_COLOR,
+            row.content.items,
+        });
     }
     const slice = try quacks.toOwnedSlice();
     try self.render_q.add_to_render_q(slice);

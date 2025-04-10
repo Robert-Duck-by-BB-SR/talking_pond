@@ -45,7 +45,7 @@ pub fn handle_current_state(self: *Self, mode: common.MODE, key: u8) !void {
     }
 }
 
-fn handle_normal(self: *Self, key: u8) !void {
+fn handle_normal(_: *Self, key: u8) !void {
     switch (key) {
         'S' => {
             active_component = .PONDS_SIDEBAR;
@@ -59,7 +59,7 @@ fn handle_normal(self: *Self, key: u8) !void {
         else => {
             switch (active_component) {
                 .PONDS_SIDEBAR => {
-                    try self.ponds.handle_normal(key);
+                    // try self.ponds.handle_normal(key);
                 },
                 .QUACKS_CHAT => {},
                 .INPUT_FIELD => {},
