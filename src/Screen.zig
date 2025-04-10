@@ -174,7 +174,6 @@ pub fn read_terminal(self: *Self, std_in: fs.File) !void {
 
 fn handle_command(self: *Self) !void {
     const command = common.KNOWN_COMMANDS.get(self.status_line[0..self.status_line_content_len]);
-    std.debug.print("COMMAND: {any} vs ITEMS: {s} vs AVAILABLE: {any}\n", .{ command, self.status_line, common.KNOWN_COMMANDS });
     if (command) |real_command| switch (real_command) {
         .QUIT => {
             const result = try std.fmt.allocPrint(self.alloc, "{s}", .{common.VISIBLE_CURSOR});

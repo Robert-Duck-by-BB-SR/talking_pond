@@ -78,7 +78,6 @@ pub fn init_first_frame(self: *Self) !void {
     var horizontal_border_list: std.ArrayList(u8) = try .initCapacity(self.alloc, width * common.theme.BORDER.HORIZONTAL.len);
     const top_border = try render_utils.render_border_top_with_title(self.alloc, self.dimensions.width, "PONDS", &horizontal_border_list);
     const bottom_border = try render_utils.render_border_bottom(self.alloc, self.dimensions.width, &horizontal_border_list);
-    std.debug.print("{}\n", .{self.rows_to_render.len});
 
     // Top border
     self.rows_to_render[0].cursor = try std.fmt.allocPrint(self.alloc, common.MOVE_CURSOR_TO_POSITION, .{ 1, self.position.col });
@@ -122,9 +121,7 @@ pub fn remap_content(self: *Self) !void {
             item.title,
             @intCast(self.dimensions.width - 2),
         );
-        std.debug.print("{s} {d} {d}\n", .{ content, content.len, i });
         @memcpy(self.rows_to_render[i].content.items[BORDER_OFFSET .. content.len + BORDER_OFFSET], content);
-        std.debug.print("{s} |||| {s} {d} {d}\n", .{ self.rows_to_render[i].content.items, self.rows_to_render[i].content.items, content.len, i });
     }
 }
 

@@ -14,12 +14,13 @@ pub fn main() !void {
     const std_in = std.io.getStdIn();
     const stdout = std_out.writer();
 
-    // var gpa = std.heap.GeneralPurposeAllocator(.{}).init;
-    // var arena = std.heap.ArenaAllocator.init(gpa.allocator());
-    // defer arena.deinit();
-    //
-    var allocator = std.heap.DebugAllocator(.{}).init;
-    var screen = Screen.create(allocator.allocator());
+    var gpa = std.heap.GeneralPurposeAllocator(.{}).init;
+    var arena = std.heap.ArenaAllocator.init(gpa.allocator());
+    defer arena.deinit();
+    
+    // NOTE: im leaving it just in case arena will do another two page stack trace
+    // var allocator = std.heap.DebugAllocator(.{}).init;
+    var screen = Screen.create(arena.allocator());
     try screen.create_layers(std_out);
 
     // NOTE: we don't want that to happend while debbuging
