@@ -125,43 +125,47 @@ pub fn remap_content(self: *Self) !void {
     }
 }
 
-// fn render_row(self: *Self, row_index: usize) !void { }
+fn render_row(self: *Self, row_index: usize) ![]u8 {
+    var ponds: std.ArrayList(u8) = .init(self.alloc);
+    const row = self.rows_to_render[row_index];
+    try ponds.writer().print("{s}{s}{s}{s}{s}", .{
+        row.cursor,
+        if (self.ponds_list.items.len != 0 and row_index == self.active_pond) ACTIVE_ITEM else INACTIVE_ITEM,
+        row.content.items,
+        try std.fmt.allocPrint(self.alloc, common.MOVE_CURSOR_TO_POSITION, .{ row_index + 1, self.dimensions.width - 1 }),
+        if ((row_index > 0 and row_index < self.ponds_list.items.len + 1) and self.ponds_list.items[row_index - 1].has_update) common.NOTIFICATION_ICON_PATTERN else "",
+    });
+    return ponds.toOwnedSlice();
+}
 
 pub fn render(self: *Self) !void {
     var ponds: std.ArrayList(u8) = .init(self.alloc);
     try self.remap_content();
-    for (self.rows_to_render, 0..) |row, i| {
-        try ponds.writer().print("{s}{s}{s}{s}{s}", .{
-            row.cursor,
-            if (self.ponds_list.items.len != 0 and i == self.active_pond) ACTIVE_ITEM else INACTIVE_ITEM,
-            row.content.items,
-            try std.fmt.allocPrint(self.alloc, common.MOVE_CURSOR_TO_POSITION, .{i + 1, self.dimensions.width - 1}),
-            if ((i > 0 and i < self.ponds_list.items.len + 1) and self.ponds_list.items[i - 1].has_update) common.NOTIFICATION_ICON_PATTERN else "",
+    for (0..self.rows_to_render.len) |i| {
+        try ponds.writer().print("{s}", .{
+            try self.render_row(i),
         });
     }
     const slice = try ponds.toOwnedSlice();
     try self.render_q.add_to_render_q(slice);
 }
 
-// pub fn handle_normal(self: *Self, key: u8) !void {
-//     switch (key) {
-//         'j' => {
-//             if (self.active_pond + 1 < self.ponds_list.items.len) {
-//                 self.active_pond += 1;
-//                 // TODO: REMOVE ME AND MAKE GLOBAL
-//                 const width: usize = @intCast(self.dimensions.width - 2);
-//                 // make me a part of a function
-//                 const title = try render_active_pond_item(self.alloc, self.ponds_list.items[active_pond].title, width);
-//                 self.rows_to_render[active_pond + 1].cursor = try std.fmt.allocPrint(self.alloc, common.MOVE_CURSOR_TO_POSITION, .{ active_pond + 2, self.position.col });
-//                 self.rows_to_render[active_pond + 1].content = std.ArrayList(u8).fromOwnedSlice(self.alloc, title);
-//                 try render_row(self, active_pond + 1);
-//             }
-//         },
-//         'k' => {
-//             if (active_pond - 1 >= 0) {
-//                 active_pond -= 1;
-//             }
-//         },
-//         else => {},
-//     }
-// }
+pub fn handle_normal(self: *Self, key: u8) !void {
+    switch (key) {
+        'j' => {
+            const prev_pond = self.active_pond;
+            self.active_pond = wrapi(self.active_pond + 1, self.ponds_list.items.len);
+            const old_pond = try self.render_row(prev_pond);
+            const new_pond = try self.render_row(self.active_pond);
+            try self.render_q.add_to_render_q(try std.fmt.allocPrint(self.alloc, "{s}{s}", .{old_pond, new_pond}));
+        },
+        'k' => {
+            const prev_pond = self.active_pond;
+            self.active_pond = wrapi(self.active_pond - 1, self.ponds_list.items.len);
+            const old_pond = try self.render_row(prev_pond);
+            const new_pond = try self.render_row(self.active_pond);
+            try self.render_q.add_to_render_q(try std.fmt.allocPrint(self.alloc, "{s}{s}", .{old_pond, new_pond}));
+        },
+        else => {},
+    }
+}
