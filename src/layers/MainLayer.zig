@@ -74,4 +74,3 @@ fn handle_insert(key: u8) void {
     }
 }
 
-pub fn init_first_frame() ![]u8 {}

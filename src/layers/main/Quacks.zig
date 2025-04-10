@@ -16,7 +16,6 @@ const Row = struct {
     content: std.ArrayList(u8) = undefined,
 };
 
-// FIXME: dimensions kinda goofy
 pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, render_q: *RenderQ) Self {
     return Self{
         .render_q = render_q,

@@ -26,6 +26,7 @@ pub fn render_border_top(alloc: std.mem.Allocator, width: i16, horizontal_border
 pub fn render_border_top_with_title(alloc: std.mem.Allocator, width: i16, title: []const u8, horizontal_border: *std.ArrayList(u8)) ![]u8 {
     var j: usize = 0;
     horizontal_border.appendSliceAssumeCapacity(border.HORIZONTAL);
+    // REMEMBER: borders are unicode characters, which means it's technically a slice
     horizontal_border.appendSliceAssumeCapacity(border.HORIZONTAL);
     horizontal_border.appendSliceAssumeCapacity(title);
     while (j < width - @as(i16, @intCast(title.len)) - 4) {
