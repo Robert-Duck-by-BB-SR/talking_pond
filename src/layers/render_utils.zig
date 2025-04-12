@@ -21,48 +21,44 @@ pub fn render_border_top(alloc: std.mem.Allocator, width: i16, horizontal_border
 }
 
 /// Border is generated in style:
-/// --TEXT-----
-/// That's why we append border.HORIZONTAL in the beninging
-pub fn render_border_top_with_title(alloc: std.mem.Allocator, width: i16, title: []const u8, horizontal_border: *std.ArrayList(u8)) ![]u8 {
-    var j: usize = 0;
-    horizontal_border.appendSliceAssumeCapacity(border.HORIZONTAL);
-    // REMEMBER: borders are unicode characters, which means it's technically a slice
-    horizontal_border.appendSliceAssumeCapacity(border.HORIZONTAL);
-    horizontal_border.appendSliceAssumeCapacity(title);
-    while (j < width - @as(i16, @intCast(title.len)) - 4) {
-        defer j += 1;
-        horizontal_border.appendSliceAssumeCapacity(border.HORIZONTAL);
+/// |-- TEXT -----|
+pub fn make_border_with_title(alloc: std.mem.Allocator, w: usize, title: []const u8) ![]u8 {
+    // 4 for two corner characters and 2 spaces around the title
+    const num_of_horizontal_total = w - title.len - 4;
+    // 2 for spaces around the title
+    const width = num_of_horizontal_total * border.HORIZONTAL.len + title.len + border.TOP_LEFT.len + border.TOP_RIGHT.len + 2;
+    const horizontal_border = try alloc.alloc(u8, width);
+
+    // first get all the points for memcopies
+    const tlborder_end = border.TOP_LEFT.len;
+    const hborder_end = tlborder_end + border.HORIZONTAL.len * 2 + 1; // <- 1 space character to outline the title
+    const title_end = hborder_end + title.len + 1; // <- ditto
+    const hbwidth = (width - title_end - border.TOP_RIGHT.len);
+
+    @memcpy(horizontal_border[0..tlborder_end], border.TOP_LEFT);
+    @memcpy(horizontal_border[tlborder_end .. hborder_end - 1], border.HORIZONTAL ** 2);
+    horizontal_border[hborder_end - 1] = ' ';
+    @memcpy(horizontal_border[hborder_end .. title_end - 1], title);
+    horizontal_border[title_end - 1] = ' ';
+    var i = title_end;
+    while (i < title_end + hbwidth) {
+        defer i += border.HORIZONTAL.len;
+        @memcpy(horizontal_border[i .. i + border.HORIZONTAL.len], border.HORIZONTAL);
     }
-    return try std.fmt.allocPrint(
-        alloc,
-        "{s}{s}{s}{s}",
-        .{
-            border.TOP_LEFT,
-            horizontal_border.items,
-            border.TOP_RIGHT,
-            common.RESET_STYLES,
-        },
-    );
+    @memcpy(horizontal_border[i .. ], border.TOP_RIGHT);
+    return horizontal_border;
 }
 
-pub fn render_border_bottom(alloc: std.mem.Allocator, width: i16, horizontal_border: *std.ArrayList(u8)) ![]u8 {
-    var j: usize = 0;
-    horizontal_border.clearRetainingCapacity();
-    while (j < width - 2) {
-        defer j += 1;
-        horizontal_border.appendSliceAssumeCapacity(border.HORIZONTAL);
+pub fn make_bottom_border(width: usize, horizontal_border: []u8) void {
+    const horizonal_border_len = (width - border.BOTTOM_LEFT.len - border.BOTTOM_RIGHT.len);
+    const blborder_end = border.BOTTOM_LEFT.len;
+    @memcpy(horizontal_border[0..blborder_end], border.BOTTOM_LEFT);
+    var i = blborder_end;
+    while (i <= horizonal_border_len) {
+        defer i += border.HORIZONTAL.len;
+        @memcpy(horizontal_border[i .. i + border.HORIZONTAL.len], border.HORIZONTAL);
     }
-
-    return try std.fmt.allocPrint(
-        alloc,
-        "{s}{s}{s}{s}",
-        .{
-            border.BOTTOM_LEFT,
-            horizontal_border.items,
-            border.BOTTOM_RIGHT,
-            common.RESET_STYLES,
-        },
-    );
+    @memcpy(horizontal_border[i..], border.BOTTOM_RIGHT);
 }
 
 pub fn render_line_of_text_and_backround(alloc: std.mem.Allocator, text: []const u8, width: usize) ![]u8 {
