@@ -10,12 +10,14 @@ alloc: std.mem.Allocator,
 render_q: *RenderQ,
 
 rows_to_render: []Row = undefined,
-borders: []Border = undefined,
+border: []u8 = undefined,
 ponds_list: std.ArrayList(PondItem) = undefined,
 active_pond: usize = 0,
+is_active: bool = true,
 
 const ACTIVE_ITEM = common.theme.FONT_COLOR ++ common.theme.ACTIVE_BACKGROUND_COLOR;
 const INACTIVE_ITEM = common.theme.FONT_COLOR ++ common.theme.BACKGROUND_COLOR;
+const ACTIVE_BORDER = common.theme.ACTIVE_FONT_COLOR ++ common.theme.BACKGROUND_COLOR;
 
 const Row = struct {
     cursor: []u8 = undefined,
@@ -26,11 +28,6 @@ const PondItem = struct {
     id: []u8 = undefined,
     has_update: bool = false,
     title: []const u8 = undefined,
-};
-
-const Border = struct {
-    cursor: []u8 = undefined,
-    content: []u8 = undefined,
 };
 
 const Self = @This();
@@ -77,7 +74,6 @@ pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, 
 
 pub fn init_first_frame(self: *Self) !void {
     self.rows_to_render = try self.alloc.alloc(Row, @intCast(self.dimensions.height - 2));
-    self.borders = try self.alloc.alloc(Border, @intCast(self.dimensions.height));
     const width: usize = @intCast(self.dimensions.width - 2);
 
     const corners_width = common.theme.BORDER.BOTTOM_LEFT.len + common.theme.BORDER.BOTTOM_RIGHT.len;
@@ -95,12 +91,14 @@ pub fn init_first_frame(self: *Self) !void {
     );
 
     // Top border
-    self.borders[0].cursor = try std.fmt.allocPrint(
-        self.alloc,
-        common.MOVE_CURSOR_TO_POSITION,
-        .{ 1, self.position.col },
-    );
-    self.borders[0].content = top_border;
+    self.border = try std.fmt.allocPrint(self.alloc, "{s}{s}", .{
+        try std.fmt.allocPrint(
+            self.alloc,
+            common.MOVE_CURSOR_TO_POSITION,
+            .{ 1, self.position.col },
+        ),
+        top_border,
+    });
 
     // Background
     for (self.rows_to_render, 2..) |*row, i| {
@@ -114,16 +112,48 @@ pub fn init_first_frame(self: *Self) !void {
         row.content = bg_mid;
     }
 
+    for (1..@intCast(self.dimensions.height - 1)) |i| {
+        self.border = try std.fmt.allocPrint(self.alloc, "{s}{s}{s}{s}{s}", .{
+            self.border,
+            try std.fmt.allocPrint(
+                self.alloc,
+                common.MOVE_CURSOR_TO_POSITION,
+                .{
+                    i + 1,
+                    self.position.col,
+                },
+            ),
+            common.theme.BORDER.VERTICAL,
+            try std.fmt.allocPrint(
+                self.alloc,
+                common.MOVE_CURSOR_TO_POSITION,
+                .{
+                    i + 1,
+                    self.dimensions.width,
+                },
+            ),
+            common.theme.BORDER.VERTICAL,
+        });
+    }
+
     // Bottom border
-    self.borders[self.borders.len - 1].cursor = try std.fmt.allocPrint(
+    self.border = try std.fmt.allocPrint(
         self.alloc,
-        common.MOVE_CURSOR_TO_POSITION,
+        "{s}{s}{s}{s}",
         .{
-            self.borders.len,
-            self.position.col,
+            self.border,
+            try std.fmt.allocPrint(
+                self.alloc,
+                common.MOVE_CURSOR_TO_POSITION,
+                .{
+                    self.dimensions.height,
+                    self.position.col,
+                },
+            ),
+            bottom_border,
+            common.RESET_STYLES,
         },
     );
-    self.borders[self.borders.len - 1].content = bottom_border;
 }
 
 pub fn remap_content(self: *Self) !void {
@@ -133,7 +163,7 @@ pub fn remap_content(self: *Self) !void {
             pond.title,
             @intCast(self.dimensions.width - 2),
         );
-        @memcpy(self.rows_to_render[i].content[0.. content.len], content);
+        @memcpy(self.rows_to_render[i].content[0..content.len], content);
     }
 }
 
@@ -159,6 +189,10 @@ pub fn render(self: *Self) !void {
             try self.render_row(i),
         });
     }
+    try ponds.writer().print("{s}{s}", .{
+        if (self.is_active) ACTIVE_BORDER else INACTIVE_ITEM,
+        self.border,
+    });
     const slice = try ponds.toOwnedSlice();
     try self.render_q.add_to_render_q(slice);
 }
@@ -167,7 +201,7 @@ pub fn handle_normal(self: *Self, key: u8) !void {
     switch (key) {
         'j' => {
             const prev_pond = self.active_pond;
-            self.active_pond = wrapi(self.active_pond,  1, self.ponds_list.items.len);
+            self.active_pond = wrapi(self.active_pond, 1, self.ponds_list.items.len);
             const old_pond = try self.render_row(prev_pond);
             const new_pond = try self.render_row(self.active_pond);
             try self.render_q.add_to_render_q(try std.fmt.allocPrint(self.alloc, "{s}{s}", .{ old_pond, new_pond }));
