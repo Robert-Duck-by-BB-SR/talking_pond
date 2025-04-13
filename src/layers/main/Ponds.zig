@@ -10,12 +10,12 @@ alloc: std.mem.Allocator,
 render_q: *RenderQ,
 
 rows_to_render: []Row = undefined,
+borders: []Border = undefined,
 ponds_list: std.ArrayList(PondItem) = undefined,
-active_pond: usize = 1,
+active_pond: usize = 0,
 
 const ACTIVE_ITEM = common.theme.FONT_COLOR ++ common.theme.ACTIVE_BACKGROUND_COLOR;
 const INACTIVE_ITEM = common.theme.FONT_COLOR ++ common.theme.BACKGROUND_COLOR;
-const BORDER_OFFSET = common.theme.BORDER.VERTICAL.len;
 
 const Row = struct {
     cursor: []u8 = undefined,
@@ -28,15 +28,21 @@ const PondItem = struct {
     title: []const u8 = undefined,
 };
 
+const Border = struct {
+    cursor: []u8 = undefined,
+    content: []u8 = undefined,
+};
+
 const Self = @This();
 
-fn wrapi(index: usize, max: usize) usize {
-    if (index == 0) {
-        return max;
-    } else if (index > max) {
-        return 1;
+fn wrapi(index: usize, direction: isize, max: usize) usize {
+    if (direction == -1 and index == 0) {
+        return max - 1;
+    } else if (direction == 1 and index == max - 1) {
+        return 0;
     } else {
-        return index;
+        const s_index: isize = @intCast(index);
+        return @intCast(s_index + direction);
     }
 }
 
@@ -70,74 +76,64 @@ pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, 
 }
 
 pub fn init_first_frame(self: *Self) !void {
-    self.rows_to_render = try self.alloc.alloc(Row, @intCast(self.dimensions.height));
+    self.rows_to_render = try self.alloc.alloc(Row, @intCast(self.dimensions.height - 2));
+    self.borders = try self.alloc.alloc(Border, @intCast(self.dimensions.height));
     const width: usize = @intCast(self.dimensions.width - 2);
 
     const corners_width = common.theme.BORDER.BOTTOM_LEFT.len + common.theme.BORDER.BOTTOM_RIGHT.len;
     const border_width = width * common.theme.BORDER.HORIZONTAL.len + corners_width;
-    std.debug.print("{}\n", .{border_width});
 
-    const bottom_border = try self.alloc.alloc(u8, border_width);
     const top_border = try render_utils.make_border_with_title(
         self.alloc,
         @intCast(self.dimensions.width),
         "PONDS",
     );
 
-    render_utils.make_bottom_border(
+    const bottom_border = try render_utils.make_bottom_border(
+        self.alloc,
         border_width,
-        bottom_border,
     );
 
     // Top border
-    self.rows_to_render[0].cursor = try std.fmt.allocPrint(
+    self.borders[0].cursor = try std.fmt.allocPrint(
         self.alloc,
         common.MOVE_CURSOR_TO_POSITION,
         .{ 1, self.position.col },
     );
-    self.rows_to_render[0].content = top_border;
+    self.borders[0].content = top_border;
 
     // Background
-    for (1..self.rows_to_render.len - 1) |i| {
+    for (self.rows_to_render, 2..) |*row, i| {
         const bg_mid = try self.alloc.alloc(u8, width);
         @memset(bg_mid, ' ');
-        self.rows_to_render[i].cursor = try std.fmt.allocPrint(
+        row.cursor = try std.fmt.allocPrint(
             self.alloc,
             common.MOVE_CURSOR_TO_POSITION,
-            .{ i + 1, self.position.col },
+            .{ i, self.position.col + 1 },
         );
-        self.rows_to_render[i].content = try std.fmt.allocPrint(
-            self.alloc,
-            "{s}{s}{s}{s}",
-            .{
-                common.theme.BORDER.VERTICAL,
-                bg_mid,
-                common.theme.BORDER.VERTICAL,
-                common.RESET_STYLES,
-            },
-        );
+        row.content = bg_mid;
     }
 
     // Bottom border
-    self.rows_to_render[self.rows_to_render.len - 1].cursor = try std.fmt.allocPrint(
+    self.borders[self.borders.len - 1].cursor = try std.fmt.allocPrint(
         self.alloc,
         common.MOVE_CURSOR_TO_POSITION,
         .{
-            self.rows_to_render.len,
+            self.borders.len,
             self.position.col,
         },
     );
-    self.rows_to_render[self.rows_to_render.len - 1].content = bottom_border;
+    self.borders[self.borders.len - 1].content = bottom_border;
 }
 
 pub fn remap_content(self: *Self) !void {
-    for (self.ponds_list.items, 1..) |item, i| {
+    for (self.ponds_list.items, 0..) |pond, i| {
         const content = try render_utils.render_line_of_text_and_backround(
             self.alloc,
-            item.title,
+            pond.title,
             @intCast(self.dimensions.width - 2),
         );
-        @memcpy(self.rows_to_render[i].content[BORDER_OFFSET .. content.len + BORDER_OFFSET], content);
+        @memcpy(self.rows_to_render[i].content[0.. content.len], content);
     }
 }
 
@@ -171,14 +167,14 @@ pub fn handle_normal(self: *Self, key: u8) !void {
     switch (key) {
         'j' => {
             const prev_pond = self.active_pond;
-            self.active_pond = wrapi(self.active_pond + 1, self.ponds_list.items.len);
+            self.active_pond = wrapi(self.active_pond,  1, self.ponds_list.items.len);
             const old_pond = try self.render_row(prev_pond);
             const new_pond = try self.render_row(self.active_pond);
             try self.render_q.add_to_render_q(try std.fmt.allocPrint(self.alloc, "{s}{s}", .{ old_pond, new_pond }));
         },
         'k' => {
             const prev_pond = self.active_pond;
-            self.active_pond = wrapi(self.active_pond - 1, self.ponds_list.items.len);
+            self.active_pond = wrapi(self.active_pond, -1, self.ponds_list.items.len);
             const old_pond = try self.render_row(prev_pond);
             const new_pond = try self.render_row(self.active_pond);
             try self.render_q.add_to_render_q(try std.fmt.allocPrint(self.alloc, "{s}{s}", .{ old_pond, new_pond }));

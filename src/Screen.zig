@@ -159,7 +159,8 @@ pub fn read_terminal(self: *Self, std_in: fs.File) !void {
                             .MAIN => {
                                 try self.main_layer.handle_current_state(self.active_mode, curr_char);
                             },
-                            else => {},
+                            .LOGIN => {},
+                            // else => {},
                         }
                     },
                 }

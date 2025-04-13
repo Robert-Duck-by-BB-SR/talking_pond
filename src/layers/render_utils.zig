@@ -49,7 +49,8 @@ pub fn make_border_with_title(alloc: std.mem.Allocator, w: usize, title: []const
     return horizontal_border;
 }
 
-pub fn make_bottom_border(width: usize, horizontal_border: []u8) void {
+pub fn make_bottom_border(alloc: std.mem.Allocator, width: usize) ![]u8 {
+    const horizontal_border = try alloc.alloc(u8, width);
     const horizonal_border_len = (width - border.BOTTOM_LEFT.len - border.BOTTOM_RIGHT.len);
     const blborder_end = border.BOTTOM_LEFT.len;
     @memcpy(horizontal_border[0..blborder_end], border.BOTTOM_LEFT);
@@ -59,6 +60,7 @@ pub fn make_bottom_border(width: usize, horizontal_border: []u8) void {
         @memcpy(horizontal_border[i .. i + border.HORIZONTAL.len], border.HORIZONTAL);
     }
     @memcpy(horizontal_border[i..], border.BOTTOM_RIGHT);
+    return horizontal_border;
 }
 
 pub fn render_line_of_text_and_backround(alloc: std.mem.Allocator, text: []const u8, width: usize) ![]u8 {
