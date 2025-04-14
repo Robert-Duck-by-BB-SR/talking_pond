@@ -174,9 +174,9 @@ fn render_row(self: *Self, row_index: usize) ![]u8 {
         row.cursor,
         if (self.ponds_list.items.len != 0 and row_index == self.active_pond) ACTIVE_ITEM else INACTIVE_ITEM,
         row.content,
-        try std.fmt.allocPrint(self.alloc, common.MOVE_CURSOR_TO_POSITION, .{ row_index + 1, self.dimensions.width - 1 }),
-        if ((row_index > 0 and row_index < self.ponds_list.items.len + 1) and
-            self.ponds_list.items[row_index - 1].has_update) common.NOTIFICATION_ICON_PATTERN else "",
+        try std.fmt.allocPrint(self.alloc, common.MOVE_CURSOR_TO_POSITION, .{ row_index + 2, self.dimensions.width - 1 }),
+        if (row_index < self.ponds_list.items.len and
+            self.ponds_list.items[row_index].has_update) common.NOTIFICATION_ICON_PATTERN else "",
     });
     return ponds.toOwnedSlice();
 }
