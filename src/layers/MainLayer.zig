@@ -10,9 +10,9 @@ quacks: Quacks,
 // insert: Insert,
 alloc: std.mem.Allocator,
 render_queue: *RenderQueue,
+active_component: ComponentType = .PONDS_SIDEBAR,
 
-const Components = enum { PONDS_SIDEBAR, QUACKS_CHAT, INPUT_FIELD };
-var active_component: Components = .PONDS_SIDEBAR;
+const ComponentType = enum { PONDS_SIDEBAR, QUACKS_CHAT, INPUT_FIELD };
 
 const Self = @This();
 
@@ -45,24 +45,24 @@ pub fn render_first_frame(self: *Self) !void {
 pub fn handle_current_state(self: *Self, mode: common.MODE, key: u8) !void {
     switch (mode) {
         .NORMAL => try handle_normal(self, key),
-        .INSERT => handle_insert(key),
+        .INSERT => {},
         else => {},
     }
 }
 
 fn handle_normal(self: *Self, key: u8) !void {
     switch (key) {
-        'S' => {
-            active_component = .PONDS_SIDEBAR;
+        'P' => {
+            try self.switch_active(.PONDS_SIDEBAR);
         },
-        'C' => {
-            active_component = .QUACKS_CHAT;
+        'Q' => {
+            try self.switch_active(.QUACKS_CHAT);
         },
         'I' => {
-            active_component = .INPUT_FIELD;
+            try self.switch_active(.INPUT_FIELD);
         },
         else => {
-            switch (active_component) {
+            switch (self.active_component) {
                 .PONDS_SIDEBAR => {
                     try self.ponds.handle_normal(key);
                 },
@@ -73,8 +73,34 @@ fn handle_normal(self: *Self, key: u8) !void {
     }
 }
 
-fn handle_insert(key: u8) void {
-    switch (key) {
-        else => {},
+fn switch_active(self: *Self, new_active: ComponentType) !void {
+    var old_border: []u8 = undefined;
+    var new_border: []u8 = undefined;
+    switch (self.active_component) {
+        .PONDS_SIDEBAR => {
+            self.ponds.is_active = false;
+            old_border = self.ponds.border;
+        },
+        .QUACKS_CHAT => {
+            self.quacks.is_active = false;
+            old_border = self.quacks.border;
+        },
+        .INPUT_FIELD => {},
     }
+    switch (new_active) {
+        .PONDS_SIDEBAR => {
+            self.ponds.is_active = true;
+            new_border = self.ponds.border;
+        },
+        .QUACKS_CHAT => {
+            self.quacks.is_active = true;
+            new_border = self.quacks.border;
+        },
+        .INPUT_FIELD => {},
+    }
+    self.active_component = new_active;
+    const compiled_old_border = try common.render_border(self.alloc, false, old_border);
+    const compiled_new_border = try common.render_border(self.alloc, true, new_border);
+    try self.render_queue.add_to_render_q(compiled_old_border);
+    try self.render_queue.add_to_render_q(compiled_new_border);
 }
