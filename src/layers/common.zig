@@ -71,3 +71,8 @@ pub const theme = struct {
 };
 
 pub const NOTIFICATION_ICON_PATTERN = theme.ACTIVE_FONT_COLOR ++ NOTIFICATION_ICON ++ RESET_STYLES;
+
+
+pub const ACTIVE_ITEM = theme.FONT_COLOR ++ theme.ACTIVE_BACKGROUND_COLOR;
+pub const INACTIVE_ITEM = theme.FONT_COLOR ++ theme.BACKGROUND_COLOR;
+pub const ACTIVE_BORDER = theme.ACTIVE_FONT_COLOR ++ theme.BACKGROUND_COLOR;

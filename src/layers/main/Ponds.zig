@@ -15,9 +15,6 @@ ponds_list: std.ArrayList(PondItem) = undefined,
 active_pond: usize = 0,
 is_active: bool = true,
 
-const ACTIVE_ITEM = common.theme.FONT_COLOR ++ common.theme.ACTIVE_BACKGROUND_COLOR;
-const INACTIVE_ITEM = common.theme.FONT_COLOR ++ common.theme.BACKGROUND_COLOR;
-const ACTIVE_BORDER = common.theme.ACTIVE_FONT_COLOR ++ common.theme.BACKGROUND_COLOR;
 
 const Row = struct {
     cursor: []u8 = undefined,
@@ -172,7 +169,7 @@ fn render_row(self: *Self, row_index: usize) ![]u8 {
     const row = self.rows_to_render[row_index];
     try ponds.writer().print("{s}{s}{s}{s}{s}", .{
         row.cursor,
-        if (self.ponds_list.items.len != 0 and row_index == self.active_pond) ACTIVE_ITEM else INACTIVE_ITEM,
+        if (self.ponds_list.items.len != 0 and row_index == self.active_pond) common.ACTIVE_ITEM else common.INACTIVE_ITEM,
         row.content,
         try std.fmt.allocPrint(self.alloc, common.MOVE_CURSOR_TO_POSITION, .{ row_index + 2, self.dimensions.width - 1 }),
         if (row_index < self.ponds_list.items.len and
@@ -190,7 +187,7 @@ pub fn render(self: *Self) !void {
         });
     }
     try ponds.writer().print("{s}{s}", .{
-        if (self.is_active) ACTIVE_BORDER else INACTIVE_ITEM,
+        if (self.is_active) common.ACTIVE_BORDER else common.INACTIVE_ITEM,
         self.border,
     });
     const slice = try ponds.toOwnedSlice();
