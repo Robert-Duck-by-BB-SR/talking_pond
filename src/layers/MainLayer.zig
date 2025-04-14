@@ -7,7 +7,7 @@ const RenderQueue = @import("../RenderQueue.zig");
 
 ponds: Ponds,
 quacks: Quacks,
-// insert: Insert,
+insert: Insert,
 alloc: std.mem.Allocator,
 render_queue: *RenderQueue,
 active_component: ComponentType = .PONDS_SIDEBAR,
@@ -27,19 +27,34 @@ pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, 
         terminal_dimensions,
         render_queue,
     );
+    const insert = Insert.create(
+        alloc,
+        .{
+            .row = quacks.dimensions.height + 1,
+            .col = quacks.position.col,
+        },
+        .{
+            .height = 5,
+            .width = quacks.dimensions.width,
+        },
+        render_queue,
+    );
     return Self{
         .alloc = alloc,
         .render_queue = render_queue,
         .ponds = ponds,
         .quacks = quacks,
+        .insert = insert,
     };
 }
 
 pub fn render_first_frame(self: *Self) !void {
     try self.ponds.init_first_frame();
     try self.quacks.init_first_frame();
+    try self.insert.init_first_frame();
     try self.ponds.render();
     try self.quacks.render();
+    try self.insert.render();
 }
 
 pub fn handle_current_state(self: *Self, mode: common.MODE, key: u8) !void {
@@ -85,7 +100,10 @@ fn switch_active(self: *Self, new_active: ComponentType) !void {
             self.quacks.is_active = false;
             old_border = self.quacks.border;
         },
-        .INPUT_FIELD => {},
+        .INPUT_FIELD => {
+            self.insert.is_active = false;
+            old_border = self.insert.border;
+        },
     }
     switch (new_active) {
         .PONDS_SIDEBAR => {
@@ -96,7 +114,10 @@ fn switch_active(self: *Self, new_active: ComponentType) !void {
             self.quacks.is_active = true;
             new_border = self.quacks.border;
         },
-        .INPUT_FIELD => {},
+        .INPUT_FIELD => {
+            self.quacks.is_active = true;
+            new_border = self.insert.border;
+        },
     }
     self.active_component = new_active;
     const compiled_old_border = try common.render_border(self.alloc, false, old_border);
