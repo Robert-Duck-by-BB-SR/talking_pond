@@ -67,6 +67,7 @@ pub const NormalBorder = struct {
 };
 
 pub const NOTIFICATION_ICON = "\u{25FC}";
+pub const NOTIFICATION_ICON_PATTERN = theme.ACTIVE_FONT_COLOR ++ NOTIFICATION_ICON ++ RESET_STYLES;
 
 pub const theme = struct {
     pub const FONT_COLOR = "\x1b[38;2;192;192;192m";
@@ -75,9 +76,6 @@ pub const theme = struct {
     pub const ACTIVE_BACKGROUND_COLOR = "\x1b[48;2;155;100;0m";
     pub const BORDER = NormalBorder;
 };
-
-pub const NOTIFICATION_ICON_PATTERN = theme.ACTIVE_FONT_COLOR ++ NOTIFICATION_ICON ++ RESET_STYLES;
-
 
 pub const ACTIVE_ITEM = theme.FONT_COLOR ++ theme.ACTIVE_BACKGROUND_COLOR;
 pub const INACTIVE_ITEM = theme.FONT_COLOR ++ theme.BACKGROUND_COLOR;

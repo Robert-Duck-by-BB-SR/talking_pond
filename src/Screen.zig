@@ -114,7 +114,6 @@ pub fn get_terminal_dimensions(self: *Self, std_out: fs.File) !void {
     assert(!(self.terminal_dimensions.width <= 0) and !(self.terminal_dimensions.height <= 0)); // how?
     assert(self.terminal_dimensions.width != std.math.maxInt(i10)); // waytoodank 511 columns is a lot
     assert(self.terminal_dimensions.height < self.terminal_dimensions.width); // we do not support vertical
-
 }
 
 pub fn read_terminal(self: *Self, std_in: fs.File) !void {
@@ -127,8 +126,6 @@ pub fn read_terminal(self: *Self, std_in: fs.File) !void {
 
         // FIXME: remove later
         if (curr_char == 3) {
-            const result = try std.fmt.allocPrint(self.alloc, "{s}", .{common.VISIBLE_CURSOR});
-            try self.render_q.add_to_render_q(result, .CURSOR);
             self.exit = true;
             self.render_q.condition.signal();
             return;
@@ -172,8 +169,6 @@ fn handle_command(self: *Self) !void {
     const command = common.KNOWN_COMMANDS.get(self.status_line[0..self.status_line_content_len]);
     if (command) |real_command| switch (real_command) {
         .QUIT => {
-            const result = try std.fmt.allocPrint(self.alloc, "{s}", .{common.VISIBLE_CURSOR});
-            try self.render_q.add_to_render_q(result, .CURSOR);
             self.exit = true;
         },
         .NEW_CONVERSATION => {
