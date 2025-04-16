@@ -14,6 +14,8 @@ border: []u8 = undefined,
 active_pond: usize = 0,
 is_active: bool = false,
 
+virtual_cursor: common.Position = .{ .col = 0, .row = 0 },
+full_content: std.ArrayList(u8) = undefined,
 
 const Row = struct {
     cursor: []u8 = undefined,
@@ -28,6 +30,7 @@ pub fn create(alloc: std.mem.Allocator, position: common.Position, dimensions: c
         .alloc = alloc,
         .dimensions = dimensions,
         .position = position,
+        .full_content = .init(alloc),
     };
 }
 
@@ -128,6 +131,18 @@ fn render_row(self: *Self, row_index: usize) ![]u8 {
     return ponds.toOwnedSlice();
 }
 
+pub fn render_current_virtual_cursor(self: *Self) []u8 {
+    const actual_position = .{
+        self.position.row + self.virtual_cursor.row + 1,
+        self.position.col + self.virtual_cursor.col + 1,
+    };
+    return std.fmt.allocPrint(
+        self.alloc,
+        common.MOVE_CURSOR_TO_POSITION,
+        .{ actual_position[0], actual_position[1] },
+    ) catch "";
+}
+
 pub fn render(self: *Self) !void {
     var ponds: std.ArrayList(u8) = .init(self.alloc);
     for (0..self.rows_to_render.len) |i| {
@@ -137,6 +152,10 @@ pub fn render(self: *Self) !void {
     }
     const rendered_border = try common.render_border(self.alloc, self.is_active, self.border);
     try ponds.writer().print("{s}", .{rendered_border});
+    if (self.is_active) {
+        try ponds.writer().print("{s}", .{self.render_current_virtual_cursor()});
+    }
     const slice = try ponds.toOwnedSlice();
-    try self.render_q.add_to_render_q(slice);
+    try self.render_q.add_to_render_q(slice, .CONTENT);
+    self.render_q.sudo_render();
 }

@@ -35,36 +35,33 @@ const Self = @This();
 pub fn create(alloc: std.mem.Allocator) Self {
     return Self{
         .alloc = alloc,
-        .render_q = .{
-            .queue = std.ArrayList(u8).init(alloc),
-        },
+        .render_q = RenderQ.create(alloc),
     };
 }
 
 pub fn create_layers(self: *Self, stdout: fs.File) !void {
-    // FIXME: you know what to do 
+    // FIXME: you know what to do
     try self.get_terminal_dimensions(stdout);
     self.main_layer = try MainLayer.create(self.alloc, self.terminal_dimensions, &self.render_q);
 }
 
-
 /// initialize screen before we start reading from terminal
 /// here we check the connection, pick layer to render (login/main)
 /// clear screen and finally render first frame
-pub fn init_first_frame(self: *Self, stdout: fs.File.Writer) !void {
+pub fn init_first_frame(self: *Self) !void {
     // hide cursor
     const hidden_cursor_slice = try std.fmt.allocPrint(self.alloc, "{s}", .{common.HIDDEN_CURSOR});
-    try self.render_q.add_to_render_q(hidden_cursor_slice);
+    try self.render_q.add_to_render_q(hidden_cursor_slice, .CURSOR);
     self.status_line = try self.alloc.alloc(u8, @intCast(self.terminal_dimensions.width));
     @memset(self.status_line, ' ');
-    try self.render_q.queue.appendSlice(common.CLEAR_SCREEN);
-    try self.render_q.queue.appendSlice(common.theme.ACTIVE_BACKGROUND_COLOR);
+    try self.render_q.add_to_render_q(common.CLEAR_SCREEN, .CONTENT);
+    try self.render_q.add_to_render_q(common.theme.ACTIVE_BACKGROUND_COLOR, .CONTENT);
 
     // layer logic here
     try self.main_layer.render_first_frame();
     try self.change_mode(.NORMAL);
-    try stdout.print("{s}", .{self.render_q.queue.items});
-    self.render_q.queue.clearAndFree();
+    self.render_q.sudo_render();
+    self.render_q.first_frame = false;
 }
 
 fn render_status_line(self: Self) ![]u8 {
@@ -81,7 +78,8 @@ pub fn change_mode(self: *Self, new_mode: common.MODE) !void {
 
     const status_line_content = try self.render_status_line();
     defer self.alloc.free(status_line_content);
-    try self.render_q.add_to_render_q(status_line_content);
+    try self.render_q.add_to_render_q(status_line_content, .STATUS);
+    self.render_q.sudo_render();
 }
 
 fn append_to_command(self: *Self, char: u8) !void {
@@ -89,7 +87,8 @@ fn append_to_command(self: *Self, char: u8) !void {
     self.status_line_content_len += 1;
     const status_line_content = try self.render_status_line();
     defer self.alloc.free(status_line_content);
-    try self.render_q.add_to_render_q(status_line_content);
+    try self.render_q.add_to_render_q(status_line_content, .STATUS);
+    self.render_q.sudo_render();
 }
 
 pub fn get_terminal_dimensions(self: *Self, std_out: fs.File) !void {
@@ -129,13 +128,12 @@ pub fn read_terminal(self: *Self, std_in: fs.File) !void {
         // FIXME: remove later
         if (curr_char == 3) {
             const result = try std.fmt.allocPrint(self.alloc, "{s}", .{common.VISIBLE_CURSOR});
-            try self.render_q.add_to_render_q(result);
+            try self.render_q.add_to_render_q(result, .CURSOR);
             self.exit = true;
             self.render_q.condition.signal();
             return;
         }
 
-        const prev_mode = self.active_mode;
         switch (self.active_mode) {
             .COMMAND => {
                 switch (curr_char) {
@@ -167,9 +165,6 @@ pub fn read_terminal(self: *Self, std_in: fs.File) !void {
             },
             else => {},
         }
-        if (prev_mode != self.active_mode) {
-            // TODO deal with the mode change
-        }
     }
 }
 
@@ -178,7 +173,7 @@ fn handle_command(self: *Self) !void {
     if (command) |real_command| switch (real_command) {
         .QUIT => {
             const result = try std.fmt.allocPrint(self.alloc, "{s}", .{common.VISIBLE_CURSOR});
-            try self.render_q.add_to_render_q(result);
+            try self.render_q.add_to_render_q(result, .CURSOR);
             self.exit = true;
         },
         .NEW_CONVERSATION => {

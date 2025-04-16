@@ -103,6 +103,7 @@ fn switch_active(self: *Self, new_active: ComponentType) !void {
         .INPUT_FIELD => {
             self.insert.is_active = false;
             old_border = self.insert.border;
+            try self.render_queue.add_to_render_q(common.HIDDEN_CURSOR, .CURSOR);
         },
     }
     switch (new_active) {
@@ -117,11 +118,16 @@ fn switch_active(self: *Self, new_active: ComponentType) !void {
         .INPUT_FIELD => {
             self.quacks.is_active = true;
             new_border = self.insert.border;
+            try self.render_queue.add_to_render_q(common.VISIBLE_CURSOR, .CURSOR);
+            try self.render_queue.add_to_render_q(self.insert.render_current_virtual_cursor(), .CURSOR);
         },
     }
     self.active_component = new_active;
     const compiled_old_border = try common.render_border(self.alloc, false, old_border);
     const compiled_new_border = try common.render_border(self.alloc, true, new_border);
-    try self.render_queue.add_to_render_q(compiled_old_border);
-    try self.render_queue.add_to_render_q(compiled_new_border);
+    try self.render_queue.add_to_render_q(compiled_old_border, .CONTENT);
+    try self.render_queue.add_to_render_q(compiled_new_border, .CONTENT);
+
+    self.render_queue.sudo_render();
+
 }

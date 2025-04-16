@@ -157,5 +157,6 @@ pub fn render(self: *Self) !void {
     const rendered_border = try common.render_border(self.alloc, self.is_active, self.border);
     try ponds.writer().print("{s}", .{rendered_border});
     const slice = try ponds.toOwnedSlice();
-    try self.render_q.add_to_render_q(slice);
+    try self.render_q.add_to_render_q(slice, .CONTENT);
+    self.render_q.sudo_render();
 }

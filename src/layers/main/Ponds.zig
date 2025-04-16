@@ -188,7 +188,8 @@ pub fn render(self: *Self) !void {
     const rendered_border = try common.render_border(self.alloc, self.is_active, self.border);
     try ponds.writer().print("{s}", .{rendered_border});
     const slice = try ponds.toOwnedSlice();
-    try self.render_q.add_to_render_q(slice);
+    try self.render_q.add_to_render_q(slice, .CONTENT);
+    self.render_q.sudo_render();
 }
 
 pub fn handle_normal(self: *Self, key: u8) !void {
@@ -198,14 +199,22 @@ pub fn handle_normal(self: *Self, key: u8) !void {
             self.active_pond = wrapi(self.active_pond, 1, self.ponds_list.items.len);
             const old_pond = try self.render_row(prev_pond);
             const new_pond = try self.render_row(self.active_pond);
-            try self.render_q.add_to_render_q(try std.fmt.allocPrint(self.alloc, "{s}{s}", .{ old_pond, new_pond }));
+            try self.render_q.add_to_render_q(
+                try std.fmt.allocPrint(self.alloc, "{s}{s}", .{ old_pond, new_pond }),
+                .CONTENT,
+            );
+            self.render_q.sudo_render();
         },
         'k' => {
             const prev_pond = self.active_pond;
             self.active_pond = wrapi(self.active_pond, -1, self.ponds_list.items.len);
             const old_pond = try self.render_row(prev_pond);
             const new_pond = try self.render_row(self.active_pond);
-            try self.render_q.add_to_render_q(try std.fmt.allocPrint(self.alloc, "{s}{s}", .{ old_pond, new_pond }));
+            try self.render_q.add_to_render_q(
+                try std.fmt.allocPrint(self.alloc, "{s}{s}", .{ old_pond, new_pond }),
+                .CONTENT,
+            );
+            self.render_q.sudo_render();
         },
         else => {},
     }

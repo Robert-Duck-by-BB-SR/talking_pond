@@ -5,6 +5,12 @@ pub const LAYER_TYPE = enum {
     WINDOW,
 };
 
+pub const CONTENT_TYPE = enum {
+    CONTENT,
+    STATUS,
+    CURSOR,
+};
+
 pub const LAYERS = enum {
     LOGIN,
     MAIN,

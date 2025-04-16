@@ -25,7 +25,7 @@ pub fn main() !void {
 
     // NOTE: we don't want that to happend while debbuging
     // defer stdout.print("\x1b[2J", .{}) catch unreachable;
-    try screen.init_first_frame(stdout);
+    try screen.init_first_frame();
 
     var termos = try terminal.get_termos_with_tea();
     try terminal.start_raw_mode(std_in, std_out, &termos);
