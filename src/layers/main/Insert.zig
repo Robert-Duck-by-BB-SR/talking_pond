@@ -63,13 +63,14 @@ pub fn init_first_frame(self: *Self) !void {
     });
 
     // Background
-    for (self.rows_to_render, 2..) |*row, i| {
+    const r: usize = @intCast(self.position.row);
+    for (self.rows_to_render, 1..) |*row, i| {
         const bg_mid = try self.alloc.alloc(u8, width);
         @memset(bg_mid, ' ');
         row.cursor = try std.fmt.allocPrint(
             self.alloc,
             common.MOVE_CURSOR_TO_POSITION,
-            .{ i, self.position.col + 1 },
+            .{ r + i, self.position.col + 1 },
         );
         row.content = bg_mid;
     }
@@ -193,12 +194,18 @@ pub fn handle_insert(self: *Self, mode: *common.MODE, key: u8) !void {
     switch (key) {
         3 => {
             mode.* = .NORMAL;
+            if (self.virtual_cursor.col != 0) {
+                self.virtual_cursor.col -= 1;
+            }
+            try self.render_q.add_to_render_q(self.render_current_virtual_cursor(), .CURSOR);
         },
         else => {
             try self.full_content.append(key);
             try self.remap_content();
             const row = try self.render_row(0);
             try self.render_q.add_to_render_q(row, .CONTENT);
+            self.virtual_cursor.col += 1;
+            try self.render_q.add_to_render_q(self.render_current_virtual_cursor(), .CURSOR);
             self.render_q.sudo_render();
         },
     }
