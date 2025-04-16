@@ -192,7 +192,7 @@ pub fn render(self: *Self) !void {
     self.render_q.sudo_render();
 }
 
-pub fn handle_normal(self: *Self, key: u8) !void {
+pub fn handle_normal(self: *Self, mode: *common.MODE, key: u8, new_active: *common.ComponentType) !void {
     switch (key) {
         'j' => {
             const prev_pond = self.active_pond;
@@ -215,6 +215,15 @@ pub fn handle_normal(self: *Self, key: u8) !void {
                 .CONTENT,
             );
             self.render_q.sudo_render();
+        },
+        'Q' => {
+            new_active.* = .QUACKS_CHAT;
+        },
+        'I' => {
+            new_active.* = .INPUT_FIELD;
+        },
+        ':' => {
+            mode.* = .COMMAND;
         },
         else => {},
     }

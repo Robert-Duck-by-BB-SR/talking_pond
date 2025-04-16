@@ -10,9 +10,7 @@ quacks: Quacks,
 insert: Insert,
 alloc: std.mem.Allocator,
 render_queue: *RenderQueue,
-active_component: ComponentType = .PONDS_SIDEBAR,
-
-const ComponentType = enum { PONDS_SIDEBAR, QUACKS_CHAT, INPUT_FIELD };
+active_component: common.ComponentType = .PONDS_SIDEBAR,
 
 const Self = @This();
 
@@ -57,38 +55,37 @@ pub fn render_first_frame(self: *Self) !void {
     try self.insert.render();
 }
 
-pub fn handle_current_state(self: *Self, mode: common.MODE, key: u8) !void {
-    switch (mode) {
-        .NORMAL => try handle_normal(self, key),
-        .INSERT => {},
+pub fn handle_current_state(self: *Self, mode: *common.MODE, key: u8) !void {
+    switch (mode.*) {
+        .NORMAL => try handle_normal(self, mode, key),
+        .INSERT => {
+            if (self.active_component == .INPUT_FIELD) {
+                try self.insert.handle_insert(mode, key);
+            }
+        },
         else => {},
     }
 }
 
-fn handle_normal(self: *Self, key: u8) !void {
-    switch (key) {
-        'P' => {
-            try self.switch_active(.PONDS_SIDEBAR);
+fn handle_normal(self: *Self, mode: *common.MODE, key: u8) !void {
+    var new_active = self.active_component;
+    switch (self.active_component) {
+        .PONDS_SIDEBAR => {
+            try self.ponds.handle_normal(mode, key, &new_active);
         },
-        'Q' => {
-            try self.switch_active(.QUACKS_CHAT);
+        .QUACKS_CHAT => {
+            try self.quacks.handle_normal(mode, key, &new_active);
         },
-        'I' => {
-            try self.switch_active(.INPUT_FIELD);
+        .INPUT_FIELD => {
+            try self.insert.handle_normal(mode, key, &new_active);
         },
-        else => {
-            switch (self.active_component) {
-                .PONDS_SIDEBAR => {
-                    try self.ponds.handle_normal(key);
-                },
-                .QUACKS_CHAT => {},
-                .INPUT_FIELD => {},
-            }
-        },
+    }
+    if (new_active != self.active_component) {
+        try self.switch_active(new_active);
     }
 }
 
-fn switch_active(self: *Self, new_active: ComponentType) !void {
+fn switch_active(self: *Self, new_active: common.ComponentType) !void {
     var old_border: []u8 = undefined;
     var new_border: []u8 = undefined;
     switch (self.active_component) {
@@ -129,5 +126,4 @@ fn switch_active(self: *Self, new_active: ComponentType) !void {
     try self.render_queue.add_to_render_q(compiled_new_border, .CONTENT);
 
     self.render_queue.sudo_render();
-
 }

@@ -125,45 +125,33 @@ pub fn read_terminal(self: *Self, std_in: fs.File) !void {
 
         const curr_char = buf[0];
 
-        // FIXME: remove later
-        if (curr_char == 3) {
-            const result = try std.fmt.allocPrint(self.alloc, "{s}", .{common.VISIBLE_CURSOR});
-            try self.render_q.add_to_render_q(result, .CURSOR);
-            self.exit = true;
-            self.render_q.condition.signal();
-            return;
-        }
-
+        var new_mode = self.active_mode;
         switch (self.active_mode) {
             .COMMAND => {
                 switch (curr_char) {
                     '\r' => {
                         try self.handle_command();
-                        try self.change_mode(.NORMAL);
+                        new_mode = .NORMAL;
+                    },
+                    3 => {
+                        new_mode = .NORMAL;
                     },
                     else => {
                         try self.append_to_command(curr_char);
                     },
                 }
             },
-            // FIXME: MOVE THAT TO LAYER HANDLERS
-            .NORMAL => {
-                switch (curr_char) {
-                    ':' => {
-                        try self.change_mode(.COMMAND);
+            else => {
+                switch (self.active_layer) {
+                    .MAIN => {
+                        try self.main_layer.handle_current_state(&new_mode, curr_char);
                     },
-                    else => {
-                        switch (self.active_layer) {
-                            .MAIN => {
-                                try self.main_layer.handle_current_state(self.active_mode, curr_char);
-                            },
-                            .LOGIN => {},
-                            // else => {},
-                        }
-                    },
+                    .LOGIN => {},
                 }
             },
-            else => {},
+        }
+        if (new_mode != self.active_mode) {
+            try self.change_mode(new_mode);
         }
     }
 }

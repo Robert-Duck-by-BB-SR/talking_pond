@@ -160,3 +160,18 @@ pub fn render(self: *Self) !void {
     try self.render_q.add_to_render_q(slice, .CONTENT);
     self.render_q.sudo_render();
 }
+
+pub fn handle_normal(_: *Self, mode: *common.MODE, key: u8, new_active: *common.ComponentType) !void {
+    switch (key) {
+        'P' => {
+            new_active.* = .PONDS_SIDEBAR;
+        },
+        'I' => {
+            new_active.* = .INPUT_FIELD;
+        },
+        ':' => {
+            mode.* = .COMMAND;
+        },
+        else => {},
+    }
+}
