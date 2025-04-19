@@ -25,6 +25,8 @@ pub const MODE = enum {
     MODES_COUNT,
 };
 
+pub const ComponentType = enum { PONDS_SIDEBAR, QUACKS_CHAT, INPUT_FIELD };
+
 pub const MODE_MAP = [@intFromEnum(MODE.MODES_COUNT)][]const u8{
     "NORMAL",
     "INSERT",

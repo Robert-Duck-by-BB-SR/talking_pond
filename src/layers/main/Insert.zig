@@ -63,13 +63,14 @@ pub fn init_first_frame(self: *Self) !void {
     });
 
     // Background
-    for (self.rows_to_render, 2..) |*row, i| {
+    const r: usize = @intCast(self.position.row);
+    for (self.rows_to_render, 1..) |*row, i| {
         const bg_mid = try self.alloc.alloc(u8, width);
         @memset(bg_mid, ' ');
         row.cursor = try std.fmt.allocPrint(
             self.alloc,
             common.MOVE_CURSOR_TO_POSITION,
-            .{ i, self.position.col + 1 },
+            .{ r + i, self.position.col + 1 },
         );
         row.content = bg_mid;
     }
@@ -131,6 +132,11 @@ fn render_row(self: *Self, row_index: usize) ![]u8 {
     return ponds.toOwnedSlice();
 }
 
+fn remap_content(self: *Self) !void {
+    // TODO: replace this with actual logic for remap
+    @memcpy(self.rows_to_render[0].content[0..self.full_content.items.len], self.full_content.items);
+}
+
 pub fn render_current_virtual_cursor(self: *Self) []u8 {
     const actual_position = .{
         self.position.row + self.virtual_cursor.row + 1,
@@ -145,6 +151,7 @@ pub fn render_current_virtual_cursor(self: *Self) []u8 {
 
 pub fn render(self: *Self) !void {
     var ponds: std.ArrayList(u8) = .init(self.alloc);
+    try self.remap_content();
     for (0..self.rows_to_render.len) |i| {
         try ponds.writer().print("{s}", .{
             try self.render_row(i),
@@ -158,4 +165,48 @@ pub fn render(self: *Self) !void {
     const slice = try ponds.toOwnedSlice();
     try self.render_q.add_to_render_q(slice, .CONTENT);
     self.render_q.sudo_render();
+}
+
+pub fn handle_normal(self: *Self, mode: *common.MODE, key: u8, new_active: *common.ComponentType) !void {
+    switch (key) {
+        'Q' => {
+            new_active.* = .QUACKS_CHAT;
+        },
+        'P' => {
+            new_active.* = .PONDS_SIDEBAR;
+        },
+        ':' => {
+            mode.* = .COMMAND;
+        },
+        'a' => {
+            if (self.full_content.items.len > 0) {
+                self.virtual_cursor.col += 1;
+            }
+            try self.render_q.add_to_render_q(self.render_current_virtual_cursor(), .CURSOR);
+            self.render_q.sudo_render();
+            mode.* = .INSERT;
+        },
+        else => {},
+    }
+}
+
+pub fn handle_insert(self: *Self, mode: *common.MODE, key: u8) !void {
+    switch (key) {
+        3 => {
+            mode.* = .NORMAL;
+            if (self.virtual_cursor.col != 0) {
+                self.virtual_cursor.col -= 1;
+            }
+            try self.render_q.add_to_render_q(self.render_current_virtual_cursor(), .CURSOR);
+        },
+        else => {
+            try self.full_content.append(key);
+            try self.remap_content();
+            const row = try self.render_row(0);
+            try self.render_q.add_to_render_q(row, .CONTENT);
+            self.virtual_cursor.col += 1;
+            try self.render_q.add_to_render_q(self.render_current_virtual_cursor(), .CURSOR);
+            self.render_q.sudo_render();
+        },
+    }
 }
