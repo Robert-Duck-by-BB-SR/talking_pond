@@ -1,5 +1,6 @@
 const std = @import("std");
 const common = @import("common.zig");
+const render_utils = @import("render_utils.zig");
 const Ponds = @import("main/Ponds.zig");
 const Quacks = @import("main/Quacks.zig");
 const Insert = @import("main/Insert.zig");
@@ -120,8 +121,8 @@ fn switch_active(self: *Self, new_active: common.ComponentType) !void {
         },
     }
     self.active_component = new_active;
-    const compiled_old_border = try common.render_border(self.alloc, false, old_border);
-    const compiled_new_border = try common.render_border(self.alloc, true, new_border);
+    const compiled_old_border = try render_utils.render_border(self.alloc, false, old_border);
+    const compiled_new_border = try render_utils.render_border(self.alloc, true, new_border);
     try self.render_queue.add_to_render_q(compiled_old_border, .CONTENT);
     try self.render_queue.add_to_render_q(compiled_new_border, .CONTENT);
 

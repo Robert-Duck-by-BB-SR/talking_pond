@@ -185,7 +185,7 @@ pub fn render(self: *Self) !void {
             try self.render_pond_item(i),
         });
     }
-    const rendered_border = try common.render_border(self.alloc, self.is_active, self.border);
+    const rendered_border = try render_utils.render_border(self.alloc, self.is_active, self.border);
     try render_result.writer().print("{s}", .{rendered_border});
     const slice = try render_result.toOwnedSlice();
     try self.render_q.add_to_render_q(slice, .CONTENT);

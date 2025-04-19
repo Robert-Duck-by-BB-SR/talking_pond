@@ -157,7 +157,7 @@ pub fn render(self: *Self) !void {
             try self.render_row(i),
         });
     }
-    const rendered_border = try common.render_border(self.alloc, self.is_active, self.border);
+    const rendered_border = try render_utils.render_border(self.alloc, self.is_active, self.border);
     try ponds.writer().print("{s}", .{rendered_border});
     if (self.is_active) {
         try ponds.writer().print("{s}", .{self.render_current_virtual_cursor()});
