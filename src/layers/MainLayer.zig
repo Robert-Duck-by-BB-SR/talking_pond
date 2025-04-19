@@ -12,6 +12,7 @@ insert: Insert,
 alloc: std.mem.Allocator,
 render_queue: *RenderQueue,
 active_component: common.ComponentType = .PONDS_SIDEBAR,
+active_pond: u8 = undefined,
 
 const Self = @This();
 
@@ -48,9 +49,9 @@ pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, 
 }
 
 pub fn render_first_frame(self: *Self) !void {
-    try self.ponds.init_first_frame();
-    try self.quacks.init_first_frame();
-    try self.insert.init_first_frame();
+    try self.ponds.render_first_frame();
+    try self.quacks.render_first_frame("QUACKS");
+    try self.insert.render_first_frame();
     try self.ponds.render();
     try self.quacks.render();
     try self.insert.render();
@@ -70,9 +71,11 @@ pub fn handle_current_state(self: *Self, mode: *common.MODE, key: u8) !void {
 
 fn handle_normal(self: *Self, mode: *common.MODE, key: u8) !void {
     var new_active = self.active_component;
+    var state_management_command: common.STATE_MANAGEMENT_COMMANDS = undefined;
+
     switch (self.active_component) {
         .PONDS_SIDEBAR => {
-            try self.ponds.handle_normal(mode, key, &new_active);
+            try self.ponds.handle_normal(mode, key, &new_active, &state_management_command);
         },
         .QUACKS_CHAT => {
             try self.quacks.handle_normal(mode, key, &new_active);
@@ -81,6 +84,15 @@ fn handle_normal(self: *Self, mode: *common.MODE, key: u8) !void {
             try self.insert.handle_normal(mode, key, &new_active);
         },
     }
+
+    switch (state_management_command) {
+        .OPEN_QUACKS => {
+            const active_pond = self.ponds.get_active_pond();
+            try self.quacks.render_first_frame(active_pond.title);
+        },
+        .CLOSE_QUACKS => {},
+    }
+
     if (new_active != self.active_component) {
         try self.switch_active(new_active);
     }

@@ -68,7 +68,7 @@ pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, 
     };
 }
 
-pub fn init_first_frame(self: *Self) !void {
+pub fn render_first_frame(self: *Self) !void {
     self.rows_to_render = try self.alloc.alloc(Row, @intCast(self.dimensions.height - 2));
     const width: usize = @intCast(self.dimensions.width - 2);
 
@@ -152,7 +152,11 @@ pub fn init_first_frame(self: *Self) !void {
     );
 }
 
-pub fn remap_content(self: *Self) !void {
+pub fn get_active_pond(self: *Self) PondItem {
+    return self.ponds_list.items[self.active_pond];
+}
+
+pub fn render_ponds(self: *Self) !void {
     for (self.ponds_list.items, 0..) |pond, i| {
         const content = try render_utils.render_line_of_text_and_backround(
             self.alloc,
@@ -179,7 +183,7 @@ fn render_pond_item(self: *Self, row_index: usize) ![]u8 {
 
 pub fn render(self: *Self) !void {
     var render_result: std.ArrayList(u8) = .init(self.alloc);
-    try self.remap_content();
+    try self.render_ponds();
     for (0..self.rows_to_render.len) |i| {
         try render_result.writer().print("{s}", .{
             try self.render_pond_item(i),
@@ -192,7 +196,13 @@ pub fn render(self: *Self) !void {
     self.render_q.sudo_render();
 }
 
-pub fn handle_normal(self: *Self, mode: *common.MODE, key: u8, new_active: *common.ComponentType) !void {
+pub fn handle_normal(
+    self: *Self,
+    mode: *common.MODE,
+    key: u8,
+    new_active: *common.ComponentType,
+    state_management_command: *common.STATE_MANAGEMENT_COMMANDS,
+) !void {
     switch (key) {
         'j' => {
             const prev_pond = self.active_pond;
@@ -224,6 +234,10 @@ pub fn handle_normal(self: *Self, mode: *common.MODE, key: u8, new_active: *comm
         },
         ':' => {
             mode.* = .COMMAND;
+        },
+        13 => {
+            state_management_command.* = common.STATE_MANAGEMENT_COMMANDS.OPEN_QUACKS;
+            new_active.* = .QUACKS_CHAT;
         },
         else => {},
     }

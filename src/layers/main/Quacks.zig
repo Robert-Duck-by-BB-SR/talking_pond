@@ -37,8 +37,9 @@ pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, 
     };
 }
 
-// TODO: oh wait is this an abstraction???
-pub fn init_first_frame(self: *Self) !void {
+// salty: TODO: oh wait is this an abstraction???
+// carrot: naah bro, trust me, one more abstraction
+pub fn render_first_frame(self: *Self, title: []const u8) !void {
     self.rows_to_render = try self.alloc.alloc(Row, @intCast(self.dimensions.height - 2));
     const width: usize = @intCast(self.dimensions.width - 2);
 
@@ -48,7 +49,7 @@ pub fn init_first_frame(self: *Self) !void {
     const top_border = try render_utils.make_border_with_title(
         self.alloc,
         @intCast(self.dimensions.width),
-        "QUACKS",
+        title,
     );
 
     const bottom_border = try render_utils.make_bottom_border(
