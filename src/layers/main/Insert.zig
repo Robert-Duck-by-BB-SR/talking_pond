@@ -169,16 +169,16 @@ pub fn render(self: *Self) !void {
 
 pub fn handle_normal(self: *Self, mode: *common.MODE, key: u8, new_active: *common.ComponentType) !void {
     switch (key) {
-        'M' => {
+        'M', 'Q' => {
             new_active.* = .QUACKS_CHAT;
         },
-        'C' => {
+        'C', 'P' => {
             new_active.* = .PONDS_SIDEBAR;
         },
         ':' => {
             mode.* = .COMMAND;
         },
-        'a' => {
+        'a', 'i' => {
             if (self.full_content.items.len > 0) {
                 self.virtual_cursor.col += 1;
             }
