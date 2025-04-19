@@ -82,12 +82,3 @@ pub const theme = struct {
 pub const ACTIVE_ITEM = theme.FONT_COLOR ++ theme.ACTIVE_BACKGROUND_COLOR;
 pub const INACTIVE_ITEM = theme.FONT_COLOR ++ theme.BACKGROUND_COLOR;
 pub const ACTIVE_BORDER = theme.ACTIVE_FONT_COLOR ++ theme.BACKGROUND_COLOR;
-
-pub fn render_border(alloc: std.mem.Allocator, is_active: bool, border: []u8) ![]u8 {
-    var ponds: std.ArrayList(u8) = .init(alloc);
-    try ponds.writer().print("{s}{s}", .{
-        if (is_active) ACTIVE_BORDER else INACTIVE_ITEM,
-        border,
-    });
-    return ponds.toOwnedSlice();
-}

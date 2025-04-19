@@ -163,10 +163,10 @@ pub fn remap_content(self: *Self) !void {
     }
 }
 
-fn render_row(self: *Self, row_index: usize) ![]u8 {
-    var ponds: std.ArrayList(u8) = .init(self.alloc);
+fn render_pond_item(self: *Self, row_index: usize) ![]u8 {
+    var render_result: std.ArrayList(u8) = .init(self.alloc);
     const row = self.rows_to_render[row_index];
-    try ponds.writer().print("{s}{s}{s}{s}{s}", .{
+    try render_result.writer().print("{s}{s}{s}{s}{s}", .{
         row.cursor,
         if (self.ponds_list.items.len != 0 and row_index == self.active_pond) common.ACTIVE_ITEM else common.INACTIVE_ITEM,
         row.content,
@@ -174,20 +174,20 @@ fn render_row(self: *Self, row_index: usize) ![]u8 {
         if (row_index < self.ponds_list.items.len and
             self.ponds_list.items[row_index].has_update) common.NOTIFICATION_ICON_PATTERN else "",
     });
-    return ponds.toOwnedSlice();
+    return render_result.toOwnedSlice();
 }
 
 pub fn render(self: *Self) !void {
-    var ponds: std.ArrayList(u8) = .init(self.alloc);
+    var render_result: std.ArrayList(u8) = .init(self.alloc);
     try self.remap_content();
     for (0..self.rows_to_render.len) |i| {
-        try ponds.writer().print("{s}", .{
-            try self.render_row(i),
+        try render_result.writer().print("{s}", .{
+            try self.render_pond_item(i),
         });
     }
     const rendered_border = try common.render_border(self.alloc, self.is_active, self.border);
-    try ponds.writer().print("{s}", .{rendered_border});
-    const slice = try ponds.toOwnedSlice();
+    try render_result.writer().print("{s}", .{rendered_border});
+    const slice = try render_result.toOwnedSlice();
     try self.render_q.add_to_render_q(slice, .CONTENT);
     self.render_q.sudo_render();
 }
@@ -197,8 +197,8 @@ pub fn handle_normal(self: *Self, mode: *common.MODE, key: u8, new_active: *comm
         'j' => {
             const prev_pond = self.active_pond;
             self.active_pond = wrapi(self.active_pond, 1, self.ponds_list.items.len);
-            const old_pond = try self.render_row(prev_pond);
-            const new_pond = try self.render_row(self.active_pond);
+            const old_pond = try self.render_pond_item(prev_pond);
+            const new_pond = try self.render_pond_item(self.active_pond);
             try self.render_q.add_to_render_q(
                 try std.fmt.allocPrint(self.alloc, "{s}{s}", .{ old_pond, new_pond }),
                 .CONTENT,
@@ -208,15 +208,15 @@ pub fn handle_normal(self: *Self, mode: *common.MODE, key: u8, new_active: *comm
         'k' => {
             const prev_pond = self.active_pond;
             self.active_pond = wrapi(self.active_pond, -1, self.ponds_list.items.len);
-            const old_pond = try self.render_row(prev_pond);
-            const new_pond = try self.render_row(self.active_pond);
+            const old_pond = try self.render_pond_item(prev_pond);
+            const new_pond = try self.render_pond_item(self.active_pond);
             try self.render_q.add_to_render_q(
                 try std.fmt.allocPrint(self.alloc, "{s}{s}", .{ old_pond, new_pond }),
                 .CONTENT,
             );
             self.render_q.sudo_render();
         },
-        'Q' => {
+        'M', 'Q' => {
             new_active.* = .QUACKS_CHAT;
         },
         'I' => {

@@ -45,7 +45,7 @@ pub fn make_border_with_title(alloc: std.mem.Allocator, w: usize, title: []const
         defer i += border.HORIZONTAL.len;
         @memcpy(horizontal_border[i .. i + border.HORIZONTAL.len], border.HORIZONTAL);
     }
-    @memcpy(horizontal_border[i .. ], border.TOP_RIGHT);
+    @memcpy(horizontal_border[i..], border.TOP_RIGHT);
     return horizontal_border;
 }
 
@@ -102,4 +102,13 @@ fn render_truncated_line_of_text_and_backround(alloc: std.mem.Allocator, text: [
     );
 
     return result;
+}
+
+pub fn render_border(alloc: std.mem.Allocator, is_active: bool, border_slice: []u8) ![]u8 {
+    var render_result: std.ArrayList(u8) = .init(alloc);
+    try render_result.writer().print("{s}{s}", .{
+        if (is_active) .ACTIVE_BORDER else .INACTIVE_ITEM,
+        border_slice,
+    });
+    return render_result.toOwnedSlice();
 }

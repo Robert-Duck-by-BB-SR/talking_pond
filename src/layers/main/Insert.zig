@@ -169,10 +169,10 @@ pub fn render(self: *Self) !void {
 
 pub fn handle_normal(self: *Self, mode: *common.MODE, key: u8, new_active: *common.ComponentType) !void {
     switch (key) {
-        'Q' => {
+        'M' => {
             new_active.* = .QUACKS_CHAT;
         },
-        'P' => {
+        'C' => {
             new_active.* = .PONDS_SIDEBAR;
         },
         ':' => {

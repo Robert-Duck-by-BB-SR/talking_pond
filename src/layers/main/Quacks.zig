@@ -14,7 +14,6 @@ border: []u8 = undefined,
 active_pond: usize = 0,
 is_active: bool = false,
 
-
 const Row = struct {
     cursor: []u8 = undefined,
     content: []u8 = undefined,
@@ -163,7 +162,7 @@ pub fn render(self: *Self) !void {
 
 pub fn handle_normal(_: *Self, mode: *common.MODE, key: u8, new_active: *common.ComponentType) !void {
     switch (key) {
-        'P' => {
+        'C', 'P' => {
             new_active.* = .PONDS_SIDEBAR;
         },
         'I' => {
