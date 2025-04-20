@@ -34,7 +34,7 @@ pub fn create(alloc: std.mem.Allocator, position: common.Position, dimensions: c
     };
 }
 
-pub fn render_first_frame(self: *Self) !void {
+pub fn init_first_frame(self: *Self) !void {
     self.rows_to_render = try self.alloc.alloc(Row, @intCast(self.dimensions.height - 2));
     const width: usize = @intCast(self.dimensions.width - 2);
 

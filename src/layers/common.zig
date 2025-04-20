@@ -33,7 +33,7 @@ pub const MODE_MAP = [@intFromEnum(MODE.MODES_COUNT)][]const u8{
     ":",
 };
 
-pub const STATE_MANAGEMENT_COMMANDS = enum { OPEN_QUACKS, CLOSE_QUACKS };
+pub const STATE_MANAGEMENT_COMMANDS = enum { NONE, OPEN_QUACKS, CLOSE_QUACKS };
 
 const COMMANDS = enum {
     QUIT,

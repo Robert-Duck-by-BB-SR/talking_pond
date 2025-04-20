@@ -68,25 +68,21 @@ pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, 
     };
 }
 
-pub fn render_first_frame(self: *Self) !void {
+/// Renders borders and background
+pub fn init_first_frame(self: *Self) !void {
     self.rows_to_render = try self.alloc.alloc(Row, @intCast(self.dimensions.height - 2));
     const width: usize = @intCast(self.dimensions.width - 2);
 
     const corners_width = common.theme.BORDER.BOTTOM_LEFT.len + common.theme.BORDER.BOTTOM_RIGHT.len;
     const border_width = width * common.theme.BORDER.HORIZONTAL.len + corners_width;
 
+    // Top border
     const top_border = try render_utils.make_border_with_title(
         self.alloc,
         @intCast(self.dimensions.width),
         "PONDS",
     );
 
-    const bottom_border = try render_utils.make_bottom_border(
-        self.alloc,
-        border_width,
-    );
-
-    // Top border
     self.border = try std.fmt.allocPrint(self.alloc, "{s}{s}", .{
         try std.fmt.allocPrint(
             self.alloc,
@@ -133,6 +129,11 @@ pub fn render_first_frame(self: *Self) !void {
     }
 
     // Bottom border
+    const bottom_border = try render_utils.make_bottom_border(
+        self.alloc,
+        border_width,
+    );
+
     self.border = try std.fmt.allocPrint(
         self.alloc,
         "{s}{s}{s}{s}",
@@ -152,11 +153,7 @@ pub fn render_first_frame(self: *Self) !void {
     );
 }
 
-pub fn get_active_pond(self: *Self) PondItem {
-    return self.ponds_list.items[self.active_pond];
-}
-
-pub fn render_ponds(self: *Self) !void {
+pub fn fill_content_with_ponds(self: *Self) !void {
     for (self.ponds_list.items, 0..) |pond, i| {
         const content = try render_utils.render_line_of_text_and_backround(
             self.alloc,
@@ -183,7 +180,7 @@ fn render_pond_item(self: *Self, row_index: usize) ![]u8 {
 
 pub fn render(self: *Self) !void {
     var render_result: std.ArrayList(u8) = .init(self.alloc);
-    try self.render_ponds();
+    try self.fill_content_with_ponds();
     for (0..self.rows_to_render.len) |i| {
         try render_result.writer().print("{s}", .{
             try self.render_pond_item(i),
