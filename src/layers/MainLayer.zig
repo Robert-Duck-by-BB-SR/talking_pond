@@ -89,6 +89,7 @@ fn handle_normal(self: *Self, mode: *common.MODE, key: u8) !void {
         .OPEN_QUACKS => {
             // const active_pond = self.ponds.get_active_pond();
             // try self.quacks.render();
+            try self.switch_active(.QUACKS_CHAT);
         },
         .CLOSE_QUACKS => {},
         else => {},
@@ -140,6 +141,8 @@ fn switch_active(self: *Self, new_active: common.ComponentType) !void {
     const compiled_new_border = try render_utils.render_border(self.alloc, true, new_border);
     try self.render_queue.add_to_render_q(compiled_old_border, .CONTENT);
     try self.render_queue.add_to_render_q(compiled_new_border, .CONTENT);
+    self.alloc.free(compiled_old_border);
+    self.alloc.free(compiled_new_border);
 
     self.render_queue.sudo_render();
 }

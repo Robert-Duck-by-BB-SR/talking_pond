@@ -206,10 +206,14 @@ pub fn handle_normal(
             self.active_pond = wrapi(self.active_pond, 1, self.ponds_list.items.len);
             const old_pond = try self.render_pond_item(prev_pond);
             const new_pond = try self.render_pond_item(self.active_pond);
+            const result = try std.fmt.allocPrint(self.alloc, "{s}{s}", .{ old_pond, new_pond });
             try self.render_q.add_to_render_q(
-                try std.fmt.allocPrint(self.alloc, "{s}{s}", .{ old_pond, new_pond }),
+                result,
                 .CONTENT,
             );
+            self.alloc.free(old_pond);
+            self.alloc.free(new_pond);
+            self.alloc.free(result);
             self.render_q.sudo_render();
         },
         'k' => {
@@ -217,10 +221,14 @@ pub fn handle_normal(
             self.active_pond = wrapi(self.active_pond, -1, self.ponds_list.items.len);
             const old_pond = try self.render_pond_item(prev_pond);
             const new_pond = try self.render_pond_item(self.active_pond);
+            const result = try std.fmt.allocPrint(self.alloc, "{s}{s}", .{ old_pond, new_pond });
             try self.render_q.add_to_render_q(
-                try std.fmt.allocPrint(self.alloc, "{s}{s}", .{ old_pond, new_pond }),
+                result,
                 .CONTENT,
             );
+            self.alloc.free(old_pond);
+            self.alloc.free(new_pond);
+            self.alloc.free(result);
             self.render_q.sudo_render();
         },
         'M', 'Q' => {
