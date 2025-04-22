@@ -167,14 +167,14 @@ pub fn fill_content_with_ponds(self: *Self) !void {
     }
 }
 
-fn render_pond_item(self: *Self, row_index: usize) ![]u8 {
-    var render_result: std.ArrayList(u8) = .init(self.alloc);
+fn render_pond_item(self: *Self, row_index: usize, allocator: std.mem.Allocator) ![]u8 {
+    var render_result: std.ArrayList(u8) = .init(allocator);
     const row = self.rows_to_render[row_index];
     try render_result.writer().print("{s}{s}{s}{s}{s}", .{
         row.cursor,
         if (self.ponds_list.items.len != 0 and row_index == self.active_pond) common.ACTIVE_ITEM else common.INACTIVE_ITEM,
         row.content,
-        try std.fmt.allocPrint(self.alloc, common.MOVE_CURSOR_TO_POSITION, .{ row_index + 2, self.dimensions.width - 1 }),
+        try std.fmt.allocPrint(allocator, common.MOVE_CURSOR_TO_POSITION, .{ row_index + 2, self.dimensions.width - 1 }),
         if (row_index < self.ponds_list.items.len and
             self.ponds_list.items[row_index].has_update) common.NOTIFICATION_ICON_PATTERN else "",
     });
@@ -182,11 +182,14 @@ fn render_pond_item(self: *Self, row_index: usize) ![]u8 {
 }
 
 pub fn render(self: *Self) !void {
+    var arena = std.heap.ArenaAllocator.init(self.alloc);
+    defer arena.deinit();
+    const allocator = arena.allocator();
     var render_result: std.ArrayList(u8) = .init(self.alloc);
     try self.fill_content_with_ponds();
     for (0..self.rows_to_render.len) |i| {
         try render_result.writer().print("{s}", .{
-            try self.render_pond_item(i),
+            try self.render_pond_item(i, allocator),
         });
     }
     const rendered_border = try render_utils.render_border(self.alloc, self.is_active, self.border);
@@ -205,33 +208,33 @@ pub fn handle_normal(
 ) !void {
     switch (key) {
         'j' => {
+            var arena = std.heap.ArenaAllocator.init(self.alloc);
+            defer arena.deinit();
+            const allocator = arena.allocator();
             const prev_pond = self.active_pond;
             self.active_pond = wrapi(self.active_pond, 1, self.ponds_list.items.len);
-            const old_pond = try self.render_pond_item(prev_pond);
-            const new_pond = try self.render_pond_item(self.active_pond);
-            const result = try std.fmt.allocPrint(self.alloc, "{s}{s}", .{ old_pond, new_pond });
+            const old_pond = try self.render_pond_item(prev_pond, allocator);
+            const new_pond = try self.render_pond_item(self.active_pond, allocator);
+            const result = try std.fmt.allocPrint(allocator, "{s}{s}", .{ old_pond, new_pond });
             try self.render_q.add_to_render_q(
                 result,
                 .CONTENT,
             );
-            self.alloc.free(old_pond);
-            self.alloc.free(new_pond);
-            self.alloc.free(result);
             self.render_q.sudo_render();
         },
         'k' => {
+            var arena = std.heap.ArenaAllocator.init(self.alloc);
+            defer arena.deinit();
+            const allocator = arena.allocator();
             const prev_pond = self.active_pond;
             self.active_pond = wrapi(self.active_pond, -1, self.ponds_list.items.len);
-            const old_pond = try self.render_pond_item(prev_pond);
-            const new_pond = try self.render_pond_item(self.active_pond);
-            const result = try std.fmt.allocPrint(self.alloc, "{s}{s}", .{ old_pond, new_pond });
+            const old_pond = try self.render_pond_item(prev_pond, allocator);
+            const new_pond = try self.render_pond_item(self.active_pond, allocator);
+            const result = try std.fmt.allocPrint(allocator, "{s}{s}", .{ old_pond, new_pond });
             try self.render_q.add_to_render_q(
                 result,
                 .CONTENT,
             );
-            self.alloc.free(old_pond);
-            self.alloc.free(new_pond);
-            self.alloc.free(result);
             self.render_q.sudo_render();
         },
         'M', 'Q' => {
