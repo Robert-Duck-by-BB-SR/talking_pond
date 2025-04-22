@@ -43,8 +43,8 @@ pub fn render(self: *Self, stdout: std.fs.File.Writer) !void {
         self.status_line_queue.items,
         self.cursor_queue.items,
     });
-    self.content_queue.clearAndFree();
-    self.status_line_queue.clearAndFree();
-    self.cursor_queue.clearAndFree();
+    self.content_queue.clearRetainingCapacity();
+    self.status_line_queue.clearRetainingCapacity();
+    self.cursor_queue.clearRetainingCapacity();
     self.condition.wait(&self.mutex);
 }

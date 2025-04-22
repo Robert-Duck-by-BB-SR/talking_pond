@@ -102,6 +102,10 @@ fn handle_normal(self: *Self, mode: *common.MODE, key: u8) !void {
 }
 
 fn switch_active(self: *Self, new_active: common.ComponentType) !void {
+    var arena = std.heap.ArenaAllocator.init(self.alloc);
+    const temporary_allocator = arena.allocator();
+    defer arena.deinit();
+
     var old_border: []u8 = undefined;
     var new_border: []u8 = undefined;
     switch (self.active_component) {
@@ -137,12 +141,13 @@ fn switch_active(self: *Self, new_active: common.ComponentType) !void {
     }
     self.active_component = new_active;
 
-    const compiled_old_border = try render_utils.render_border(self.alloc, false, old_border);
-    const compiled_new_border = try render_utils.render_border(self.alloc, true, new_border);
-    try self.render_queue.add_to_render_q(compiled_old_border, .CONTENT);
-    try self.render_queue.add_to_render_q(compiled_new_border, .CONTENT);
-    self.alloc.free(compiled_old_border);
-    self.alloc.free(compiled_new_border);
-
+    const one = try render_utils.render_border(temporary_allocator, false, old_border);
+    const two = try render_utils.render_border(temporary_allocator, true, new_border);
+    // const temp_old_border = try self.alloc.dupe(u8, compiled_old_border);
+    // const temp_new_border = try self.alloc.dupe(u8, compiled_new_border);
+    // std.debug.print("{s}", .{one});
+    // std.debug.print("{s}", .{two});
+    try self.render_queue.add_to_render_q(one, .CONTENT);
+    try self.render_queue.add_to_render_q(two, .CONTENT);
     self.render_queue.sudo_render();
 }

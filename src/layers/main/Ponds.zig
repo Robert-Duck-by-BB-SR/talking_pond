@@ -70,7 +70,10 @@ pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, 
 
 /// Renders borders and background
 pub fn init_first_frame(self: *Self) !void {
-    self.rows_to_render = try self.alloc.alloc(Row, @intCast(self.dimensions.height - 2));
+    var arena = std.heap.ArenaAllocator.init(self.alloc);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+    self.rows_to_render = try allocator.alloc(Row, @intCast(self.dimensions.height - 2));
     const width: usize = @intCast(self.dimensions.width - 2);
 
     const corners_width = common.theme.BORDER.BOTTOM_LEFT.len + common.theme.BORDER.BOTTOM_RIGHT.len;
@@ -78,14 +81,14 @@ pub fn init_first_frame(self: *Self) !void {
 
     // Top border
     const top_border = try render_utils.make_border_with_title(
-        self.alloc,
+        allocator,
         @intCast(self.dimensions.width),
         "PONDS",
     );
 
     self.border = try std.fmt.allocPrint(self.alloc, "{s}{s}", .{
         try std.fmt.allocPrint(
-            self.alloc,
+            allocator,
             common.MOVE_CURSOR_TO_POSITION,
             .{ 1, self.position.col },
         ),
@@ -97,7 +100,7 @@ pub fn init_first_frame(self: *Self) !void {
         const bg_mid = try self.alloc.alloc(u8, width);
         @memset(bg_mid, ' ');
         row.cursor = try std.fmt.allocPrint(
-            self.alloc,
+            allocator,
             common.MOVE_CURSOR_TO_POSITION,
             .{ i, self.position.col + 1 },
         );
@@ -108,7 +111,7 @@ pub fn init_first_frame(self: *Self) !void {
         self.border = try std.fmt.allocPrint(self.alloc, "{s}{s}{s}{s}{s}", .{
             self.border,
             try std.fmt.allocPrint(
-                self.alloc,
+                allocator,
                 common.MOVE_CURSOR_TO_POSITION,
                 .{
                     i + 1,
@@ -117,7 +120,7 @@ pub fn init_first_frame(self: *Self) !void {
             ),
             common.theme.BORDER.VERTICAL,
             try std.fmt.allocPrint(
-                self.alloc,
+                allocator,
                 common.MOVE_CURSOR_TO_POSITION,
                 .{
                     i + 1,
@@ -130,17 +133,17 @@ pub fn init_first_frame(self: *Self) !void {
 
     // Bottom border
     const bottom_border = try render_utils.make_bottom_border(
-        self.alloc,
+        allocator,
         border_width,
     );
 
     self.border = try std.fmt.allocPrint(
-        self.alloc,
+        allocator,
         "{s}{s}{s}{s}",
         .{
             self.border,
             try std.fmt.allocPrint(
-                self.alloc,
+                allocator,
                 common.MOVE_CURSOR_TO_POSITION,
                 .{
                     self.dimensions.height,
