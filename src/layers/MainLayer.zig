@@ -12,7 +12,6 @@ insert: Insert,
 alloc: std.mem.Allocator,
 render_queue: *RenderQueue,
 active_component: common.ComponentType = .PONDS_SIDEBAR,
-active_pond: u8 = undefined,
 
 const Self = @This();
 
@@ -50,7 +49,7 @@ pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, 
 
 pub fn render_first_frame(self: *Self) !void {
     try self.ponds.init_first_frame();
-    try self.quacks.init_first_frame("QUACKS");
+    try self.quacks.init_first_frame();
     try self.insert.init_first_frame();
     try self.ponds.render();
     try self.quacks.render();
@@ -71,11 +70,10 @@ pub fn handle_current_state(self: *Self, mode: *common.MODE, key: u8) !void {
 
 fn handle_normal(self: *Self, mode: *common.MODE, key: u8) !void {
     var new_active = self.active_component;
-    var state_management_command: common.STATE_MANAGEMENT_COMMANDS = .NONE;
 
     switch (self.active_component) {
         .PONDS_SIDEBAR => {
-            try self.ponds.handle_normal(mode, key, &new_active, &state_management_command);
+            try self.ponds.handle_normal(mode, key, &new_active);
         },
         .QUACKS_CHAT => {
             try self.quacks.handle_normal(mode, key, &new_active);
@@ -84,17 +82,6 @@ fn handle_normal(self: *Self, mode: *common.MODE, key: u8) !void {
             try self.insert.handle_normal(mode, key, &new_active);
         },
     }
-
-    switch (state_management_command) {
-        .OPEN_QUACKS => {
-            // const active_pond = self.ponds.get_active_pond();
-            // try self.quacks.render();
-            try self.switch_active(.QUACKS_CHAT);
-        },
-        .CLOSE_QUACKS => {},
-        else => {},
-    }
-    state_management_command = .NONE;
 
     if (new_active != self.active_component) {
         try self.switch_active(new_active);
@@ -107,7 +94,9 @@ fn switch_active(self: *Self, new_active: common.ComponentType) !void {
     defer arena.deinit();
 
     var old_border: []u8 = undefined;
-    var new_border: []u8 = undefined;
+    var updated_old_border: []u8 = undefined;
+    var updated_new_border: []u8 = undefined;
+
     switch (self.active_component) {
         .PONDS_SIDEBAR => {
             self.ponds.is_active = false;
@@ -126,28 +115,27 @@ fn switch_active(self: *Self, new_active: common.ComponentType) !void {
     switch (new_active) {
         .PONDS_SIDEBAR => {
             self.ponds.is_active = true;
-            new_border = self.ponds.border;
+            updated_old_border = try render_utils.rerender_border(temporary_allocator, false, old_border);
+            updated_new_border = try render_utils.rerender_border(temporary_allocator, true, self.ponds.border);
         },
         .QUACKS_CHAT => {
             self.quacks.is_active = true;
-            new_border = self.quacks.border;
+            updated_old_border = try render_utils.rerender_border(temporary_allocator, false, old_border);
+            // TODO: handle unselected pond
+            try self.quacks.render_border_with_title(self.ponds.get_active_pond_title(), temporary_allocator);
+            updated_new_border = try render_utils.rerender_border(temporary_allocator, true, self.quacks.border);
         },
         .INPUT_FIELD => {
             self.quacks.is_active = true;
-            new_border = self.insert.border;
             try self.render_queue.add_to_render_q(common.VISIBLE_CURSOR, .CURSOR);
             try self.render_queue.add_to_render_q(self.insert.render_current_virtual_cursor(), .CURSOR);
+            updated_old_border = try render_utils.rerender_border(temporary_allocator, false, old_border);
+            updated_new_border = try render_utils.rerender_border(temporary_allocator, true, self.insert.border);
         },
     }
     self.active_component = new_active;
 
-    const one = try render_utils.render_border(temporary_allocator, false, old_border);
-    const two = try render_utils.render_border(temporary_allocator, true, new_border);
-    // const temp_old_border = try self.alloc.dupe(u8, compiled_old_border);
-    // const temp_new_border = try self.alloc.dupe(u8, compiled_new_border);
-    // std.debug.print("{s}", .{one});
-    // std.debug.print("{s}", .{two});
-    try self.render_queue.add_to_render_q(one, .CONTENT);
-    try self.render_queue.add_to_render_q(two, .CONTENT);
+    try self.render_queue.add_to_render_q(updated_old_border, .CONTENT);
+    try self.render_queue.add_to_render_q(updated_new_border, .CONTENT);
     self.render_queue.sudo_render();
 }

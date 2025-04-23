@@ -104,7 +104,7 @@ fn render_truncated_line_of_text_and_backround(alloc: std.mem.Allocator, text: [
     return result;
 }
 
-pub fn render_border(alloc: std.mem.Allocator, is_active: bool, border_slice: []u8) ![]u8 {
+pub fn rerender_border(alloc: std.mem.Allocator, is_active: bool, border_slice: []u8) ![]u8 {
     var render_result: std.ArrayList(u8) = .init(alloc);
     try render_result.writer().print("{s}{s}", .{
         if (is_active) common.ACTIVE_BORDER else common.INACTIVE_ITEM,

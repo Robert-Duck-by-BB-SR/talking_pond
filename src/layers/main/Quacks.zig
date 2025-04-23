@@ -6,7 +6,7 @@ const render_utils = @import("../render_utils.zig");
 dimensions: common.Dimensions = undefined,
 position: common.Position = undefined,
 
-alloc: std.mem.Allocator,
+main_allocator: std.mem.Allocator,
 render_q: *RenderQ,
 
 rows_to_render: []Row = undefined,
@@ -24,7 +24,7 @@ const Self = @This();
 pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, render_q: *RenderQ) Self {
     return Self{
         .render_q = render_q,
-        .alloc = alloc,
+        .main_allocator = alloc,
         .position = .{
             .row = 1,
             .col = common.PONDS_SIDEBAR_SIZE + 1,
@@ -39,51 +39,51 @@ pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, 
 
 // salty: TODO: oh wait is this an abstraction???
 // carrot: naah bro, trust me, one more abstraction
-pub fn init_first_frame(self: *Self, title: []const u8) !void {
-    self.rows_to_render = try self.alloc.alloc(Row, @intCast(self.dimensions.height - 2));
-    const width: usize = @intCast(self.dimensions.width - 2);
+pub fn init_first_frame(self: *Self) !void {
+    var arena = std.heap.ArenaAllocator.init(self.main_allocator);
+    defer arena.deinit();
+    const temp_allocator = arena.allocator();
 
+    self.rows_to_render = try temp_allocator.alloc(Row, @intCast(self.dimensions.height - 2));
+    try self.render_border_with_title("QUACKS", temp_allocator);
+    // Background
+    for (self.rows_to_render, 2..) |*row, i| {
+        const bg_mid = try self.main_allocator.alloc(u8, @intCast(self.dimensions.width - 2));
+        @memset(bg_mid, ' ');
+        row.cursor = try std.fmt.allocPrint(
+            temp_allocator,
+            common.MOVE_CURSOR_TO_POSITION,
+            .{ i, self.position.col + 1 },
+        );
+        row.content = bg_mid;
+    }
+}
+
+pub fn render_border_with_title(self: *Self, title: []const u8, temp_allocator: std.mem.Allocator) !void {
+    const width: usize = @intCast(self.dimensions.width - 2);
     const corners_width = common.theme.BORDER.BOTTOM_LEFT.len + common.theme.BORDER.BOTTOM_RIGHT.len;
     const border_width = width * common.theme.BORDER.HORIZONTAL.len + corners_width;
 
+    // Top border
     const top_border = try render_utils.make_border_with_title(
-        self.alloc,
+        temp_allocator,
         @intCast(self.dimensions.width),
         title,
     );
-
-    const bottom_border = try render_utils.make_bottom_border(
-        self.alloc,
-        border_width,
-    );
-
-    // Top border
-    self.border = try std.fmt.allocPrint(self.alloc, "{s}{s}", .{
+    self.border = try std.fmt.allocPrint(self.main_allocator, "{s}{s}", .{
         try std.fmt.allocPrint(
-            self.alloc,
+            temp_allocator,
             common.MOVE_CURSOR_TO_POSITION,
             .{ 1, self.position.col },
         ),
         top_border,
     });
 
-    // Background
-    for (self.rows_to_render, 2..) |*row, i| {
-        const bg_mid = try self.alloc.alloc(u8, width);
-        @memset(bg_mid, ' ');
-        row.cursor = try std.fmt.allocPrint(
-            self.alloc,
-            common.MOVE_CURSOR_TO_POSITION,
-            .{ i, self.position.col + 1 },
-        );
-        row.content = bg_mid;
-    }
-
     for (1..@intCast(self.dimensions.height - 1)) |i| {
-        self.border = try std.fmt.allocPrint(self.alloc, "{s}{s}{s}{s}{s}", .{
+        self.border = try std.fmt.allocPrint(temp_allocator, "{s}{s}{s}{s}{s}", .{
             self.border,
             try std.fmt.allocPrint(
-                self.alloc,
+                temp_allocator,
                 common.MOVE_CURSOR_TO_POSITION,
                 .{
                     i + 1,
@@ -92,7 +92,7 @@ pub fn init_first_frame(self: *Self, title: []const u8) !void {
             ),
             common.theme.BORDER.VERTICAL,
             try std.fmt.allocPrint(
-                self.alloc,
+                temp_allocator,
                 common.MOVE_CURSOR_TO_POSITION,
                 .{
                     i + 1,
@@ -104,13 +104,17 @@ pub fn init_first_frame(self: *Self, title: []const u8) !void {
     }
 
     // Bottom border
+    const bottom_border = try render_utils.make_bottom_border(
+        temp_allocator,
+        border_width,
+    );
     self.border = try std.fmt.allocPrint(
-        self.alloc,
+        temp_allocator,
         "{s}{s}{s}{s}",
         .{
             self.border,
             try std.fmt.allocPrint(
-                self.alloc,
+                temp_allocator,
                 common.MOVE_CURSOR_TO_POSITION,
                 .{
                     self.dimensions.height,
@@ -135,7 +139,7 @@ pub fn init_first_frame(self: *Self, title: []const u8) !void {
 // }
 
 fn render_row(self: *Self, row_index: usize) ![]u8 {
-    var ponds: std.ArrayList(u8) = .init(self.alloc);
+    var ponds: std.ArrayList(u8) = .init(self.main_allocator);
     const row = self.rows_to_render[row_index];
     try ponds.writer().print("{s}{s}{s}", .{
         row.cursor,
@@ -147,14 +151,14 @@ fn render_row(self: *Self, row_index: usize) ![]u8 {
 }
 
 pub fn render(self: *Self) !void {
-    var ponds: std.ArrayList(u8) = .init(self.alloc);
+    var ponds: std.ArrayList(u8) = .init(self.main_allocator);
     // try self.remap_content();
     for (0..self.rows_to_render.len) |i| {
         try ponds.writer().print("{s}", .{
             try self.render_row(i),
         });
     }
-    const rendered_border = try render_utils.render_border(self.alloc, self.is_active, self.border);
+    const rendered_border = try render_utils.rerender_border(self.main_allocator, self.is_active, self.border);
     try ponds.writer().print("{s}", .{rendered_border});
     const slice = try ponds.toOwnedSlice();
     try self.render_q.add_to_render_q(slice, .CONTENT);
