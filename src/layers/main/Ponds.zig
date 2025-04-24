@@ -75,31 +75,12 @@ pub fn init_first_frame(self: *Self) !void {
     defer arena.deinit();
     const temporary_alloctor = arena.allocator();
 
-    self.rows_to_render = try temporary_alloctor.alloc(Row, @intCast(self.dimensions.height - 2));
-    const width: usize = @intCast(self.dimensions.width - 2);
-
-    const corners_width = common.theme.BORDER.BOTTOM_LEFT.len + common.theme.BORDER.BOTTOM_RIGHT.len;
-    const border_width = width * common.theme.BORDER.HORIZONTAL.len + corners_width;
-
-    // Top border
-    const top_border = try render_utils.make_border_with_title(
-        temporary_alloctor,
-        @intCast(self.dimensions.width),
-        "PONDS",
-    );
-
-    self.border = try std.fmt.allocPrint(self.main_allocator, "{s}{s}", .{
-        try std.fmt.allocPrint(
-            temporary_alloctor,
-            common.MOVE_CURSOR_TO_POSITION,
-            .{ 1, self.position.col },
-        ),
-        top_border,
-    });
+    try self.render_border(temporary_alloctor);
 
     // Background
+    self.rows_to_render = try temporary_alloctor.alloc(Row, @intCast(self.dimensions.height - 2));
     for (self.rows_to_render, 2..) |*row, i| {
-        const bg_mid = try self.main_allocator.alloc(u8, width);
+        const bg_mid = try self.main_allocator.alloc(u8, @intCast(self.dimensions.width - 2));
         @memset(bg_mid, ' ');
         row.cursor = try std.fmt.allocPrint(
             temporary_alloctor,
@@ -108,12 +89,34 @@ pub fn init_first_frame(self: *Self) !void {
         );
         row.content = bg_mid;
     }
+}
+
+fn render_border(self: *Self, temporary_allocator: std.mem.Allocator) !void {
+    const width: usize = @intCast(self.dimensions.width - 2);
+    const corners_width = common.theme.BORDER.BOTTOM_LEFT.len + common.theme.BORDER.BOTTOM_RIGHT.len;
+    const border_width = width * common.theme.BORDER.HORIZONTAL.len + corners_width;
+
+    // Top border
+    const top_border = try render_utils.make_border_with_title(
+        temporary_allocator,
+        @intCast(self.dimensions.width),
+        "PONDS",
+    );
+
+    self.border = try std.fmt.allocPrint(temporary_allocator, "{s}{s}", .{
+        try std.fmt.allocPrint(
+            temporary_allocator,
+            common.MOVE_CURSOR_TO_POSITION,
+            .{ 1, self.position.col },
+        ),
+        top_border,
+    });
 
     for (1..@intCast(self.dimensions.height - 1)) |i| {
-        self.border = try std.fmt.allocPrint(self.main_allocator, "{s}{s}{s}{s}{s}", .{
+        self.border = try std.fmt.allocPrint(temporary_allocator, "{s}{s}{s}{s}{s}", .{
             self.border,
             try std.fmt.allocPrint(
-                temporary_alloctor,
+                temporary_allocator,
                 common.MOVE_CURSOR_TO_POSITION,
                 .{
                     i + 1,
@@ -122,7 +125,7 @@ pub fn init_first_frame(self: *Self) !void {
             ),
             common.theme.BORDER.VERTICAL,
             try std.fmt.allocPrint(
-                temporary_alloctor,
+                temporary_allocator,
                 common.MOVE_CURSOR_TO_POSITION,
                 .{
                     i + 1,
@@ -135,17 +138,17 @@ pub fn init_first_frame(self: *Self) !void {
 
     // Bottom border
     const bottom_border = try render_utils.make_bottom_border(
-        temporary_alloctor,
+        temporary_allocator,
         border_width,
     );
 
     self.border = try std.fmt.allocPrint(
-        temporary_alloctor,
+        temporary_allocator,
         "{s}{s}{s}{s}",
         .{
             self.border,
             try std.fmt.allocPrint(
-                temporary_alloctor,
+                temporary_allocator,
                 common.MOVE_CURSOR_TO_POSITION,
                 .{
                     self.dimensions.height,

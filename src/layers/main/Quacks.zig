@@ -9,7 +9,7 @@ position: common.Position = undefined,
 main_allocator: std.mem.Allocator,
 render_q: *RenderQ,
 
-rows_to_render: []Row = undefined,
+content: []Row = undefined,
 border: []u8 = undefined,
 active_pond: usize = 0,
 is_active: bool = false,
@@ -44,10 +44,10 @@ pub fn init_first_frame(self: *Self) !void {
     defer arena.deinit();
     const temp_allocator = arena.allocator();
 
-    self.rows_to_render = try temp_allocator.alloc(Row, @intCast(self.dimensions.height - 2));
+    self.content = try temp_allocator.alloc(Row, @intCast(self.dimensions.height - 2));
     try self.render_border_with_title("QUACKS", temp_allocator);
     // Background
-    for (self.rows_to_render, 2..) |*row, i| {
+    for (self.content, 2..) |*row, i| {
         const bg_mid = try self.main_allocator.alloc(u8, @intCast(self.dimensions.width - 2));
         @memset(bg_mid, ' ');
         row.cursor = try std.fmt.allocPrint(
@@ -140,7 +140,7 @@ pub fn render_border_with_title(self: *Self, title: []const u8, temp_allocator: 
 
 fn render_row(self: *Self, row_index: usize) ![]u8 {
     var ponds: std.ArrayList(u8) = .init(self.main_allocator);
-    const row = self.rows_to_render[row_index];
+    const row = self.content[row_index];
     try ponds.writer().print("{s}{s}{s}", .{
         row.cursor,
         common.INACTIVE_ITEM,
@@ -153,7 +153,7 @@ fn render_row(self: *Self, row_index: usize) ![]u8 {
 pub fn render(self: *Self) !void {
     var ponds: std.ArrayList(u8) = .init(self.main_allocator);
     // try self.remap_content();
-    for (0..self.rows_to_render.len) |i| {
+    for (0..self.content.len) |i| {
         try ponds.writer().print("{s}", .{
             try self.render_row(i),
         });
