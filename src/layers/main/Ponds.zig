@@ -10,7 +10,7 @@ main_allocator: std.mem.Allocator = undefined,
 temporary_allocator: std.mem.Allocator = undefined,
 render_q: *RenderQ,
 
-rows_to_render: []Row = undefined,
+content: []Row = undefined,
 border: []u8 = undefined,
 ponds_list: std.ArrayList(PondItem) = undefined,
 active_pond: usize = 0,
@@ -42,20 +42,20 @@ fn wrapi(index: usize, direction: isize, max: usize) usize {
 
 pub fn create(parent_allocator: std.mem.Allocator, terminal_dimensions: common.Dimensions, render_q: *RenderQ) !Self {
     // NOTE: -2 accounts for borders
-    var ponds_list: std.ArrayList(PondItem) = try .initCapacity(
+    const ponds_list: std.ArrayList(PondItem) = try .initCapacity(
         parent_allocator,
         @intCast(terminal_dimensions.height - 2),
     );
 
-    const pond_item_one: PondItem = .{ .title = "YAPPING IS BACK", .has_update = false };
-    const pond_item_two: PondItem = .{ .title = "HELL YEAH", .has_update = true };
-    const pond_item_three: PondItem = .{ .title = "Babagi with a capital G", .has_update = false };
-    const pond_item_four: PondItem = .{ .title = "GITGOOD / fix skill issue (same thing)", .has_update = true };
-
-    try ponds_list.append(pond_item_one);
-    try ponds_list.append(pond_item_two);
-    try ponds_list.append(pond_item_three);
-    try ponds_list.append(pond_item_four);
+    // const pond_item_one: PondItem = .{ .title = "YAPPING IS BACK", .has_update = false };
+    // const pond_item_two: PondItem = .{ .title = "HELL YEAH", .has_update = true };
+    // const pond_item_three: PondItem = .{ .title = "Babagi with a capital G", .has_update = false };
+    // const pond_item_four: PondItem = .{ .title = "GITGOOD / fix skill issue (same thing)", .has_update = true };
+    //
+    // try ponds_list.append(pond_item_one);
+    // try ponds_list.append(pond_item_two);
+    // try ponds_list.append(pond_item_three);
+    // try ponds_list.append(pond_item_four);
 
     return Self{
         .render_q = render_q,
@@ -78,8 +78,8 @@ pub fn init_first_frame(self: *Self) !void {
     try self.render_border(temporary_alloctor);
 
     // Background
-    self.rows_to_render = try temporary_alloctor.alloc(Row, @intCast(self.dimensions.height - 2));
-    for (self.rows_to_render, 2..) |*row, i| {
+    self.content = try temporary_alloctor.alloc(Row, @intCast(self.dimensions.height - 2));
+    for (self.content, 2..) |*row, i| {
         const bg_mid = try self.main_allocator.alloc(u8, @intCast(self.dimensions.width - 2));
         @memset(bg_mid, ' ');
         row.cursor = try std.fmt.allocPrint(
@@ -162,13 +162,24 @@ fn render_border(self: *Self, temporary_allocator: std.mem.Allocator) !void {
 }
 
 pub fn fill_content_with_ponds(self: *Self, temporary_alloctor: std.mem.Allocator) !void {
+    if (self.ponds_list.items.len == 0) {
+        const middle: usize = @intFromFloat(@as(f16, @floatFromInt(self.dimensions.height)) * 0.5);
+        const content = try render_utils.render_line_of_text_and_backround(
+            temporary_alloctor,
+            "DRY LAND",
+            common.TEXT_POSITION.CENTER,
+            @intCast(self.dimensions.width - 2),
+        );
+        @memcpy(self.content[middle - 2].content[0..content.len], content);
+    }
     for (self.ponds_list.items, 0..) |pond, i| {
         const content = try render_utils.render_line_of_text_and_backround(
             temporary_alloctor,
             pond.title,
+            common.TEXT_POSITION.LEFT,
             @intCast(self.dimensions.width - 2),
         );
-        @memcpy(self.rows_to_render[i].content[0..content.len], content);
+        @memcpy(self.content[i].content[0..content.len], content);
     }
 }
 
@@ -178,7 +189,7 @@ pub fn get_active_pond_title(self: *Self) []const u8 {
 
 fn render_pond_item(self: *Self, row_index: usize, allocator: std.mem.Allocator) ![]u8 {
     var render_result: std.ArrayList(u8) = .init(allocator);
-    const row = self.rows_to_render[row_index];
+    const row = self.content[row_index];
     try render_result.writer().print("{s}{s}{s}{s}{s}", .{
         row.cursor,
         if (self.ponds_list.items.len != 0 and row_index == self.active_pond) common.ACTIVE_ITEM else common.INACTIVE_ITEM,
@@ -196,7 +207,7 @@ pub fn render(self: *Self) !void {
     const temporary_allocator = arena.allocator();
     var render_result: std.ArrayList(u8) = .init(temporary_allocator);
     try self.fill_content_with_ponds(temporary_allocator);
-    for (0..self.rows_to_render.len) |i| {
+    for (0..self.content.len) |i| {
         try render_result.writer().print("{s}", .{
             try self.render_pond_item(i, temporary_allocator),
         });
@@ -216,6 +227,9 @@ pub fn handle_normal(
 ) !void {
     switch (key) {
         'j' => {
+            if (self.ponds_list.items.len == 0) {
+                return;
+            }
             var arena = std.heap.ArenaAllocator.init(self.main_allocator);
             defer arena.deinit();
             const allocator = arena.allocator();
@@ -231,6 +245,9 @@ pub fn handle_normal(
             self.render_q.sudo_render();
         },
         'k' => {
+            if (self.ponds_list.items.len == 0) {
+                return;
+            }
             var arena = std.heap.ArenaAllocator.init(self.main_allocator);
             defer arena.deinit();
             const allocator = arena.allocator();
@@ -255,6 +272,9 @@ pub fn handle_normal(
             mode.* = .COMMAND;
         },
         13 => {
+            if (self.ponds_list.items.len == 0) {
+                return;
+            }
             new_active.* = .QUACKS_CHAT;
         },
         else => {},

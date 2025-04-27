@@ -63,27 +63,42 @@ pub fn make_bottom_border(alloc: std.mem.Allocator, width: usize) ![]u8 {
     return horizontal_border;
 }
 
-pub fn render_line_of_text_and_backround(alloc: std.mem.Allocator, text: []const u8, width: usize) ![]u8 {
+pub fn render_line_of_text_and_backround(alloc: std.mem.Allocator, text: []const u8, text_postion: common.TEXT_POSITION, width: usize) ![]u8 {
     var result: []u8 = undefined;
+
     if (text.len >= width) {
-        result = try render_truncated_line_of_text_and_backround(alloc, text, width);
+        result = try truncated_line_of_text_and_backround(alloc, text, width);
     } else {
-        const bg_mid = try alloc.alloc(u8, width - text.len);
-        @memset(bg_mid, ' ');
-        result = try std.fmt.allocPrint(
-            alloc,
-            "{s}{s}",
-            .{
-                text,
-                bg_mid,
-            },
-        );
+        if (text_postion == common.TEXT_POSITION.CENTER) {
+            const bg_mid = try alloc.alloc(u8, @intFromFloat(@as(f16, @floatFromInt(width - text.len)) * 0.5));
+            @memset(bg_mid, ' ');
+            result = try std.fmt.allocPrint(
+                alloc,
+                "{s}{s}{s}",
+                .{
+                    bg_mid,
+                    text,
+                    bg_mid,
+                },
+            );
+        } else {
+            const bg_mid = try alloc.alloc(u8, width - text.len);
+            @memset(bg_mid, ' ');
+            result = try std.fmt.allocPrint(
+                alloc,
+                "{s}{s}",
+                .{
+                    text,
+                    bg_mid,
+                },
+            );
+        }
     }
 
     return result;
 }
 
-fn render_truncated_line_of_text_and_backround(alloc: std.mem.Allocator, text: []const u8, width: usize) ![]u8 {
+fn truncated_line_of_text_and_backround(alloc: std.mem.Allocator, text: []const u8, width: usize) ![]u8 {
     const bg_len = 1;
     var truncated_text: []const u8 = undefined;
     const to_remove = text.len - width;

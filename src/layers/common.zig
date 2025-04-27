@@ -73,6 +73,11 @@ pub const NormalBorder = struct {
 pub const NOTIFICATION_ICON = "\u{25FC}";
 pub const NOTIFICATION_ICON_PATTERN = theme.ACTIVE_FONT_COLOR ++ NOTIFICATION_ICON ++ RESET_STYLES;
 
+pub const TEXT_POSITION = enum {
+    LEFT,
+    CENTER,
+};
+
 pub const theme = struct {
     pub const FONT_COLOR = "\x1b[38;2;192;192;192m";
     pub const ACTIVE_FONT_COLOR = "\x1b[38;2;112;255;112m";
