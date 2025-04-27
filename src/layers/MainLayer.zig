@@ -21,7 +21,7 @@ pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, 
         terminal_dimensions,
         render_queue,
     );
-    const quacks = Quacks.create(
+    const quacks = try Quacks.create(
         alloc,
         terminal_dimensions,
         render_queue,

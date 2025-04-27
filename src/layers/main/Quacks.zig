@@ -14,6 +14,13 @@ border: []u8 = undefined,
 active_pond: usize = 0,
 is_active: bool = false,
 
+quacks_list: std.ArrayList(QuackItem) = undefined,
+
+const QuackItem = struct {
+    id: []u8 = undefined,
+    message: []const u8 = undefined,
+};
+
 const Row = struct {
     cursor: []u8 = undefined,
     content: []u8 = undefined,
@@ -21,7 +28,13 @@ const Row = struct {
 
 const Self = @This();
 
-pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, render_q: *RenderQ) Self {
+pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, render_q: *RenderQ) !Self {
+    const quacks_list: std.ArrayList(QuackItem) = try .initCapacity(
+        alloc,
+        // 6 = 1 (status line) + 2 (top and bottom border of input field) + 3 (lines for actual input)
+        @intCast(terminal_dimensions.height - 6),
+    );
+
     return Self{
         .render_q = render_q,
         .main_allocator = alloc,
@@ -34,6 +47,7 @@ pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, 
             // 6 = 1 (status line) + 2 (top and bottom border of input field) + 3 (lines for actual input)
             .height = terminal_dimensions.height - 6,
         },
+        .quacks_list = quacks_list,
     };
 }
 
@@ -138,29 +152,50 @@ pub fn render_border_with_title(self: *Self, title: []const u8, temp_allocator: 
 //     }
 // }
 
+pub fn fill_content_with_quacks(self: *Self, temporary_alloctor: std.mem.Allocator) !void {
+    if (self.quacks_list.items.len == 0) {
+        const middle: usize = @intFromFloat(@as(f16, @floatFromInt(self.dimensions.height)) * 0.5);
+        const content = try render_utils.render_line_of_text_and_backround(
+            temporary_alloctor,
+            "**DEAD SILENCE**",
+            common.TEXT_POSITION.CENTER,
+            @intCast(self.dimensions.width - 2),
+        );
+        @memcpy(self.content[middle - 2].content[0..content.len], content);
+    }
+    for (self.quacks_list.items, 0..) |quack, i| {
+        const content = try render_utils.render_line_of_text_and_backround(
+            temporary_alloctor,
+            quack.message,
+            common.TEXT_POSITION.LEFT,
+            @intCast(self.dimensions.width - 2),
+        );
+        @memcpy(self.content[i].content[0..content.len], content);
+    }
+}
+
 fn render_row(self: *Self, row_index: usize) ![]u8 {
-    var ponds: std.ArrayList(u8) = .init(self.main_allocator);
+    var render_result: std.ArrayList(u8) = .init(self.main_allocator);
     const row = self.content[row_index];
-    try ponds.writer().print("{s}{s}{s}", .{
+    try render_result.writer().print("{s}{s}{s}", .{
         row.cursor,
         common.INACTIVE_ITEM,
-        // if (self.ponds_list.items.len != 0 and row_index == self.active_pond) common.ACTIVE_ITEM else common.INACTIVE_ITEM,
         row.content,
     });
-    return ponds.toOwnedSlice();
+    return render_result.toOwnedSlice();
 }
 
 pub fn render(self: *Self) !void {
-    var ponds: std.ArrayList(u8) = .init(self.main_allocator);
-    // try self.remap_content();
+    var render_result: std.ArrayList(u8) = .init(self.main_allocator);
+    try self.fill_content_with_quacks(self.main_allocator);
     for (0..self.content.len) |i| {
-        try ponds.writer().print("{s}", .{
+        try render_result.writer().print("{s}", .{
             try self.render_row(i),
         });
     }
     const rendered_border = try render_utils.rerender_border(self.main_allocator, self.is_active, self.border);
-    try ponds.writer().print("{s}", .{rendered_border});
-    const slice = try ponds.toOwnedSlice();
+    try render_result.writer().print("{s}", .{rendered_border});
+    const slice = try render_result.toOwnedSlice();
     try self.render_q.add_to_render_q(slice, .CONTENT);
     self.render_q.sudo_render();
 }
