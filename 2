@@ -14,8 +14,10 @@ content: []Row = undefined,
 border: []u8 = undefined,
 ponds_list: std.ArrayList(PondItem) = undefined,
 active_pond_index: usize = 0,
-sliding_window_move_by: u8 = 0,
 is_active: bool = true,
+
+sliding_window_move_by: u8 = 0,
+ponds_scrolled: u8 = 0,
 
 const Row = struct {
     cursor: []u8 = undefined,
@@ -84,7 +86,7 @@ pub fn create(parent_allocator: std.mem.Allocator, terminal_dimensions: common.D
         .position = .{ .col = 1, .row = 1 },
         .dimensions = .{
             .width = common.PONDS_SIDEBAR_SIZE,
-            .height = terminal_dimensions.height - 1,
+            .height = terminal_dimensions.height - 30,
         },
         .ponds_list = ponds_list,
     };
@@ -207,7 +209,7 @@ pub fn fill_content_with_ponds(self: *Self, temporary_alloctor: std.mem.Allocato
         }
     } else {
         // Reached the end end of ponds_list
-        if (self.active_pond_index > self.ponds_list.items.len - 1) {
+        if (self.content.len + self.sliding_window_move_by > self.ponds_list.items.len) {
             return;
         }
 
@@ -229,31 +231,26 @@ pub fn get_active_pond_title(self: *Self) []const u8 {
     return self.ponds_list.items[self.active_pond_index].title;
 }
 
-fn render_pond_item(self: *Self, content_row_index: usize, allocator: std.mem.Allocator) ![]u8 {
+fn render_pond_item(self: *Self, row_index: usize, allocator: std.mem.Allocator) ![]u8 {
+    // const active_index = self.ponds_scrolled + self.sliding_window_move_by;
     var render_result: std.ArrayList(u8) = .init(allocator);
-    const row = self.content[content_row_index];
+    const row = self.content[row_index];
     try render_result.writer().print("{s}{s}{s}{s}{s}", .{
         row.cursor,
-        self.set_highlight_styles(content_row_index),
+        if (self.ponds_list.items.len != 0 and row_index == self.active_pond_index) common.ACTIVE_ITEM else common.INACTIVE_ITEM,
         row.content,
-        try std.fmt.allocPrint(allocator, common.MOVE_CURSOR_TO_POSITION, .{ content_row_index + 2, self.dimensions.width - 1 }),
-        self.render_pond_notification_icon(content_row_index + self.sliding_window_move_by),
+        try std.fmt.allocPrint(allocator, common.MOVE_CURSOR_TO_POSITION, .{ row_index + 2, self.dimensions.width - 1 }),
+        self.render_pond_notification_icon(row_index + self.sliding_window_move_by),
     });
     return render_result.toOwnedSlice();
-}
-
-fn set_highlight_styles(self: *Self, content_row_index: usize) []const u8 {
-    if (self.ponds_list.items.len != 0 and content_row_index + self.sliding_window_move_by == self.active_pond_index) {
-        return common.ACTIVE_ITEM;
-    }
-    return common.INACTIVE_ITEM;
 }
 
 fn render_pond_notification_icon(self: *Self, pond_index: usize) []const u8 {
     if (pond_index < self.ponds_list.items.len and self.ponds_list.items[pond_index].has_update) {
         return common.NOTIFICATION_ICON_PATTERN;
+    } else {
+        return "";
     }
-    return "";
 }
 
 pub fn render(self: *Self) !void {
@@ -295,18 +292,20 @@ pub fn handle_normal(
             if (self.ponds_list.items.len == 0) {
                 return;
             }
-            if (self.active_pond_index == self.ponds_list.items.len - 1) {
-                return;
-            }
-
             var arena = std.heap.ArenaAllocator.init(self.main_allocator);
             defer arena.deinit();
             const allocator = arena.allocator();
 
+            if (self.ponds_scrolled != self.content.len) {
+                self.ponds_scrolled += 1;
+            }
+
             // Scroll if we need to show ponds which are out of bounds of content
             // Then we need to refill content again with new ponds
-            if (self.active_pond_index - self.sliding_window_move_by == self.content.len - 1) {
-                // TODO:" inroduce this feature back
+            if (self.ponds_scrolled == self.content.len) {
+                if (self.content.len + self.sliding_window_move_by >= self.ponds_list.items.len) {
+                    return;
+                }
                 // self.active_pond_index = wrapi(self.active_pond_index, 1, self.ponds_list.items.len);
                 self.active_pond_index += 1;
                 self.sliding_window_move_by += 1;
@@ -318,12 +317,11 @@ pub fn handle_normal(
                 );
                 self.render_q.sudo_render();
             } else {
-                const prev_pond_index = self.active_pond_index - self.sliding_window_move_by;
-                // TODO:" inroduce this feature back
+                const prev_pond_index = self.active_pond_index;
                 // self.active_pond_index = wrapi(self.active_pond_index, 1, self.ponds_list.items.len);
                 self.active_pond_index += 1;
                 const prev_pond = try self.render_pond_item(prev_pond_index, allocator);
-                const new_pond = try self.render_pond_item(self.active_pond_index - self.sliding_window_move_by, allocator);
+                const new_pond = try self.render_pond_item(self.active_pond_index, allocator);
                 const result = try std.fmt.allocPrint(allocator, "{s}{s}", .{ prev_pond, new_pond });
                 try self.render_q.add_to_render_q(
                     result,
@@ -336,40 +334,24 @@ pub fn handle_normal(
             if (self.ponds_list.items.len == 0) {
                 return;
             }
-            if (self.active_pond_index == 0) {
-                return;
-            }
-
             var arena = std.heap.ArenaAllocator.init(self.main_allocator);
             defer arena.deinit();
             const allocator = arena.allocator();
 
-            // Move sliding window
-            if (self.active_pond_index - self.sliding_window_move_by == 0) {
-                self.active_pond_index -= 1;
-                self.sliding_window_move_by -= 1;
-                try self.fill_content_with_ponds(allocator);
-
-                const rendered_ponds = try self.render_ponds(allocator);
-                try self.render_q.add_to_render_q(
-                    rendered_ponds,
-                    .CONTENT,
-                );
-                self.render_q.sudo_render();
-            } else {
-                const prev_pond = self.active_pond_index - self.sliding_window_move_by;
-                // TODO:" inroduce this feature back
-                self.active_pond_index -= 1;
-                const old_pond = try self.render_pond_item(prev_pond, allocator);
-                const new_pond = try self.render_pond_item(self.active_pond_index - self.sliding_window_move_by, allocator);
-                const result = try std.fmt.allocPrint(allocator, "{s}{s}", .{ old_pond, new_pond });
-                try self.render_q.add_to_render_q(
-                    result,
-                    .CONTENT,
-                );
-
-                self.render_q.sudo_render();
+            if (self.ponds_scrolled != 0) {
+                self.ponds_scrolled -= 1;
             }
+
+            const prev_pond = self.active_pond_index;
+            self.active_pond_index = wrapi(self.active_pond_index, -1, self.ponds_list.items.len);
+            const old_pond = try self.render_pond_item(prev_pond, allocator);
+            const new_pond = try self.render_pond_item(self.active_pond_index, allocator);
+            const result = try std.fmt.allocPrint(allocator, "{s}{s}", .{ old_pond, new_pond });
+            try self.render_q.add_to_render_q(
+                result,
+                .CONTENT,
+            );
+            self.render_q.sudo_render();
         },
         'M', 'Q' => {
             new_active.* = .QUACKS_CHAT;
