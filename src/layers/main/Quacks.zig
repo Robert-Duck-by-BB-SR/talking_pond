@@ -1,6 +1,6 @@
+const std = @import("std");
 const common = @import("../common.zig");
 const RenderQ = @import("../../RenderQueue.zig");
-const std = @import("std");
 const render_utils = @import("../render_utils.zig");
 
 dimensions: common.Dimensions = undefined,
@@ -17,7 +17,9 @@ is_active: bool = false,
 quacks_list: std.ArrayList(QuackItem) = undefined,
 
 const QuackItem = struct {
-    id: []u8 = undefined,
+    // id: []u8 = undefined,
+    time: []const u8,
+    author: []const u8,
     message: []const u8 = undefined,
 };
 
@@ -29,11 +31,21 @@ const Row = struct {
 const Self = @This();
 
 pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, render_q: *RenderQ) !Self {
-    const quacks_list: std.ArrayList(QuackItem) = try .initCapacity(
+    var quacks_list: std.ArrayList(QuackItem) = try .initCapacity(
         alloc,
         // 6 = 1 (status line) + 2 (top and bottom border of input field) + 3 (lines for actual input)
         @intCast(terminal_dimensions.height - 6),
     );
+
+    const quack_one: QuackItem = .{ .time = "69:42", .author = "might guy", .message = "Yo bitch, whatup" };
+    const quack_two: QuackItem = .{ .time = "69:52", .author = "kakashi", .message = "Whatup homie" };
+    const quack_three: QuackItem = .{ .time = "69:69", .author = "might guy", .message = "Babagi?" };
+    const quack_four: QuackItem = .{ .time = "69:69", .author = "kakashi", .message = "With a capital G" };
+
+    try quacks_list.append(quack_one);
+    try quacks_list.append(quack_two);
+    try quacks_list.append(quack_three);
+    try quacks_list.append(quack_four);
 
     return Self{
         .render_q = render_q,
@@ -52,7 +64,7 @@ pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, 
 }
 
 // salty: TODO: oh wait is this an abstraction???
-// carrot: naah bro, trust me, one more abstraction
+// carrot: naah bro, trust me, one more abstraction and it will be definetely the best code
 pub fn init_first_frame(self: *Self) !void {
     var arena = std.heap.ArenaAllocator.init(self.main_allocator);
     defer arena.deinit();
@@ -141,32 +153,31 @@ pub fn render_border_with_title(self: *Self, title: []const u8, temp_allocator: 
     );
 }
 
-// pub fn remap_content(self: *Self) !void {
-//     for (self.ponds_list.items, 0..) |pond, i| {
-//         const content = try render_utils.render_line_of_text_and_backround(
-//             self.alloc,
-//             pond.title,
-//             @intCast(self.dimensions.width - 2),
-//         );
-//         @memcpy(self.rows_to_render[i].content[0..content.len], content);
-//     }
-// }
-
 pub fn fill_content_with_quacks(self: *Self, temporary_alloctor: std.mem.Allocator) !void {
     if (self.quacks_list.items.len == 0) {
-        const middle: usize = @intFromFloat(@as(f16, @floatFromInt(self.dimensions.height)) * 0.5);
         const content = try render_utils.render_line_of_text_and_backround(
             temporary_alloctor,
             "**DEAD SILENCE**",
             common.TEXT_POSITION.CENTER,
             @intCast(self.dimensions.width - 2),
         );
-        @memcpy(self.content[middle - 2].content[0..content.len], content);
+        const middle_index: usize = @intFromFloat(@as(f16, @floatFromInt(self.dimensions.height)) * 0.5);
+        @memcpy(self.content[middle_index - 2].content[0..content.len], content);
+        return;
     }
+
+    // Structure of line: [12:00] author: message -> 7 (time), 1 (space), author.len + 1 (:) + 1(space) + message.len (slice)
+    // Total = 10 + author.len + message.len (slice)
+    var line: []u8 = undefined;
     for (self.quacks_list.items, 0..) |quack, i| {
+        line = try std.fmt.allocPrint(temporary_alloctor, "[{s}] {s}: {s}", .{
+            quack.time,
+            quack.author,
+            quack.message,
+        });
         const content = try render_utils.render_line_of_text_and_backround(
             temporary_alloctor,
-            quack.message,
+            line,
             common.TEXT_POSITION.LEFT,
             @intCast(self.dimensions.width - 2),
         );
@@ -177,6 +188,17 @@ pub fn fill_content_with_quacks(self: *Self, temporary_alloctor: std.mem.Allocat
 fn render_row(self: *Self, row_index: usize) ![]u8 {
     var render_result: std.ArrayList(u8) = .init(self.main_allocator);
     const row = self.content[row_index];
+    // const active_bitch_ass: []const u8 = "might guy";
+    // if (std.mem.eql(u8, quack.author, active_bitch_ass)) {
+    //     line = try std.fmt.allocPrint(temporary_alloctor, "[{s}] {s}{s}{s}: {s}{s}", .{
+    //         quack.time,
+    //         common.theme.ACTIVE_FONT_COLOR,
+    //         quack.author,
+    //         common.INACTIVE_ITEM,
+    //         quack.message,
+    //         common.theme.BACKGROUND_COLOR,
+    //     });
+    // }
     try render_result.writer().print("{s}{s}{s}", .{
         row.cursor,
         common.INACTIVE_ITEM,
