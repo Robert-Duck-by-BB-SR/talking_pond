@@ -99,8 +99,6 @@ pub fn render_line_of_text_and_backround(alloc: std.mem.Allocator, text: []const
     return result;
 }
 
-// HEY YOU FUCKER
-// MAKE IT A ARRAYS OR LIST OF
 pub fn render_multiple_lines_with_background(temp_alloc: std.mem.Allocator, text: []const u8, width: usize, left_spacing: usize) !*std.ArrayList([]const u8) {
     var render_result: std.ArrayList([]const u8) = .init(temp_alloc);
     var last_text_index: usize = 0;
@@ -109,34 +107,23 @@ pub fn render_multiple_lines_with_background(temp_alloc: std.mem.Allocator, text
         if (render_result.items.len == 0) {
             const slice = text[0..width];
             try render_result.append(slice);
-            // try render_result.writer().print("{s}", .{slice});
             last_text_index += width;
         }
 
         const bg_before = try temp_alloc.alloc(u8, left_spacing);
         @memset(bg_before, ' ');
 
-        // HOW TO FIX THIS SHIT??????
-        var iteration: u8 = 0;
         while (last_text_index < text.len - 1) {
             if (last_text_index + width - left_spacing > text.len - 1) {
                 const slice = text[last_text_index .. text.len - 1];
                 try render_result.append(try std.fmt.allocPrint(temp_alloc, "{s}{s}", .{ bg_before, slice }));
-                // try render_result.writer().print("{s}{s}", .{ bg_before, slice });
-                iteration += 1;
                 break;
             } else {
                 const slice = text[last_text_index .. last_text_index + width - left_spacing];
                 try render_result.append(try std.fmt.allocPrint(temp_alloc, "{s}{s}", .{ bg_before, slice }));
-                // try render_result.writer().print("{s}{s}", .{ bg_before, slice });
                 last_text_index += width - left_spacing;
-                iteration += 1;
             }
         }
-
-        try debug.debug_in_file_or_i_will_smack_your_face(try std.fmt.allocPrint(temp_alloc, "len: {d}", .{
-            render_result.items.len,
-        }));
     } else {
         const bg_mid = try temp_alloc.alloc(u8, width - text.len);
         @memset(bg_mid, ' ');

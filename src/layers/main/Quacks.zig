@@ -17,12 +17,18 @@ active_pond: usize = 0,
 is_active: bool = false,
 
 quacks_list: std.ArrayList(QuackItem) = undefined,
+visible_quacks_list: std.ArrayList(VisibleQuackItem) = undefined,
 
 const QuackItem = struct {
     // id: []u8 = undefined,
     time: []const u8,
     author: []const u8,
     message: []const u8 = undefined,
+};
+
+const VisibleQuackItem = struct {
+    id: usize,
+    lines_taken: u8,
 };
 
 const Row = struct {
@@ -39,15 +45,30 @@ pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, 
         @intCast(terminal_dimensions.height - 6),
     );
 
-    const quack_one: QuackItem = .{ .time = "69:42", .author = "bob", .message = "Yo bitch, whatup" };
+    const quack_one: QuackItem = .{ .time = "69:42", .author = "bob", .message = "Yo bitches, whatup" };
     const quack_two: QuackItem = .{ .time = "69:52", .author = "kakashi", .message = "Whatup homie" };
-    const quack_three: QuackItem = .{ .time = "69:69", .author = "bob", .message = "Babagi?" };
+    const quack_three: QuackItem = .{ .time = "69:69", .author = "bob", .message = "Bro what the fuck are you talking about? Btw, babagi?" };
     const quack_four: QuackItem = .{ .time = "69:69", .author = "kakashi", .message = "With a capital G" };
     const quack_five: QuackItem = .{ .time = "69:69", .author = "bibi", .message = "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum." };
 
     try quacks_list.append(quack_one);
     try quacks_list.append(quack_two);
     try quacks_list.append(quack_five);
+    try quacks_list.append(quack_three);
+    try quacks_list.append(quack_four);
+    try quacks_list.append(quack_three);
+    try quacks_list.append(quack_one);
+    try quacks_list.append(quack_two);
+    try quacks_list.append(quack_three);
+    try quacks_list.append(quack_four);
+    try quacks_list.append(quack_one);
+    try quacks_list.append(quack_two);
+    try quacks_list.append(quack_five);
+    try quacks_list.append(quack_three);
+    try quacks_list.append(quack_four);
+    try quacks_list.append(quack_three);
+    try quacks_list.append(quack_one);
+    try quacks_list.append(quack_two);
     try quacks_list.append(quack_three);
     try quacks_list.append(quack_four);
 
@@ -64,6 +85,11 @@ pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, 
             .height = terminal_dimensions.height - 6,
         },
         .quacks_list = quacks_list,
+        .visible_quacks_list = try .initCapacity(
+            alloc,
+            // 6 = 1 (status line) + 2 (top and bottom border of input field) + 3 (lines for actual input)
+            @intCast(terminal_dimensions.height - 6),
+        ),
     };
 }
 
@@ -171,27 +197,41 @@ pub fn fill_content_with_quacks(self: *Self, temporary_alloctor: std.mem.Allocat
     }
 
     // Structure of line: [12:00] author: message -> 7 (time), 1 (space), author.len + 1 (:) + 1(space) + message.len (slice)
-    // Total = 10 + author.len + message.len (slice)
-    var index: usize = 1;
+    // Total = 11 + author.len + message.len (slice)
+    var multiple_lines_spacing: u8 = 0;
     for (self.quacks_list.items, 0..) |quack, i| {
         const all_content_lines = try render_utils.render_multiple_lines_with_background(
             temporary_alloctor,
-            try std.fmt.allocPrint(temporary_alloctor, "[{s}] {s}: {s}", .{
+            // TODO: add > here and make rending support the first space if message is not selected
+            try std.fmt.allocPrint(temporary_alloctor, " [{s}] {s}: {s}", .{
                 quack.time,
                 quack.author,
                 quack.message,
             }),
             @intCast(self.dimensions.width - 2),
-            8,
+            9,
         );
 
-        for (all_content_lines.items) |value| {
-            // try debug.debug_in_file_or_i_will_smack_your_face(try std.fmt.allocPrint(temporary_alloctor, "iter: {d}", .{
-            //     index,
-            // }));
-            std.debug.print("{s}", .{value});
-            @memcpy(self.rows[i + index].content[0..value.len], value);
-            index += 1;
+        if (all_content_lines.items.len > 1) {
+            for (all_content_lines.items) |value| {
+                @memcpy(self.rows[i + multiple_lines_spacing].content[0..value.len], value);
+                // last line for multiple line message does not need a spacing
+                if (multiple_lines_spacing != all_content_lines.items.len - 1) {
+                    multiple_lines_spacing += 1;
+                }
+
+                try self.visible_quacks_list.append(VisibleQuackItem{
+                    // id which will be corresponding to id in quacks_list
+                    .id = i,
+                    .lines_taken = multiple_lines_spacing,
+                });
+            }
+        } else {
+            @memcpy(self.rows[i + multiple_lines_spacing].content[0..all_content_lines.items[0].len], all_content_lines.items[0]);
+            try self.visible_quacks_list.append(VisibleQuackItem{
+                .id = i,
+                .lines_taken = 1,
+            });
         }
     }
 }
@@ -199,12 +239,11 @@ pub fn fill_content_with_quacks(self: *Self, temporary_alloctor: std.mem.Allocat
 fn render_row(self: *Self, temporary_alloctor: std.mem.Allocator, row_index: usize) ![]u8 {
     var render_result: std.ArrayList(u8) = .init(self.main_allocator);
     const row = self.rows[row_index];
-    _ = temporary_alloctor;
     try render_result.writer().print("{s}{s}{s}", .{
         row.cursor,
         common.INACTIVE_ITEM,
-        row.content,
-            // try formatting_utils.message_author_rizzling(temporary_alloctor, "bob", row.content),
+        // row.content,
+        try formatting_utils.message_author_rizzling(temporary_alloctor, "bob", row.content),
     });
     return render_result.toOwnedSlice();
 }
