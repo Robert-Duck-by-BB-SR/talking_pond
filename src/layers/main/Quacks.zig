@@ -2,6 +2,8 @@ const std = @import("std");
 const common = @import("../common.zig");
 const RenderQ = @import("../../RenderQueue.zig");
 const render_utils = @import("../render_utils.zig");
+const formatting_utils = @import("../formatting_utils.zig");
+const debug = @import("../../debug/debugger.zig");
 
 dimensions: common.Dimensions = undefined,
 position: common.Position = undefined,
@@ -9,7 +11,7 @@ position: common.Position = undefined,
 main_allocator: std.mem.Allocator,
 render_q: *RenderQ,
 
-content: []Row = undefined,
+rows: []Row = undefined,
 border: []u8 = undefined,
 active_pond: usize = 0,
 is_active: bool = false,
@@ -37,13 +39,15 @@ pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, 
         @intCast(terminal_dimensions.height - 6),
     );
 
-    const quack_one: QuackItem = .{ .time = "69:42", .author = "might guy", .message = "Yo bitch, whatup" };
+    const quack_one: QuackItem = .{ .time = "69:42", .author = "bob", .message = "Yo bitch, whatup" };
     const quack_two: QuackItem = .{ .time = "69:52", .author = "kakashi", .message = "Whatup homie" };
-    const quack_three: QuackItem = .{ .time = "69:69", .author = "might guy", .message = "Babagi?" };
+    const quack_three: QuackItem = .{ .time = "69:69", .author = "bob", .message = "Babagi?" };
     const quack_four: QuackItem = .{ .time = "69:69", .author = "kakashi", .message = "With a capital G" };
+    const quack_five: QuackItem = .{ .time = "69:69", .author = "bibi", .message = "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum." };
 
     try quacks_list.append(quack_one);
     try quacks_list.append(quack_two);
+    try quacks_list.append(quack_five);
     try quacks_list.append(quack_three);
     try quacks_list.append(quack_four);
 
@@ -70,10 +74,10 @@ pub fn init_first_frame(self: *Self) !void {
     defer arena.deinit();
     const temp_allocator = arena.allocator();
 
-    self.content = try temp_allocator.alloc(Row, @intCast(self.dimensions.height - 2));
+    self.rows = try temp_allocator.alloc(Row, @intCast(self.dimensions.height - 2));
     try self.render_border_with_title("QUACKS", temp_allocator);
     // Background
-    for (self.content, 2..) |*row, i| {
+    for (self.rows, 2..) |*row, i| {
         const bg_mid = try self.main_allocator.alloc(u8, @intCast(self.dimensions.width - 2));
         @memset(bg_mid, ' ');
         row.cursor = try std.fmt.allocPrint(
@@ -162,57 +166,58 @@ pub fn fill_content_with_quacks(self: *Self, temporary_alloctor: std.mem.Allocat
             @intCast(self.dimensions.width - 2),
         );
         const middle_index: usize = @intFromFloat(@as(f16, @floatFromInt(self.dimensions.height)) * 0.5);
-        @memcpy(self.content[middle_index - 2].content[0..content.len], content);
+        @memcpy(self.rows[middle_index - 2].content[0..content.len], content);
         return;
     }
 
     // Structure of line: [12:00] author: message -> 7 (time), 1 (space), author.len + 1 (:) + 1(space) + message.len (slice)
     // Total = 10 + author.len + message.len (slice)
-    var line: []u8 = undefined;
+    var index: usize = 1;
     for (self.quacks_list.items, 0..) |quack, i| {
-        line = try std.fmt.allocPrint(temporary_alloctor, "[{s}] {s}: {s}", .{
-            quack.time,
-            quack.author,
-            quack.message,
-        });
-        const content = try render_utils.render_line_of_text_and_backround(
+        const all_content_lines = try render_utils.render_multiple_lines_with_background(
             temporary_alloctor,
-            line,
-            common.TEXT_POSITION.LEFT,
+            try std.fmt.allocPrint(temporary_alloctor, "[{s}] {s}: {s}", .{
+                quack.time,
+                quack.author,
+                quack.message,
+            }),
             @intCast(self.dimensions.width - 2),
+            8,
         );
-        @memcpy(self.content[i].content[0..content.len], content);
+
+        for (all_content_lines.items) |value| {
+            // try debug.debug_in_file_or_i_will_smack_your_face(try std.fmt.allocPrint(temporary_alloctor, "iter: {d}", .{
+            //     index,
+            // }));
+            std.debug.print("{s}", .{value});
+            @memcpy(self.rows[i + index].content[0..value.len], value);
+            index += 1;
+        }
     }
 }
 
-fn render_row(self: *Self, row_index: usize) ![]u8 {
+fn render_row(self: *Self, temporary_alloctor: std.mem.Allocator, row_index: usize) ![]u8 {
     var render_result: std.ArrayList(u8) = .init(self.main_allocator);
-    const row = self.content[row_index];
-    // const active_bitch_ass: []const u8 = "might guy";
-    // if (std.mem.eql(u8, quack.author, active_bitch_ass)) {
-    //     line = try std.fmt.allocPrint(temporary_alloctor, "[{s}] {s}{s}{s}: {s}{s}", .{
-    //         quack.time,
-    //         common.theme.ACTIVE_FONT_COLOR,
-    //         quack.author,
-    //         common.INACTIVE_ITEM,
-    //         quack.message,
-    //         common.theme.BACKGROUND_COLOR,
-    //     });
-    // }
+    const row = self.rows[row_index];
+    _ = temporary_alloctor;
     try render_result.writer().print("{s}{s}{s}", .{
         row.cursor,
         common.INACTIVE_ITEM,
         row.content,
+            // try formatting_utils.message_author_rizzling(temporary_alloctor, "bob", row.content),
     });
     return render_result.toOwnedSlice();
 }
 
 pub fn render(self: *Self) !void {
+    var arena = std.heap.ArenaAllocator.init(self.main_allocator);
+    defer arena.deinit();
+    const temp_allocator = arena.allocator();
     var render_result: std.ArrayList(u8) = .init(self.main_allocator);
     try self.fill_content_with_quacks(self.main_allocator);
-    for (0..self.content.len) |i| {
+    for (0..self.rows.len) |i| {
         try render_result.writer().print("{s}", .{
-            try self.render_row(i),
+            try self.render_row(temp_allocator, i),
         });
     }
     const rendered_border = try render_utils.rerender_border(self.main_allocator, self.is_active, self.border);

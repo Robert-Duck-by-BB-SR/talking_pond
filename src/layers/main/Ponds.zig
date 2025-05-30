@@ -10,7 +10,7 @@ main_allocator: std.mem.Allocator = undefined,
 temporary_allocator: std.mem.Allocator = undefined,
 render_q: *RenderQ,
 
-content: []Row = undefined,
+rows: []Row = undefined,
 border: []u8 = undefined,
 ponds_list: std.ArrayList(PondItem) = undefined,
 active_pond_index: usize = 0,
@@ -99,8 +99,8 @@ pub fn init_first_frame(self: *Self) !void {
     try self.render_border(temporary_alloctor);
 
     // Background
-    self.content = try temporary_alloctor.alloc(Row, @intCast(self.dimensions.height - 2));
-    for (self.content, 2..) |*row, i| {
+    self.rows = try temporary_alloctor.alloc(Row, @intCast(self.dimensions.height - 2));
+    for (self.rows, 2..) |*row, i| {
         const bg_mid = try self.main_allocator.alloc(u8, @intCast(self.dimensions.width - 2));
         @memset(bg_mid, ' ');
         row.cursor = try std.fmt.allocPrint(
@@ -191,11 +191,11 @@ pub fn fill_content_with_ponds(self: *Self, temporary_alloctor: std.mem.Allocato
             common.TEXT_POSITION.CENTER,
             @intCast(self.dimensions.width - 2),
         );
-        @memcpy(self.content[middle - 2].content[0..content.len], content);
+        @memcpy(self.rows[middle - 2].content[0..content.len], content);
         return;
     }
 
-    if (self.content.len >= self.ponds_list.items.len) {
+    if (self.rows.len >= self.ponds_list.items.len) {
         for (self.ponds_list.items, 0..) |pond, i| {
             const line = try render_utils.render_line_of_text_and_backround(
                 temporary_alloctor,
@@ -203,7 +203,7 @@ pub fn fill_content_with_ponds(self: *Self, temporary_alloctor: std.mem.Allocato
                 common.TEXT_POSITION.LEFT,
                 @intCast(self.dimensions.width - 2),
             );
-            @memcpy(self.content[i].content[0..line.len], line);
+            @memcpy(self.rows[i].content[0..line.len], line);
         }
     } else {
         // Reached the end end of ponds_list
@@ -212,7 +212,7 @@ pub fn fill_content_with_ponds(self: *Self, temporary_alloctor: std.mem.Allocato
         }
 
         // Refilling content for scrolling
-        const slice = self.ponds_list.items[self.sliding_window_move_by .. self.content.len + self.sliding_window_move_by];
+        const slice = self.ponds_list.items[self.sliding_window_move_by .. self.rows.len + self.sliding_window_move_by];
         for (slice, 0..) |pond, i| {
             const line = try render_utils.render_line_of_text_and_backround(
                 temporary_alloctor,
@@ -220,7 +220,7 @@ pub fn fill_content_with_ponds(self: *Self, temporary_alloctor: std.mem.Allocato
                 common.TEXT_POSITION.LEFT,
                 @intCast(self.dimensions.width - 2),
             );
-            @memcpy(self.content[i].content[0..line.len], line);
+            @memcpy(self.rows[i].content[0..line.len], line);
         }
     }
 }
@@ -231,7 +231,7 @@ pub fn get_active_pond_title(self: *Self) []const u8 {
 
 fn render_pond_item(self: *Self, content_row_index: usize, allocator: std.mem.Allocator) ![]u8 {
     var render_result: std.ArrayList(u8) = .init(allocator);
-    const row = self.content[content_row_index];
+    const row = self.rows[content_row_index];
     try render_result.writer().print("{s}{s}{s}{s}{s}", .{
         row.cursor,
         self.set_highlight_styles(content_row_index),
@@ -275,7 +275,7 @@ pub fn render(self: *Self) !void {
 
 fn render_ponds(self: *Self, temporary_allocator: std.mem.Allocator) ![]u8 {
     var render_result: std.ArrayList(u8) = .init(temporary_allocator);
-    for (0..self.content.len) |i| {
+    for (0..self.rows.len) |i| {
         try render_result.writer().print("{s}", .{
             try self.render_pond_item(i, temporary_allocator),
         });
@@ -305,7 +305,7 @@ pub fn handle_normal(
 
             // Scroll if we need to show ponds which are out of bounds of content
             // Then we need to refill content again with new ponds
-            if (self.active_pond_index - self.sliding_window_move_by == self.content.len - 1) {
+            if (self.active_pond_index - self.sliding_window_move_by == self.rows.len - 1) {
                 // TODO:" inroduce this feature back
                 // self.active_pond_index = wrapi(self.active_pond_index, 1, self.ponds_list.items.len);
                 self.active_pond_index += 1;
