@@ -13,7 +13,7 @@ render_q: *RenderQ,
 
 rows: []Row = undefined,
 border: []u8 = undefined,
-active_pond: usize = 0,
+active_quack: usize = 0,
 is_active: bool = false,
 
 quacks_list: std.ArrayList(QuackItem) = undefined,
@@ -71,6 +71,8 @@ pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, 
     try quacks_list.append(quack_two);
     try quacks_list.append(quack_three);
     try quacks_list.append(quack_four);
+    try quacks_list.append(quack_one);
+    try quacks_list.append(quack_two);
 
     return Self{
         .render_q = render_q,
@@ -199,10 +201,9 @@ pub fn fill_content_with_quacks(self: *Self, temporary_alloctor: std.mem.Allocat
     // Structure of line: [12:00] author: message -> 7 (time), 1 (space), author.len + 1 (:) + 1(space) + message.len (slice)
     // Total = 11 + author.len + message.len (slice)
     var multiple_lines_spacing: u8 = 0;
-    for (self.quacks_list.items, 0..) |quack, i| {
+    for (self.quacks_list.items[0..], 0..) |quack, i| {
         const all_content_lines = try render_utils.render_multiple_lines_with_background(
             temporary_alloctor,
-            // TODO: add > here and make rending support the first space if message is not selected
             try std.fmt.allocPrint(temporary_alloctor, " [{s}] {s}: {s}", .{
                 quack.time,
                 quack.author,
