@@ -28,7 +28,7 @@ const QuackItem = struct {
 
 const VisibleQuackItem = struct {
     id: usize,
-    lines_taken: u8,
+    lines_will_take: u8,
 };
 
 const Row = struct {
@@ -41,38 +41,23 @@ const Self = @This();
 pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, render_q: *RenderQ) !Self {
     var quacks_list: std.ArrayList(QuackItem) = try .initCapacity(
         alloc,
-        // 6 = 1 (status line) + 2 (top and bottom border of input field) + 3 (lines for actual input)
-        @intCast(terminal_dimensions.height - 6),
+        // 8 = 1 (status line) + 2 (top and bottom border of input field) + 5 (lines for actual input)
+        @intCast(terminal_dimensions.height - 8),
     );
 
     const quack_one: QuackItem = .{ .time = "69:42", .author = "bob", .message = "Yo bitches, whatup" };
-    const quack_two: QuackItem = .{ .time = "69:52", .author = "kakashi", .message = "Whatup homie" };
-    const quack_three: QuackItem = .{ .time = "69:69", .author = "bob", .message = "Bro what the fuck are you talking about? Btw, babagi?" };
-    const quack_four: QuackItem = .{ .time = "69:69", .author = "kakashi", .message = "With a capital G" };
-    const quack_five: QuackItem = .{ .time = "69:69", .author = "bibi", .message = "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum." };
+    // const quack_two: QuackItem = .{ .time = "69:52", .author = "kakashi", .message = "Whatup homie" };
+    // const quack_three: QuackItem = .{ .time = "69:69", .author = "bob", .message = "Bro what the fuck are you talking about? Btw, babagi?" };
+    // const quack_four: QuackItem = .{ .time = "69:69", .author = "kakashi", .message = "With a capital G" };
+    // const quack_five: QuackItem = .{ .time = "69:69", .author = "bibi", .message = "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum." };
 
+    for (0..@intCast(terminal_dimensions.height - 8)) |i| {
+        _ = i;
+        try quacks_list.append(quack_one);
+    }
     try quacks_list.append(quack_one);
-    try quacks_list.append(quack_two);
-    try quacks_list.append(quack_five);
-    try quacks_list.append(quack_three);
-    try quacks_list.append(quack_four);
-    try quacks_list.append(quack_three);
     try quacks_list.append(quack_one);
-    try quacks_list.append(quack_two);
-    try quacks_list.append(quack_three);
-    try quacks_list.append(quack_four);
     try quacks_list.append(quack_one);
-    try quacks_list.append(quack_two);
-    try quacks_list.append(quack_five);
-    try quacks_list.append(quack_three);
-    try quacks_list.append(quack_four);
-    try quacks_list.append(quack_three);
-    try quacks_list.append(quack_one);
-    try quacks_list.append(quack_two);
-    try quacks_list.append(quack_three);
-    try quacks_list.append(quack_four);
-    try quacks_list.append(quack_one);
-    try quacks_list.append(quack_two);
 
     return Self{
         .render_q = render_q,
@@ -83,13 +68,13 @@ pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, 
         },
         .dimensions = .{
             .width = terminal_dimensions.width - common.PONDS_SIDEBAR_SIZE - 1,
-            // 6 = 1 (status line) + 2 (top and bottom border of input field) + 3 (lines for actual input)
+            // 6 = 1 (status line) + 5 (lines for actual input)
             .height = terminal_dimensions.height - 6,
         },
         .quacks_list = quacks_list,
         .visible_quacks_list = try .initCapacity(
             alloc,
-            // 6 = 1 (status line) + 2 (top and bottom border of input field) + 3 (lines for actual input)
+            // 6 = 1 (status line) + 5 (lines for actual input)
             @intCast(terminal_dimensions.height - 6),
         ),
     };
@@ -200,8 +185,10 @@ pub fn fill_content_with_quacks(self: *Self, temporary_alloctor: std.mem.Allocat
 
     // Structure of line: [12:00] author: message -> 7 (time), 1 (space), author.len + 1 (:) + 1(space) + message.len (slice)
     // Total = 11 + author.len + message.len (slice)
+    var lines_taken: u8 = 0;
+    // used to move other messages down if there is a multiple line message
     var multiple_lines_spacing: u8 = 0;
-    for (self.quacks_list.items[0..], 0..) |quack, i| {
+    for (self.quacks_list.items[0..], 0..) |quack, quack_id| {
         const all_content_lines = try render_utils.render_multiple_lines_with_background(
             temporary_alloctor,
             try std.fmt.allocPrint(temporary_alloctor, " [{s}] {s}: {s}", .{
@@ -214,25 +201,30 @@ pub fn fill_content_with_quacks(self: *Self, temporary_alloctor: std.mem.Allocat
         );
 
         if (all_content_lines.items.len > 1) {
+            var lines_counter: u8 = 0;
             for (all_content_lines.items) |value| {
-                @memcpy(self.rows[i + multiple_lines_spacing].content[0..value.len], value);
+                @memcpy(self.rows[quack_id + multiple_lines_spacing].content[0..value.len], value);
                 // last line for multiple line message does not need a spacing
                 if (multiple_lines_spacing != all_content_lines.items.len - 1) {
                     multiple_lines_spacing += 1;
                 }
-
-                try self.visible_quacks_list.append(VisibleQuackItem{
-                    // id which will be corresponding to id in quacks_list
-                    .id = i,
-                    .lines_taken = multiple_lines_spacing,
-                });
+                lines_counter += 1;
             }
-        } else {
-            @memcpy(self.rows[i + multiple_lines_spacing].content[0..all_content_lines.items[0].len], all_content_lines.items[0]);
             try self.visible_quacks_list.append(VisibleQuackItem{
-                .id = i,
-                .lines_taken = 1,
+                // id which will be corresponding to id in quacks_list
+                .id = quack_id,
+                .lines_will_take = lines_counter,
             });
+        } else {
+            if (lines_taken == self.dimensions.height - 2) {
+                break;
+            }
+            @memcpy(self.rows[quack_id + multiple_lines_spacing].content[0..all_content_lines.items[0].len], all_content_lines.items[0]);
+            try self.visible_quacks_list.append(VisibleQuackItem{
+                .id = quack_id,
+                .lines_will_take = 1,
+            });
+            lines_taken += 1;
         }
     }
 }
@@ -243,7 +235,6 @@ fn render_row(self: *Self, temporary_alloctor: std.mem.Allocator, row_index: usi
     try render_result.writer().print("{s}{s}{s}", .{
         row.cursor,
         common.INACTIVE_ITEM,
-        // row.content,
         try formatting_utils.message_author_rizzling(temporary_alloctor, "bob", row.content),
     });
     return render_result.toOwnedSlice();
