@@ -49,15 +49,13 @@ pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, 
     // const quack_two: QuackItem = .{ .time = "69:52", .author = "kakashi", .message = "Whatup homie" };
     // const quack_three: QuackItem = .{ .time = "69:69", .author = "bob", .message = "Bro what the fuck are you talking about? Btw, babagi?" };
     // const quack_four: QuackItem = .{ .time = "69:69", .author = "kakashi", .message = "With a capital G" };
-    // const quack_five: QuackItem = .{ .time = "69:69", .author = "bibi", .message = "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum." };
+    const quack_five: QuackItem = .{ .time = "69:69", .author = "bibi", .message = "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum." };
 
-    for (0..@intCast(terminal_dimensions.height - 8)) |i| {
+    for (0..@intCast(terminal_dimensions.height - 10)) |i| {
         _ = i;
         try quacks_list.append(quack_one);
     }
-    try quacks_list.append(quack_one);
-    try quacks_list.append(quack_one);
-    try quacks_list.append(quack_one);
+    try quacks_list.append(quack_five);
 
     return Self{
         .render_q = render_q,
@@ -203,12 +201,17 @@ pub fn fill_content_with_quacks(self: *Self, temporary_alloctor: std.mem.Allocat
         if (all_content_lines.items.len > 1) {
             var lines_counter: u8 = 0;
             for (all_content_lines.items) |value| {
+                // NOTE: WHAT IF HALF OF THE MESSAGE WILL BE THERE?
+                if (lines_taken == self.dimensions.height - 2) {
+                    break;
+                }
                 @memcpy(self.rows[quack_id + multiple_lines_spacing].content[0..value.len], value);
                 // last line for multiple line message does not need a spacing
                 if (multiple_lines_spacing != all_content_lines.items.len - 1) {
                     multiple_lines_spacing += 1;
                 }
                 lines_counter += 1;
+                lines_taken += 1;
             }
             try self.visible_quacks_list.append(VisibleQuackItem{
                 // id which will be corresponding to id in quacks_list
@@ -230,6 +233,12 @@ pub fn fill_content_with_quacks(self: *Self, temporary_alloctor: std.mem.Allocat
 }
 
 fn render_row(self: *Self, temporary_alloctor: std.mem.Allocator, row_index: usize) ![]u8 {
+    //-----
+    // GOOFING AROUND
+
+    self.set_highlight_styles(row_index);
+
+    //-----
     var render_result: std.ArrayList(u8) = .init(self.main_allocator);
     const row = self.rows[row_index];
     try render_result.writer().print("{s}{s}{s}", .{
@@ -238,6 +247,14 @@ fn render_row(self: *Self, temporary_alloctor: std.mem.Allocator, row_index: usi
         try formatting_utils.message_author_rizzling(temporary_alloctor, "bob", row.content),
     });
     return render_result.toOwnedSlice();
+}
+
+fn set_highlight_styles(self: *Self, content_row_index: usize) void {
+    if (self.active_quack == content_row_index) {
+        self.rows[content_row_index].content[0] = '>';
+    } else {
+        self.rows[content_row_index].content[0] = ' ';
+    }
 }
 
 pub fn render(self: *Self) !void {
@@ -258,8 +275,52 @@ pub fn render(self: *Self) !void {
     self.render_q.sudo_render();
 }
 
-pub fn handle_normal(_: *Self, mode: *common.MODE, key: u8, new_active: *common.ComponentType) !void {
+pub fn handle_normal(self: *Self, mode: *common.MODE, key: u8, new_active: *common.ComponentType) !void {
     switch (key) {
+        'j' => {
+            if (self.active_quack == self.dimensions.height - 3) {
+                return;
+            }
+            var arena = std.heap.ArenaAllocator.init(self.main_allocator);
+            defer arena.deinit();
+            const allocator = arena.allocator();
+
+            const prev_quack = self.active_quack;
+            self.active_quack += 1;
+
+            const result = try std.fmt.allocPrint(allocator, "{s}{s}", .{
+                try self.render_row(allocator, prev_quack),
+                try self.render_row(allocator, self.active_quack),
+            });
+
+            try self.render_q.add_to_render_q(
+                result,
+                .CONTENT,
+            );
+            self.render_q.sudo_render();
+        },
+        'k' => {
+            if (self.active_quack == 0) {
+                return;
+            }
+            var arena = std.heap.ArenaAllocator.init(self.main_allocator);
+            defer arena.deinit();
+            const allocator = arena.allocator();
+
+            const prev_quack = self.active_quack;
+            self.active_quack -= 1;
+
+            const result = try std.fmt.allocPrint(allocator, "{s}{s}", .{
+                try self.render_row(allocator, prev_quack),
+                try self.render_row(allocator, self.active_quack),
+            });
+
+            try self.render_q.add_to_render_q(
+                result,
+                .CONTENT,
+            );
+            self.render_q.sudo_render();
+        },
         'C', 'P' => {
             new_active.* = .PONDS_SIDEBAR;
         },

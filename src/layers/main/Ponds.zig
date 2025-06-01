@@ -322,9 +322,10 @@ pub fn handle_normal(
                 // TODO:" inroduce this feature back
                 // self.active_pond_index = wrapi(self.active_pond_index, 1, self.ponds_list.items.len);
                 self.active_pond_index += 1;
-                const prev_pond = try self.render_pond_item(prev_pond_index, allocator);
-                const new_pond = try self.render_pond_item(self.active_pond_index - self.sliding_window_move_by, allocator);
-                const result = try std.fmt.allocPrint(allocator, "{s}{s}", .{ prev_pond, new_pond });
+                const result = try std.fmt.allocPrint(allocator, "{s}{s}", .{
+                    try self.render_pond_item(prev_pond_index, allocator),
+                    try self.render_pond_item(self.active_pond_index - self.sliding_window_move_by, allocator),
+                });
                 try self.render_q.add_to_render_q(
                     result,
                     .CONTENT,

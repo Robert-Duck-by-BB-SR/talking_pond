@@ -29,7 +29,14 @@ pub fn message_author_rizzling(temporary_alloctor: std.mem.Allocator, author: []
                 },
                 // Message
                 else => {
-                    try result.writer().print("{s} ", .{part});
+                    // NOTE: here we can add specific formartting shit using nested switch
+                    // try result.writer().print("{s}", .{splitted_message.rest()});
+                    // break;
+                    if (splitted_message.peek() == null) {
+                        try result.writer().print("{s}", .{part});
+                    } else {
+                        try result.writer().print("{s} ", .{part});
+                    }
                 },
             }
             index += 1;
@@ -52,7 +59,14 @@ pub fn message_author_rizzling(temporary_alloctor: std.mem.Allocator, author: []
                 },
                 // Message
                 else => {
-                    try result.writer().print("{s} ", .{part});
+                    // NOTE: here we can add specific formartting shit using nested switch
+                    // try result.writer().print("{s}", .{splitted_message.rest()});
+                    // break;
+                    if (splitted_message.peek() == null) {
+                        try result.writer().print("{s}", .{part});
+                    } else {
+                        try result.writer().print("{s} ", .{part});
+                    }
                 },
             }
             index += 1;
