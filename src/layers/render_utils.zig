@@ -135,7 +135,6 @@ pub fn render_multiple_lines_with_background(temp_alloc: std.mem.Allocator, text
                 bg_mid,
             },
         );
-        // try render_result.writer().print("{s}", .{line});
         try render_result.append(line);
     }
 
