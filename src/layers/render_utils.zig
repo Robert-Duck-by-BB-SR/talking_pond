@@ -99,7 +99,7 @@ pub fn render_line_of_text_and_backround(alloc: std.mem.Allocator, text: []const
     return result;
 }
 
-pub fn render_multiple_lines_with_background(temp_alloc: std.mem.Allocator, text: []const u8, width: usize, left_spacing: usize) !*std.ArrayList([]const u8) {
+pub fn render_multiple_lines_with_background(temp_alloc: std.mem.Allocator, text: []const u8, width: usize, left_spacing: usize) ![][]const u8 {
     var render_result: std.ArrayList([]const u8) = .init(temp_alloc);
     var last_text_index: usize = 0;
 
@@ -135,11 +135,10 @@ pub fn render_multiple_lines_with_background(temp_alloc: std.mem.Allocator, text
                 bg_mid,
             },
         );
-        // try render_result.writer().print("{s}", .{line});
         try render_result.append(line);
     }
 
-    return &render_result;
+    return render_result.toOwnedSlice();
 }
 
 fn truncated_line_of_text_and_backround(alloc: std.mem.Allocator, text: []const u8, width: usize) ![]u8 {
