@@ -138,7 +138,6 @@ pub fn render_multiple_lines_with_background(temp_alloc: std.mem.Allocator, text
         try render_result.append(line);
     }
 
-    // return &render_result;
     return render_result.toOwnedSlice();
 }
 
