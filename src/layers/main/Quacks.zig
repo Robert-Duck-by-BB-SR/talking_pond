@@ -49,8 +49,8 @@ pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, 
     // const quack_four: QuackItem = .{ .time = "69:69", .author = "kakashi", .message = "With a capital G" };
     const quack_five: QuackItem = .{ .time = "69:69", .author = "bibi", .message = "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including version" };
 
-    try quacks_list.append(quack_five);
     try quacks_list.append(quack_first);
+    try quacks_list.append(quack_five);
     // try quacks_list.append(quack_one);
     // for (0..@intCast(terminal_dimensions.height - 9)) |i| {
     //     _ = i;
@@ -228,10 +228,9 @@ pub fn fill_content_with_quacks(self: *Self, temporary_alloctor: std.mem.Allocat
             9,
         );
 
-        var reverse_index: usize = all_content_lines.items.len - 1;
+        var reverse_index: usize = all_content_lines.len - 1;
         while (true) {
-            // SOMETHING FUCK EVERYTHING UP HERE
-            const line = all_content_lines.items[reverse_index];
+            const line = all_content_lines[reverse_index];
             try linked_quacks.reverse_insert(line);
 
             if (reverse_index == 0) {
@@ -246,17 +245,20 @@ pub fn fill_content_with_quacks(self: *Self, temporary_alloctor: std.mem.Allocat
         i -= 1;
     }
 
-    // try debug.debug_in_file_or_i_will_smack_your_face(try std.fmt.allocPrint(temporary_alloctor, "{d}", .{ linked_quacks.get_len(), linked_quacks.head.?.line }));
-    // var row_id: usize = 0;
-    // var quack_node = linked_quacks.head;
-    // while (quack_node != null) {
-    //     if (row_id == self.rows.len - 1) {
-    //         break;
-    //     }
-    //     @memcpy(self.rows[row_id].content[0..quack_node.?.line.len], quack_node.?.line);
-    //     quack_node = quack_node.?.next;
-    //     row_id += 1;
-    // }
+    var row_id: usize = 0;
+    const max_row: usize = linked_quacks.get_len();
+    var quack_node = linked_quacks.head;
+    try debug.debug_in_file_or_i_will_smack_your_face(try std.fmt.allocPrint(temporary_alloctor, "{d} {s}", .{ quack_node.?.line.len, quack_node.?.line }));
+
+    while (quack_node) |node| {
+        if (row_id == max_row) {
+            break;
+        }
+        @memcpy(self.rows[row_id].content[0..node.line.len], node.line);
+
+        quack_node = node.next;
+        row_id += 1;
+    }
 }
 
 fn render_row(self: *Self, temporary_alloctor: std.mem.Allocator, row_index: usize) ![]u8 {
