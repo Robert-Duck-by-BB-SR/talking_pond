@@ -12,3 +12,4 @@ talking_pond
 zig-out/
 .projectile*
 *test*
+*.txt
