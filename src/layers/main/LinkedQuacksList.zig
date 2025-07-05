@@ -13,11 +13,12 @@ pub fn LinkedQuaksList() type {
         };
 
         head: ?*Node,
+        tail: ?*Node,
         length: u8,
         allocator: std.mem.Allocator,
 
         pub fn new(allocator: std.mem.Allocator) Self {
-            return .{ .length = 0, .head = null, .allocator = allocator };
+            return .{ .length = 0, .head = null, .tail = null, .allocator = allocator };
         }
 
         pub fn reverse_insert(self: *Self, value: []const u8) !void {
@@ -29,6 +30,20 @@ pub fn LinkedQuaksList() type {
                 node.next = self.head;
                 self.head.?.prev = node;
                 self.head = node;
+            }
+            self.length += 1;
+        }
+
+        pub fn insert(self: *Self, value: []const u8) !void {
+            var node = try self.allocator.create(Node);
+            node.line = value;
+            if (self.head == null) {
+                self.head = node;
+                self.tail = node;
+            } else {
+                self.tail.?.next = node;
+                node.prev = self.tail;
+                self.tail = node;
             }
             self.length += 1;
         }

@@ -47,17 +47,13 @@ pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, 
     const quack_two: QuackItem = .{ .time = "69:52", .author = "kakashi", .message = "2" };
     const quack_three: QuackItem = .{ .time = "69:69", .author = "bob", .message = "3" };
     // const quack_four: QuackItem = .{ .time = "69:69", .author = "kakashi", .message = "With a capital G" };
-    const quack_five: QuackItem = .{ .time = "69:69", .author = "bibi", .message = "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including version" };
+    const quack_five: QuackItem = .{ .time = "69:69", .author = "bibi", .message = "I start here, and is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including version" };
 
     try quacks_list.append(quack_first);
-    // for (0..@intCast(terminal_dimensions.height - 9)) |i| {
-    //     _ = i;
-    //     try quacks_list.append(quack_one);
-    // }
     try quacks_list.append(quack_one);
     try quacks_list.append(quack_two);
     try quacks_list.append(quack_three);
-    try quacks_list.append(quack_three);
+    try quacks_list.append(quack_five);
     try quacks_list.append(quack_five);
     try quacks_list.append(quack_last);
 
@@ -71,7 +67,7 @@ pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, 
         .dimensions = .{
             .width = terminal_dimensions.width - common.PONDS_SIDEBAR_SIZE - 1,
             // 6 = 1 (status line) + 5 (lines for actual input)
-            .height = terminal_dimensions.height - 6,
+            .height = terminal_dimensions.height - 5,
         },
         .quacks_list = quacks_list,
     };
@@ -215,12 +211,6 @@ pub fn fill_content_with_quacks(self: *Self, temporary_alloctor: std.mem.Allocat
             quacks_slice[i].message,
         });
 
-        var lines_total: usize = 1;
-        if (max_width < prepared_message.len) {
-            const division: f16 = @floatFromInt(prepared_message.len / max_width);
-            lines_total = @as(usize, @intFromFloat(@ceil(division)));
-        }
-
         // TODO: FIX LAST CHARACTER
         const all_content_lines = try render_utils.render_multiple_lines_with_background(
             temporary_alloctor,
@@ -229,30 +219,25 @@ pub fn fill_content_with_quacks(self: *Self, temporary_alloctor: std.mem.Allocat
             9,
         );
 
-        if (lines_total > lines_left_to_fill) {
-            lines_total = lines_left_to_fill;
+        if (all_content_lines.len > lines_left_to_fill) {
             lines_left_to_fill = 0;
         } else {
-            lines_left_to_fill -= lines_total;
+            lines_left_to_fill -= all_content_lines.len;
         }
 
-        var slice_of_all_content_lines = all_content_lines;
-        if (all_content_lines.len > 1) {
-            // SOMETHING IS WRONG HERE
-            // First index is exlucive
-            //
-            slice_of_all_content_lines = all_content_lines[1..2];
-        }
-
-        var reverse_index: usize = slice_of_all_content_lines.len - 1;
-        while (true) {
-            const line = slice_of_all_content_lines[reverse_index];
-            try linked_quacks.reverse_insert(line);
-
-            if (reverse_index == 0) {
-                break;
+        if (all_content_lines.len == 1) {
+            try linked_quacks.insert(all_content_lines[0]);
+        } else{
+            var index: usize = all_content_lines.len - 1;
+            while (true) {
+                const line = all_content_lines[index];
+                try linked_quacks.insert(line);
+                
+                if (index == 0) {
+                    break;
+                }
+                index -= 1;
             }
-            reverse_index -= 1;
         }
         if (i == 0) {
             break;
@@ -261,9 +246,11 @@ pub fn fill_content_with_quacks(self: *Self, temporary_alloctor: std.mem.Allocat
         i -= 1;
     }
 
+    // IF capacity is bigger 
+    // ELSE capacity is smaller
     var row_id: usize = 0;
     const max_row: usize = linked_quacks.get_len();
-    var quack_node = linked_quacks.head;
+    var quack_node = linked_quacks.tail;
 
     while (quack_node) |node| {
         if (row_id == max_row or row_id == self.rows.len) {
@@ -271,7 +258,7 @@ pub fn fill_content_with_quacks(self: *Self, temporary_alloctor: std.mem.Allocat
         }
         @memcpy(self.rows[row_id].content[0..node.line.len], node.line);
 
-        quack_node = node.next;
+        quack_node = node.prev;
         row_id += 1;
     }
 }
