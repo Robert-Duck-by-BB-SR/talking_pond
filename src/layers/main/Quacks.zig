@@ -53,6 +53,12 @@ pub fn create(alloc: std.mem.Allocator, terminal_dimensions: common.Dimensions, 
     try quacks_list.append(quack_one);
     try quacks_list.append(quack_two);
     try quacks_list.append(quack_three);
+    try quacks_list.append(quack_one);
+    try quacks_list.append(quack_one);
+    try quacks_list.append(quack_two);
+    try quacks_list.append(quack_three);
+    try quacks_list.append(quack_two);
+    try quacks_list.append(quack_three);
     try quacks_list.append(quack_five);
     try quacks_list.append(quack_five);
     try quacks_list.append(quack_last);
@@ -80,7 +86,7 @@ pub fn init_first_frame(self: *Self) !void {
     defer arena.deinit();
     const temp_allocator = arena.allocator();
 
-    self.rows = try temp_allocator.alloc(Row, @intCast(self.dimensions.height - 36));
+    self.rows = try temp_allocator.alloc(Row, @intCast(self.dimensions.height));
     try self.render_border_with_title("QUACKS", temp_allocator);
     // Background
     for (self.rows, 2..) |*row, i| {
@@ -183,11 +189,6 @@ pub fn fill_content_with_quacks(self: *Self, temporary_alloctor: std.mem.Allocat
     // Structure of line: [12:00] author: message -> 7 (time), 1 (space), author.len + 1 (:) + 1(space) + message.len (slice)
     // Total = 11 + author.len + message.len (slice)
 
-    // Step 1: get slice of quacks based on capacity (numbers of rows)
-    // Step 2: find how many lines each quack will take and sum them
-    // Step:3: render only those lines in reverse
-    // Step 4: apply them to content not in reverse
-
     const capacity: usize = @intCast(self.rows.len);
     var first_slice_index: usize = 0;
     if (capacity < self.quacks_list.items.len - 1) {
@@ -219,24 +220,32 @@ pub fn fill_content_with_quacks(self: *Self, temporary_alloctor: std.mem.Allocat
             9,
         );
 
+        var mult_lines_to_use: usize = 0;
         if (all_content_lines.len > lines_left_to_fill) {
+            mult_lines_to_use = lines_left_to_fill;
             lines_left_to_fill = 0;
         } else {
+            mult_lines_to_use = all_content_lines.len;
             lines_left_to_fill -= all_content_lines.len;
         }
 
         if (all_content_lines.len == 1) {
-            try linked_quacks.insert(all_content_lines[0]);
+            try linked_quacks.reverse_insert(all_content_lines[0]);
         } else{
+            // var lines_counter: usize = 0; 
             var index: usize = all_content_lines.len - 1;
             while (true) {
                 const line = all_content_lines[index];
-                try linked_quacks.insert(line);
+                try linked_quacks.reverse_insert(line);
                 
+                // if (index == 0 or lines_counter == mult_lines_to_use) {
+                //     break;
+                // }
                 if (index == 0) {
                     break;
                 }
                 index -= 1;
+                // lines_counter += 1;
             }
         }
         if (i == 0) {
@@ -246,20 +255,35 @@ pub fn fill_content_with_quacks(self: *Self, temporary_alloctor: std.mem.Allocat
         i -= 1;
     }
 
-    // IF capacity is bigger 
-    // ELSE capacity is smaller
-    var row_id: usize = 0;
-    const max_row: usize = linked_quacks.get_len();
-    var quack_node = linked_quacks.tail;
+    // IF SPACE LEFT - render from top to bottom
+    // IF NO SPACE LEFT - render from bottom to top
+    if (lines_left_to_fill == 0){
+        var row_id: usize = self.rows.len - 1;
+        var quack_node = linked_quacks.head;
 
-    while (quack_node) |node| {
-        if (row_id == max_row or row_id == self.rows.len) {
-            break;
+        while (quack_node) |node| {
+            @memcpy(self.rows[row_id].content[0..node.line.len], node.line);
+
+            quack_node = node.prev;
+            if (row_id == 0) {
+                break;
+            }
+            row_id -= 1;
         }
-        @memcpy(self.rows[row_id].content[0..node.line.len], node.line);
+    } else{
+        var row_id: usize = 0;
+        const max_row: usize = linked_quacks.get_len();
+        var quack_node = linked_quacks.tail;
 
-        quack_node = node.prev;
-        row_id += 1;
+        while (quack_node) |node| {
+            if (row_id == max_row or row_id == self.rows.len) {
+                break;
+            }
+            @memcpy(self.rows[row_id].content[0..node.line.len], node.line);
+
+            quack_node = node.next;
+            row_id += 1;
+        }
     }
 }
 

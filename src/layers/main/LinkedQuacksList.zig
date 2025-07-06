@@ -26,23 +26,12 @@ pub fn LinkedQuaksList() type {
             node.line = value;
             if (self.head == null) {
                 self.head = node;
-            } else {
-                node.next = self.head;
-                self.head.?.prev = node;
-                self.head = node;
-            }
-            self.length += 1;
-        }
-
-        pub fn insert(self: *Self, value: []const u8) !void {
-            var node = try self.allocator.create(Node);
-            node.line = value;
-            if (self.head == null) {
-                self.head = node;
                 self.tail = node;
+                self.head.?.prev = self.tail;
+                self.tail.?.next = self.head;
             } else {
-                self.tail.?.next = node;
-                node.prev = self.tail;
+                self.tail.?.prev = node;
+                node.next = self.tail;
                 self.tail = node;
             }
             self.length += 1;
