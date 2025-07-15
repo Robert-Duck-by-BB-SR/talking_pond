@@ -2,9 +2,8 @@ images/
 tmp_frames/
 video*
 .s*
-*debug*
+junk_file.txt
 .sec*
-*debug*
 *.out
 *.prof
 talking_pond
@@ -12,4 +11,3 @@ talking_pond
 zig-out/
 .projectile*
 *test*
-*.txt
