@@ -1,5 +1,6 @@
 const std = @import("std");
 const common = @import("common.zig");
+const debug = @import("../debug/debugger.zig");
 const border = common.theme.BORDER;
 
 pub fn render_border_top(alloc: std.mem.Allocator, width: i16, horizontal_border: *std.ArrayList(u8)) ![]u8 {
@@ -45,7 +46,7 @@ pub fn make_border_with_title(alloc: std.mem.Allocator, w: usize, title: []const
         defer i += border.HORIZONTAL.len;
         @memcpy(horizontal_border[i .. i + border.HORIZONTAL.len], border.HORIZONTAL);
     }
-    @memcpy(horizontal_border[i .. ], border.TOP_RIGHT);
+    @memcpy(horizontal_border[i..], border.TOP_RIGHT);
     return horizontal_border;
 }
 
@@ -63,27 +64,84 @@ pub fn make_bottom_border(alloc: std.mem.Allocator, width: usize) ![]u8 {
     return horizontal_border;
 }
 
-pub fn render_line_of_text_and_backround(alloc: std.mem.Allocator, text: []const u8, width: usize) ![]u8 {
+pub fn render_line_of_text_and_backround(alloc: std.mem.Allocator, text: []const u8, text_postion: common.TEXT_POSITION, width: usize) ![]u8 {
     var result: []u8 = undefined;
+
     if (text.len >= width) {
-        result = try render_truncated_line_of_text_and_backround(alloc, text, width);
+        result = try truncated_line_of_text_and_backround(alloc, text, width);
     } else {
-        const bg_mid = try alloc.alloc(u8, width - text.len);
+        if (text_postion == common.TEXT_POSITION.CENTER) {
+            const bg_mid = try alloc.alloc(u8, @intFromFloat(@as(f16, @floatFromInt(width - text.len)) * 0.5));
+            @memset(bg_mid, ' ');
+            result = try std.fmt.allocPrint(
+                alloc,
+                "{s}{s}{s}",
+                .{
+                    bg_mid,
+                    text,
+                    bg_mid,
+                },
+            );
+        } else {
+            const bg_mid = try alloc.alloc(u8, width - text.len);
+            @memset(bg_mid, ' ');
+            result = try std.fmt.allocPrint(
+                alloc,
+                "{s}{s}",
+                .{
+                    text,
+                    bg_mid,
+                },
+            );
+        }
+    }
+
+    return result;
+}
+
+pub fn render_multiple_lines_with_background(temp_alloc: std.mem.Allocator, text: []const u8, width: usize, left_spacing: usize) ![][]const u8 {
+    var render_result: std.ArrayList([]const u8) = .init(temp_alloc);
+    var last_text_index: usize = 0;
+
+    if (text.len >= width) {
+        if (render_result.items.len == 0) {
+            const slice = text[0..width];
+            try render_result.append(slice);
+            last_text_index += width;
+        }
+
+        const bg_before = try temp_alloc.alloc(u8, left_spacing);
+        @memset(bg_before, ' ');
+
+        while (last_text_index < text.len - 1) {
+            if (last_text_index + width - left_spacing > text.len - 1) {
+                const slice = text[last_text_index .. text.len - 1];
+                try render_result.append(try std.fmt.allocPrint(temp_alloc, "{s}{s}", .{ bg_before, slice }));
+                break;
+            } else {
+                const slice = text[last_text_index .. last_text_index + width - left_spacing];
+                try render_result.append(try std.fmt.allocPrint(temp_alloc, "{s}{s}", .{ bg_before, slice }));
+                last_text_index += width - left_spacing;
+            }
+        }
+    } else {
+        const bg_mid = try temp_alloc.alloc(u8, width - text.len);
         @memset(bg_mid, ' ');
-        result = try std.fmt.allocPrint(
-            alloc,
+        const line = try std.fmt.allocPrint(
+            temp_alloc,
             "{s}{s}",
             .{
                 text,
                 bg_mid,
             },
         );
+        try render_result.append(line);
     }
 
-    return result;
+    return render_result.toOwnedSlice();
 }
 
-fn render_truncated_line_of_text_and_backround(alloc: std.mem.Allocator, text: []const u8, width: usize) ![]u8 {
+fn truncated_line_of_text_and_backround(alloc: std.mem.Allocator, text: []const u8, width: usize) ![]u8 {
     const bg_len = 1;
     var truncated_text: []const u8 = undefined;
     const to_remove = text.len - width;
@@ -102,4 +160,13 @@ fn render_truncated_line_of_text_and_backround(alloc: std.mem.Allocator, text: [
     );
 
     return result;
+}
+
+pub fn rerender_border(alloc: std.mem.Allocator, is_active: bool, border_slice: []u8) ![]u8 {
+    var render_result: std.ArrayList(u8) = .init(alloc);
+    try render_result.writer().print("{s}{s}", .{
+        if (is_active) common.ACTIVE_BORDER else common.INACTIVE_ITEM,
+        border_slice,
+    });
+    return render_result.toOwnedSlice();
 }

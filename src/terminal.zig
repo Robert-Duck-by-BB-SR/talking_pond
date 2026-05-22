@@ -3,6 +3,7 @@ const fs = std.fs;
 pub const shit_os = std.os.windows;
 pub const posix = std.posix;
 const os_tag = @import("builtin").os.tag;
+const VISIBLE_CURSOR = @import("layers/common.zig").VISIBLE_CURSOR;
 
 const ENABLE_LINE_INPUT: u32 = 0x2;
 const ENABLE_ECHO_INPUT: u32 = 0x4;
@@ -67,7 +68,8 @@ pub fn start_raw_mode(std_in: fs.File, std_out: fs.File, termos: *OldState) !voi
     }
 }
 
-pub fn restore_terminal(std_in: fs.File, std_out: fs.File, termos: OldState) void {
+pub fn restore_terminal(std_in: fs.File, std_out: fs.File, writer: fs.File.Writer, termos: OldState) !void {
+    try writer.print("{s}", .{VISIBLE_CURSOR});
     switch (os_tag) {
         .windows => {
             _ = shit_os.kernel32.SetConsoleMode(std_in.handle, termos.win.std_in);

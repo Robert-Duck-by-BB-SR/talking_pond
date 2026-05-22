@@ -33,6 +33,8 @@ pub const MODE_MAP = [@intFromEnum(MODE.MODES_COUNT)][]const u8{
     ":",
 };
 
+pub const STATE_MANAGEMENT_COMMANDS = enum { NONE, OPEN_QUACKS, CLOSE_QUACKS };
+
 const COMMANDS = enum {
     QUIT,
     NEW_CONVERSATION,
@@ -69,6 +71,12 @@ pub const NormalBorder = struct {
 };
 
 pub const NOTIFICATION_ICON = "\u{25FC}";
+pub const NOTIFICATION_ICON_PATTERN = theme.ACTIVE_FONT_COLOR ++ NOTIFICATION_ICON ++ RESET_STYLES;
+
+pub const TEXT_POSITION = enum {
+    LEFT,
+    CENTER,
+};
 
 pub const theme = struct {
     pub const FONT_COLOR = "\x1b[38;2;192;192;192m";
@@ -78,18 +86,6 @@ pub const theme = struct {
     pub const BORDER = NormalBorder;
 };
 
-pub const NOTIFICATION_ICON_PATTERN = theme.ACTIVE_FONT_COLOR ++ NOTIFICATION_ICON ++ RESET_STYLES;
-
-
 pub const ACTIVE_ITEM = theme.FONT_COLOR ++ theme.ACTIVE_BACKGROUND_COLOR;
 pub const INACTIVE_ITEM = theme.FONT_COLOR ++ theme.BACKGROUND_COLOR;
 pub const ACTIVE_BORDER = theme.ACTIVE_FONT_COLOR ++ theme.BACKGROUND_COLOR;
-
-pub fn render_border(alloc: std.mem.Allocator, is_active: bool, border: []u8) ![]u8 {
-    var ponds: std.ArrayList(u8) = .init(alloc);
-    try ponds.writer().print("{s}{s}", .{
-        if (is_active) ACTIVE_BORDER else INACTIVE_ITEM,
-        border,
-    });
-    return ponds.toOwnedSlice();
-}

@@ -157,7 +157,7 @@ pub fn render(self: *Self) !void {
             try self.render_row(i),
         });
     }
-    const rendered_border = try common.render_border(self.alloc, self.is_active, self.border);
+    const rendered_border = try render_utils.rerender_border(self.alloc, self.is_active, self.border);
     try ponds.writer().print("{s}", .{rendered_border});
     if (self.is_active) {
         try ponds.writer().print("{s}", .{self.render_current_virtual_cursor()});
@@ -169,16 +169,16 @@ pub fn render(self: *Self) !void {
 
 pub fn handle_normal(self: *Self, mode: *common.MODE, key: u8, new_active: *common.ComponentType) !void {
     switch (key) {
-        'Q' => {
+        'M', 'Q' => {
             new_active.* = .QUACKS_CHAT;
         },
-        'P' => {
+        'C', 'P' => {
             new_active.* = .PONDS_SIDEBAR;
         },
         ':' => {
             mode.* = .COMMAND;
         },
-        'a' => {
+        'a', 'i' => {
             if (self.full_content.items.len > 0) {
                 self.virtual_cursor.col += 1;
             }
